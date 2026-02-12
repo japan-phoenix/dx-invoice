@@ -1,0 +1,92 @@
+# Vercel CLI ローカル開発環境用の設定
+# 使用方法: docker-compose -f docker-compose.yml -f docker-compose.vercel.yml up
+
+services:
+  vercel-dev:
+    build:
+      context: .
+      dockerfile: Dockerfile.vercel-dev
+    container_name: phoenix-jpn-vercel-dev
+    working_dir: /app
+    volumes:
+      - ../../:/app
+      - vercel_node_modules:/app/node_modules
+      - vercel_db_node_modules:/app/packages/db/node_modules
+      - vercel_pnpm_store:/root/.local/share/pnpm/store
+    ports:
+      - '3000:3000'  # Next.js (Vercel)
+    environment:
+      - DATABASE_URL=postgresql://user:password@postgres:5432/funeral_system?schema=public
+      - JWT_SECRET=local-dev-secret-key
+      - JWT_EXPIRES_IN=7d
+      - API_PORT=3001
+      - NEXT_PUBLIC_API_URL=/api
+      - FRONTEND_URL=http://localhost:3000
+      - VERCEL=1
+      - NODE_ENV=development
+      - AUTO_MIGRATE=true
+      - PROJECT_ROOT=/app
+    command: >
+      sh -c "
+        echo 'Checking pnpm installation...' &&
+        if ! command -v pnpm > /dev/null 2>&1; then
+          echo 'pnpm not found, installing...' &&
+          npm install -g pnpm@latest
+        fi &&
+        echo 'Verifying pnpm version...' &&
+        pnpm --version &&
+        echo 'Installing dependencies...' &&
+        pnpm install &&
+        echo 'Waiting for database to be ready...' &&
+        until PGPASSWORD=password psql -h postgres -U user -d funeral_system -c 'SELECT 1' > /dev/null 2>&1; do
+          echo 'Waiting for database...'
+          sleep 2
+        done &&
+        echo 'Verifying database connection...' &&
+        PGPASSWORD=password psql -h postgres -U user -d funeral_system -c 'SELECT current_database();' > /dev/null 2>&1 || echo 'Database connection warning (may be harmless)' &&
+        echo 'Database is ready!' &&
+        export DATABASE_URL='postgresql://user:password@postgres:5432/funeral_system?schema=public' &&
+        echo 'Generating Prisma Client...' &&
+        cd packages/db &&
+        pnpm generate &&
+        cd /app &&
+        cd packages/db &&
+        export DATABASE_URL='postgresql://user:password@postgres:5432/funeral_system?schema=public' &&
+        echo 'Checking migration status...' &&
+        MIGRATION_COUNT=$$(ls -1 prisma/migrations 2>/dev/null | wc -l) &&
+        if [ \"$$MIGRATION_COUNT\" -gt 0 ]; then
+          echo 'Migrations found, checking for failed migrations...' &&
+          pnpm prisma migrate status 2>&1 | grep -q 'failed' && FAILED_MIGRATIONS=1 || FAILED_MIGRATIONS=0 &&
+          if [ \"$$FAILED_MIGRATIONS\" -eq 1 ]; then
+            echo 'Failed migrations detected, resolving...' &&
+            pnpm prisma migrate resolve --applied 20260202020902_init 2>&1 || echo 'Failed to resolve migration (may already be resolved or need manual intervention)' &&
+            echo 'Waiting a moment before retrying...' &&
+            sleep 2
+          fi &&
+          echo 'Deploying migrations...' &&
+          pnpm prisma migrate deploy --schema=./prisma/schema.prisma || echo 'Migration deploy failed (you may need to reset the database)'
+        else
+          echo 'No migrations found, creating initial migration...' &&
+          pnpm prisma migrate dev --name init || echo 'Migration failed, continuing...'
+        fi &&
+        cd /app &&
+        echo 'Verifying Next.js installation...' &&
+        ls -la node_modules/.bin/next || echo 'Next.js binary not found' &&
+        echo 'Starting Next.js development server...' &&
+        echo 'Clearing Next.js cache...' &&
+        rm -rf .next &&
+        export DATABASE_URL='postgresql://user:password@postgres:5432/funeral_system?schema=public' &&
+        pnpm exec next dev -H 0.0.0.0
+      "
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - default
+    stdin_open: true
+    tty: true
+
+volumes:
+  vercel_node_modules:
+  vercel_db_node_modules:
+  vercel_pnpm_store:

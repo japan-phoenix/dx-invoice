@@ -1,0 +1,50 @@
+import apiClient from './api';
+
+export interface EstimateItem {
+  id?: string;
+  productItemId?: string;
+  productVariantId?: string;
+  description?: string;
+  unitPriceGeneral: number;
+  unitPriceMember: number;
+  qty: number;
+  amount: number;
+  sortNo: number;
+  productItem?: any;
+  productVariant?: any;
+}
+
+export interface Estimate {
+  id: string;
+  customerId: string;
+  docNo?: string;
+  status: string;
+  subtotal: number;
+  tax: number;
+  total: number;
+  membershipPaidAmount: number;
+  grandTotal: number;
+  items: EstimateItem[];
+  customer?: any;
+}
+
+export async function getEstimates(customerId?: string): Promise<Estimate[]> {
+  const url = customerId ? `/estimates?customerId=${customerId}` : '/estimates';
+  const response = await apiClient.get<Estimate[]>(url);
+  return response.data;
+}
+
+export async function getEstimate(id: string): Promise<Estimate> {
+  const response = await apiClient.get<Estimate>(`/estimates/${id}`);
+  return response.data;
+}
+
+export async function createEstimate(customerId: string, data: any): Promise<Estimate> {
+  const response = await apiClient.post(`/estimates/customers/${customerId}`, data);
+  return response.data;
+}
+
+export async function updateEstimate(id: string, data: any): Promise<Estimate> {
+  const response = await apiClient.put(`/estimates/${id}`, data);
+  return response.data;
+}

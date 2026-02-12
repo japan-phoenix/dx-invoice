@@ -1,0 +1,55 @@
+{
+  "name": "phoenix-jpn",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint .",
+    "type-check": "tsc --noEmit",
+    "postinstall": "pnpm db:generate",
+    "prebuild": "pnpm db:generate && pnpm db:migrate:deploy",
+    "build:check": "pnpm build && node scripts/check-build.js",
+    "vercel:build": "vercel build",
+    "db:generate": "cd packages/db && pnpm generate",
+    "db:migrate": "cd packages/db && pnpm migrate",
+    "db:migrate:deploy": "cd packages/db && pnpm migrate:deploy",
+    "db:seed": "cd packages/db && pnpm seed",
+    "db:studio": "cd packages/db && pnpm studio",
+    "db:reset": "cd packages/db && pnpm reset"
+  },
+  "dependencies": {
+    "next": "16.1.6",
+    "react": "19.2.4",
+    "react-dom": "19.2.4",
+    "axios": "^1.6.2",
+    "js-cookie": "^3.0.5",
+    "@phoenix-jpn/db": "workspace:*",
+    "bcryptjs": "^2.4.3",
+    "jsonwebtoken": "^9.0.2",
+    "jspdf": "^2.5.1",
+    "html2canvas": "^1.4.1"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.0",
+    "@types/react": "19.2.10",
+    "@types/react-dom": "19.2.3",
+    "@types/js-cookie": "^3.0.6",
+    "@types/bcryptjs": "^2.4.6",
+    "@types/jsonwebtoken": "^9.0.5",
+    "typescript": "^5.3.3",
+    "eslint": "^9",
+    "eslint-config-next": "16.1.6"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "pnpm": ">=8.0.0"
+  },
+  "pnpm": {
+    "overrides": {
+      "@types/react": "19.2.10",
+      "@types/react-dom": "19.2.3"
+    }
+  }
+}

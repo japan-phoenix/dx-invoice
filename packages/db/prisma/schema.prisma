@@ -1,0 +1,408 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "rhel-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Gender {
+  MALE
+  FEMALE
+  OTHER
+}
+
+enum CremationProcessType {
+  FAMILY
+  NEIGHBORHOOD
+  COMPANY
+}
+
+enum AltarPlaceType {
+  HOME
+  FUNERAL_HALL
+}
+
+enum DocumentStatus {
+  DRAFT
+  CONFIRMED
+}
+
+enum PaymentTargetType {
+  INVOICE
+  FLOWER_TARGET
+}
+
+enum PaymentStatus {
+  PAID
+  CANCELLED
+}
+
+model User {
+  id         BigInt   @id @default(autoincrement())
+  name       String   @db.VarChar(100)
+  birthDate  DateTime? @db.Date @map("birth_date")
+  email      String?  @db.VarChar(255)
+  tel        String   @unique @db.VarChar(30)
+  password   String   @db.VarChar(255)
+  createdAt  DateTime @default(now()) @db.Timestamptz(6) @map("created_at")
+  updatedAt  DateTime @updatedAt @db.Timestamptz(6) @map("updated_at")
+
+  createdPayments Payment[] @relation("CreatedBy")
+
+  @@map("users")
+}
+
+model AddressCity {
+  id        BigInt   @id @default(autoincrement())
+  name      String   @db.VarChar(100)
+  sortNo    Int      @map("sort_no")
+  isActive  Boolean  @default(true) @map("is_active")
+  createdAt DateTime @default(now()) @db.Timestamptz(6) @map("created_at")
+  updatedAt DateTime @updatedAt @db.Timestamptz(6) @map("updated_at")
+
+  towns     AddressTown[]
+  customers Customer[]
+
+  @@map("address_cities")
+}
+
+model AddressTown {
+  id        BigInt   @id @default(autoincrement())
+  cityId    BigInt   @map("city_id")
+  name      String   @db.VarChar(100)
+  sortNo    Int      @map("sort_no")
+  isActive  Boolean  @default(true) @map("is_active")
+  createdAt DateTime @default(now()) @db.Timestamptz(6) @map("created_at")
+  updatedAt DateTime @updatedAt @db.Timestamptz(6) @map("updated_at")
+
+  city      AddressCity @relation(fields: [cityId], references: [id])
+  customers Customer[]
+
+  @@index([cityId, sortNo])
+  @@map("address_towns")
+}
+
+model Customer {
+  id                    BigInt    @id @default(autoincrement())
+  receptionNo           String?   @unique @db.VarChar(30) @map("reception_no")
+  receptionAt           DateTime? @db.Timestamptz(6) @map("reception_at")
+  deceasedLastName      String?   @db.VarChar(50) @map("deceased_last_name")
+  deceasedFirstName     String?   @db.VarChar(50) @map("deceased_first_name")
+  deceasedName          String    @db.VarChar(100) @map("deceased_name")
+  gender                Gender?
+  age                   Int?
+  religion              String?   @db.VarChar(50)
+  chiefMournerName      String?   @db.VarChar(100) @map("chief_mourner_name")
+  chiefMournerRelation  String?   @db.VarChar(50) @map("chief_mourner_relation")
+  chiefMournerCityId    BigInt?   @map("chief_mourner_city_id")
+  chiefMournerTownId    BigInt?   @map("chief_mourner_town_id")
+  chiefMournerAddress   String?   @db.VarChar(255) @map("chief_mourner_address")
+  chiefMournerTel       String?   @db.VarChar(30) @map("chief_mourner_tel")
+  payerName             String?   @db.VarChar(100) @map("payer_name")
+  payerRelation         String?   @db.VarChar(50) @map("payer_relation")
+  payerAddress          String?   @db.VarChar(255) @map("payer_address")
+  payerTel              String?   @db.VarChar(30) @map("payer_tel")
+  pickupPlace           String?   @db.VarChar(255) @map("pickup_place")
+  wakeAt                DateTime? @db.Timestamptz(6) @map("wake_at")
+  wakePlace             String?   @db.VarChar(255) @map("wake_place")
+  departureAt           DateTime? @db.Timestamptz(6) @map("departure_at")
+  departurePlace        String?   @db.VarChar(255) @map("departure_place")
+  funeralFrom           DateTime? @db.Timestamptz(6) @map("funeral_from")
+  funeralTo             DateTime? @db.Timestamptz(6) @map("funeral_to")
+  funeralPlace          String?   @db.VarChar(255) @map("funeral_place")
+  returnAt              DateTime? @db.Timestamptz(6) @map("return_at")
+  returnPlace           String?   @db.VarChar(255) @map("return_place")
+  notes                 String?   @db.Text
+  memberCardNote        String?   @db.VarChar(255) @map("member_card_note")
+  createdAt             DateTime  @default(now()) @db.Timestamptz(6) @map("created_at")
+  updatedAt             DateTime  @updatedAt @db.Timestamptz(6) @map("updated_at")
+
+  chiefMournerCity      AddressCity? @relation(fields: [chiefMournerCityId], references: [id])
+  chiefMournerTown      AddressTown? @relation(fields: [chiefMournerTownId], references: [id])
+  memberships           CustomerMembership[]
+  estimates             Estimate[]
+  invoices              Invoice[]
+  flowers               Flower[]
+  flowerBillingTargets  FlowerBillingTarget[]
+  payments              Payment[]
+
+  @@index([receptionAt])
+  @@index([funeralFrom])
+  @@index([deceasedLastName, deceasedFirstName])
+  @@index([chiefMournerCityId, chiefMournerTownId])
+  @@map("customers")
+}
+
+model CustomerMembership {
+  id                  BigInt    @id @default(autoincrement())
+  customerId          BigInt    @map("customer_id")
+  rowNo               Int       @map("row_no")
+  memberNo            String?   @db.VarChar(50) @map("member_no")
+  joinedAt            DateTime? @db.Date @map("joined_at")
+  memberName          String?   @db.VarChar(100) @map("member_name")
+  courseUnits         Int?      @map("course_units")
+  maturityAmount      Int?      @map("maturity_amount")
+  paymentTimes        Int?      @map("payment_times")
+  paymentAmount       Int?      @map("payment_amount")
+  salesStaffName      String?   @db.VarChar(100) @map("sales_staff_name")
+  relationToDeceased  String?   @db.VarChar(50) @map("relation_to_deceased")
+  createdAt           DateTime  @default(now()) @db.Timestamptz(6) @map("created_at")
+  updatedAt           DateTime  @updatedAt @db.Timestamptz(6) @map("updated_at")
+
+  customer            Customer  @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  @@unique([customerId, rowNo])
+  @@map("customer_memberships")
+}
+
+model ProductItem {
+  id        BigInt   @id @default(autoincrement())
+  name      String   @db.VarChar(120)
+  isActive  Boolean  @default(true) @map("is_active")
+  createdAt DateTime @default(now()) @db.Timestamptz(6) @map("created_at")
+  updatedAt DateTime @updatedAt @db.Timestamptz(6) @map("updated_at")
+
+  variants  ProductVariant[]
+  estimateItems EstimateItem[]
+  invoiceItems  InvoiceItem[]
+
+  @@map("product_items")
+}
+
+model ProductVariant {
+  id            BigInt   @id @default(autoincrement())
+  productItemId BigInt   @map("product_item_id")
+  name          String   @db.VarChar(120)
+  imageUrl      String?  @db.VarChar(500) @map("image_url")
+  priceGeneral  Int      @map("price_general")
+  priceMember   Int      @map("price_member")
+  isActive      Boolean  @default(true) @map("is_active")
+  createdAt     DateTime @default(now()) @db.Timestamptz(6) @map("created_at")
+  updatedAt     DateTime @updatedAt @db.Timestamptz(6) @map("updated_at")
+
+  productItem  ProductItem @relation(fields: [productItemId], references: [id])
+  estimateItems EstimateItem[]
+  invoiceItems  InvoiceItem[]
+
+  @@map("product_variants")
+}
+
+model Estimate {
+  id                  BigInt              @id @default(autoincrement())
+  customerId          BigInt              @map("customer_id")
+  docNo               String?              @unique @db.VarChar(30) @map("doc_no")
+  status              DocumentStatus       @default(DRAFT)
+  subtotal            Int                  @default(0)
+  tax                 Int                  @default(0)
+  total               Int                  @default(0)
+  membershipPaidAmount Int                @default(0) @map("membership_paid_amount")
+  grandTotal          Int                  @default(0) @map("grand_total")
+  cremationProcessType CremationProcessType? @map("cremation_process_type")
+  altarPlaceType      AltarPlaceType?     @map("altar_place_type")
+  ceilingHeight       String?             @db.VarChar(30) @map("ceiling_height")
+  estimateStaff       String?             @db.VarChar(100) @map("estimate_staff")
+  ceremonyStaff       String?             @db.VarChar(100) @map("ceremony_staff")
+  transportStaff      String?             @db.VarChar(100) @map("transport_staff")
+  decorationStaff     String?             @db.VarChar(100) @map("decoration_staff")
+  returnStaff         String?             @db.VarChar(100) @map("return_staff")
+  issuedAt            DateTime?           @db.Timestamptz(6) @map("issued_at")
+  createdAt           DateTime            @default(now()) @db.Timestamptz(6) @map("created_at")
+  updatedAt           DateTime            @updatedAt @db.Timestamptz(6) @map("updated_at")
+
+  customer            Customer            @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  items               EstimateItem[]
+  invoices            Invoice[]
+
+  @@map("estimates")
+}
+
+model EstimateItem {
+  id                BigInt   @id @default(autoincrement())
+  estimateId        BigInt   @map("estimate_id")
+  productItemId     BigInt?  @map("product_item_id")
+  productVariantId  BigInt?  @map("product_variant_id")
+  description       String?  @db.VarChar(255)
+  unitPriceGeneral  Int      @default(0) @map("unit_price_general")
+  unitPriceMember   Int      @default(0) @map("unit_price_member")
+  qty               Int      @default(0)
+  amount            Int      @default(0)
+  sortNo            Int      @default(0) @map("sort_no")
+  createdAt         DateTime @default(now()) @db.Timestamptz(6) @map("created_at")
+  updatedAt         DateTime @updatedAt @db.Timestamptz(6) @map("updated_at")
+
+  estimate          Estimate      @relation(fields: [estimateId], references: [id], onDelete: Cascade)
+  productItem       ProductItem?  @relation(fields: [productItemId], references: [id])
+  productVariant    ProductVariant? @relation(fields: [productVariantId], references: [id])
+
+  @@map("estimate_items")
+}
+
+model Invoice {
+  id                  BigInt              @id @default(autoincrement())
+  customerId          BigInt              @map("customer_id")
+  docNo               String?              @unique @db.VarChar(30) @map("doc_no")
+  status              DocumentStatus       @default(DRAFT)
+  subtotal            Int                  @default(0)
+  tax                 Int                  @default(0)
+  total               Int                  @default(0)
+  membershipPaidAmount Int                @default(0) @map("membership_paid_amount")
+  grandTotal          Int                  @default(0) @map("grand_total")
+  fromEstimateId      BigInt?             @map("from_estimate_id")
+  cremationProcessType CremationProcessType? @map("cremation_process_type")
+  altarPlaceType      AltarPlaceType?     @map("altar_place_type")
+  ceilingHeight       String?             @db.VarChar(30) @map("ceiling_height")
+  estimateStaff       String?             @db.VarChar(100) @map("estimate_staff")
+  ceremonyStaff       String?             @db.VarChar(100) @map("ceremony_staff")
+  transportStaff      String?             @db.VarChar(100) @map("transport_staff")
+  decorationStaff     String?             @db.VarChar(100) @map("decoration_staff")
+  returnStaff         String?             @db.VarChar(100) @map("return_staff")
+  issuedAt            DateTime?           @db.Timestamptz(6) @map("issued_at")
+  createdAt           DateTime            @default(now()) @db.Timestamptz(6) @map("created_at")
+  updatedAt           DateTime            @updatedAt @db.Timestamptz(6) @map("updated_at")
+
+  customer            Customer            @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  fromEstimate        Estimate?           @relation(fields: [fromEstimateId], references: [id])
+  items               InvoiceItem[]
+  payments            Payment[]
+
+  @@map("invoices")
+}
+
+model InvoiceItem {
+  id                BigInt   @id @default(autoincrement())
+  invoiceId         BigInt   @map("invoice_id")
+  productItemId     BigInt?  @map("product_item_id")
+  productVariantId  BigInt?  @map("product_variant_id")
+  description       String?  @db.VarChar(255)
+  unitPriceGeneral  Int      @default(0) @map("unit_price_general")
+  unitPriceMember   Int      @default(0) @map("unit_price_member")
+  qty               Int      @default(0)
+  amount            Int      @default(0)
+  sortNo            Int      @default(0) @map("sort_no")
+  createdAt         DateTime @default(now()) @db.Timestamptz(6) @map("created_at")
+  updatedAt         DateTime @updatedAt @db.Timestamptz(6) @map("updated_at")
+
+  invoice           Invoice          @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  productItem       ProductItem?     @relation(fields: [productItemId], references: [id])
+  productVariant     ProductVariant? @relation(fields: [productVariantId], references: [id])
+
+  @@map("invoice_items")
+}
+
+model Flower {
+  id            BigInt   @id @default(autoincrement())
+  customerId    BigInt   @map("customer_id")
+  requesterName String   @db.VarChar(100) @map("requester_name")
+  labelName     String?  @db.VarChar(100) @map("label_name")
+  jointNames    String?  @db.VarChar(255) @map("joint_names")
+  billToName    String   @db.VarChar(100) @map("bill_to_name")
+  billToAddress String   @db.VarChar(255) @map("bill_to_address")
+  billToTel     String?  @db.VarChar(30) @map("bill_to_tel")
+  deliveryTo    String?  @db.VarChar(255) @map("delivery_to")
+  amount        Int      @default(0)
+  createdAt     DateTime @default(now()) @db.Timestamptz(6) @map("created_at")
+  updatedAt     DateTime @updatedAt @db.Timestamptz(6) @map("updated_at")
+
+  customer      Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  billingTargetItems FlowerBillingTargetItem[]
+
+  @@map("flowers")
+}
+
+model FlowerBillingTarget {
+  id            BigInt   @id @default(autoincrement())
+  customerId    BigInt   @map("customer_id")
+  billToName    String   @db.VarChar(100) @map("bill_to_name")
+  billToAddress String   @db.VarChar(255) @map("bill_to_address")
+  billToTel     String?  @db.VarChar(30) @map("bill_to_tel")
+  billToKey     String   @db.Char(64) @map("bill_to_key")
+  createdAt     DateTime @default(now()) @db.Timestamptz(6) @map("created_at")
+  updatedAt     DateTime @updatedAt @db.Timestamptz(6) @map("updated_at")
+
+  customer      Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  items         FlowerBillingTargetItem[]
+  payments      Payment[]
+
+  @@unique([customerId, billToKey])
+  @@map("flower_billing_targets")
+}
+
+model FlowerBillingTargetItem {
+  id                    BigInt   @id @default(autoincrement())
+  flowerBillingTargetId BigInt   @map("flower_billing_target_id")
+  flowerId               BigInt   @map("flower_id")
+  createdAt              DateTime @default(now()) @db.Timestamptz(6) @map("created_at")
+
+  flowerBillingTarget   FlowerBillingTarget @relation(fields: [flowerBillingTargetId], references: [id], onDelete: Cascade)
+  flower                Flower             @relation(fields: [flowerId], references: [id], onDelete: Cascade)
+
+  @@unique([flowerBillingTargetId, flowerId])
+  @@map("flower_billing_target_items")
+}
+
+model Payment {
+  id                    BigInt            @id @default(autoincrement())
+  customerId            BigInt            @map("customer_id")
+  targetType            PaymentTargetType @map("target_type")
+  status                PaymentStatus
+  paidAt                DateTime          @db.Timestamptz(6) @map("paid_at")
+  amount                Int               @default(0)
+  memo                  String?           @db.VarChar(255)
+  createdById            BigInt?           @map("created_by_id")
+  invoiceId              BigInt?           @map("invoice_id")
+  flowerBillingTargetId BigInt?           @map("flower_billing_target_id")
+  createdAt             DateTime          @default(now()) @db.Timestamptz(6) @map("created_at")
+  updatedAt             DateTime          @updatedAt @db.Timestamptz(6) @map("updated_at")
+
+  customer              Customer          @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  createdBy             User?             @relation("CreatedBy", fields: [createdById], references: [id])
+  invoice               Invoice?          @relation(fields: [invoiceId], references: [id])
+  flowerBillingTarget   FlowerBillingTarget? @relation(fields: [flowerBillingTargetId], references: [id])
+
+  @@index([customerId])
+  @@index([targetType, invoiceId])
+  @@index([targetType, flowerBillingTargetId])
+  @@index([paidAt])
+  @@index([createdAt])
+  @@map("payments")
+}
+
+model CompanyProfile {
+  id            BigInt   @id @default(autoincrement())
+  companyName   String   @db.VarChar(200) @map("company_name")
+  companyAddress String  @db.VarChar(255) @map("company_address")
+  companyTel    String   @db.VarChar(30) @map("company_tel")
+  companyFax    String?  @db.VarChar(30) @map("company_fax")
+  repTitle      String?  @db.VarChar(100) @map("rep_title")
+  repName       String?  @db.VarChar(100) @map("rep_name")
+  bank1Name     String?  @db.VarChar(100) @map("bank1_name")
+  bank1Branch   String?  @db.VarChar(100) @map("bank1_branch")
+  bank1Type     String?  @db.VarChar(20) @map("bank1_type")
+  bank1Account  String?  @db.VarChar(50) @map("bank1_account")
+  bank1Holder   String?  @db.VarChar(100) @map("bank1_holder")
+  bank2Name     String?  @db.VarChar(100) @map("bank2_name")
+  bank2Branch   String?  @db.VarChar(100) @map("bank2_branch")
+  bank2Type     String?  @db.VarChar(20) @map("bank2_type")
+  bank2Account  String?  @db.VarChar(50) @map("bank2_account")
+  bank2Holder   String?  @db.VarChar(100) @map("bank2_holder")
+  bank3Name     String?  @db.VarChar(100) @map("bank3_name")
+  bank3Branch   String?  @db.VarChar(100) @map("bank3_branch")
+  bank3Type     String?  @db.VarChar(20) @map("bank3_type")
+  bank3Account  String?  @db.VarChar(50) @map("bank3_account")
+  bank3Holder   String?  @db.VarChar(100) @map("bank3_holder")
+  bank4Name     String?  @db.VarChar(100) @map("bank4_name")
+  bank4Branch   String?  @db.VarChar(100) @map("bank4_branch")
+  bank4Type     String?  @db.VarChar(20) @map("bank4_type")
+  bank4Account  String?  @db.VarChar(50) @map("bank4_account")
+  bank4Holder   String?  @db.VarChar(100) @map("bank4_holder")
+  createdAt     DateTime @default(now()) @db.Timestamptz(6) @map("created_at")
+  updatedAt     DateTime @updatedAt @db.Timestamptz(6) @map("updated_at")
+
+  @@map("company_profiles")
+}

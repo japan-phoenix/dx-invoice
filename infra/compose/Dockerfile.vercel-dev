@@ -1,0 +1,24 @@
+# Vercel開発環境用のカスタムDockerイメージ
+FROM node:20-alpine
+
+# 必要なパッケージを事前にインストール
+RUN apk add --no-cache \
+    git \
+    python3 \
+    make \
+    g++ \
+    openssl \
+    openssl-dev \
+    libc6-compat \
+    postgresql-client
+
+# pnpmをグローバルにインストール
+RUN npm install -g pnpm@latest
+
+# pnpmのパスを確認
+RUN which pnpm && pnpm --version
+
+WORKDIR /app
+
+# デフォルトのシェルを設定（shを使用）
+SHELL ["/bin/sh", "-c"]

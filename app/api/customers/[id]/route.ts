@@ -1,206 +1,195 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { PrismaClient } from '@phoenix-jpn/db';
-import { requireAuth } from '@/lib/auth-middleware';
-import { serializeBigInt } from '@/lib/prisma-utils';
+import { NextRequest, NextResponse } from 'next/server'
+import { PrismaClient } from '@phoenix-jpn/db'
+import { requireAuth } from '@/lib/auth-middleware'
+import { serializeBigInt } from '@/lib/prisma-utils'
 
-export const dynamic = 'force-dynamic';
+export const dynamic = 'force-dynamic'
 
-const prisma = new PrismaClient();
+const prisma = new PrismaClient()
 
 export async function GET(request: NextRequest, props: { params: Promise<{ id: string }> }) {
-  const params = await props.params;
-  try {
-    // JWT認証
-    const authResult = await requireAuth(request);
-    if (authResult instanceof NextResponse) {
-      return authResult;
-    }
+    const params = await props.params
+    try {
+        // JWT認証
+        const authResult = await requireAuth(request)
+        if (authResult instanceof NextResponse) {
+            return authResult
+        }
 
-    const { id } = params;
+        const { id } = params
 
-    // 顧客を取得
-    const customer = await prisma.customer.findUnique({
-      where: { id: BigInt(id) },
-      include: {
-        chiefMournerCity: true,
-        chiefMournerTown: true,
-        memberships: {
-          orderBy: { rowNo: 'asc' },
-        },
-        estimates: {
-          include: {
-            items: {
-              include: {
-                productItem: true,
-                productVariant: true,
-              },
-              orderBy: { sortNo: 'asc' },
+        // 顧客を取得
+        const customer = await prisma.customer.findUnique({
+            where: { id: BigInt(id) },
+            include: {
+                chiefMournerCity: true,
+                chiefMournerTown: true,
+                memberships: {
+                    orderBy: { rowNo: 'asc' },
+                },
+                estimates: {
+                    include: {
+                        items: {
+                            include: {
+                                productItem: true,
+                                productVariant: true,
+                            },
+                            orderBy: { sortNo: 'asc' },
+                        },
+                    },
+                },
+                invoices: {
+                    include: {
+                        items: {
+                            include: {
+                                productItem: true,
+                                productVariant: true,
+                            },
+                            orderBy: { sortNo: 'asc' },
+                        },
+                    },
+                },
             },
-          },
-        },
-        invoices: {
-          include: {
-            items: {
-              include: {
-                productItem: true,
-                productVariant: true,
-              },
-              orderBy: { sortNo: 'asc' },
-            },
-          },
-        },
-      },
-    });
+        })
 
-    if (!customer) {
-      return NextResponse.json(
-        { error: '顧客が見つかりません' },
-        { status: 404 }
-      );
+        if (!customer) {
+            return NextResponse.json({ error: '顧客が見つかりません' }, { status: 404 })
+        }
+
+        // レスポンスを返す
+        return NextResponse.json(
+            serializeBigInt({
+                ...customer,
+                id: customer.id.toString(),
+                chiefMournerCityId: customer.chiefMournerCityId?.toString(),
+                chiefMournerTownId: customer.chiefMournerTownId?.toString(),
+                memberships: customer.memberships.map((m: any) => ({
+                    ...m,
+                    id: m.id.toString(),
+                    customerId: m.customerId.toString(),
+                })),
+            })
+        )
+    } catch (error: any) {
+        console.error('Get customer error:', error)
+        return NextResponse.json({ error: 'Internal server error', message: error.message }, { status: 500 })
     }
-
-    // レスポンスを返す
-    return NextResponse.json(serializeBigInt({
-      ...customer,
-      id: customer.id.toString(),
-      chiefMournerCityId: customer.chiefMournerCityId?.toString(),
-      chiefMournerTownId: customer.chiefMournerTownId?.toString(),
-      memberships: customer.memberships.map((m: any) => ({
-        ...m,
-        id: m.id.toString(),
-        customerId: m.customerId.toString(),
-      })),
-    }));
-  } catch (error: any) {
-    console.error('Get customer error:', error);
-    return NextResponse.json(
-      { error: 'Internal server error', message: error.message },
-      { status: 500 }
-    );
-  }
 }
 
 export async function PUT(request: NextRequest, props: { params: Promise<{ id: string }> }) {
-  const params = await props.params;
-  try {
-    // JWT認証
-    const authResult = await requireAuth(request);
-    if (authResult instanceof NextResponse) {
-      return authResult;
+    const params = await props.params
+    try {
+        // JWT認証
+        const authResult = await requireAuth(request)
+        if (authResult instanceof NextResponse) {
+            return authResult
+        }
+
+        const { id } = params
+        const data = await request.json()
+
+        // 空文字列をnullに変換するヘルパー関数
+        const toNullIfEmpty = (value: any) => {
+            if (value === '' || value === undefined) return null
+            return value
+        }
+
+        // 数値に変換するヘルパー関数
+        const toIntOrNull = (value: any) => {
+            if (value === '' || value === undefined || value === null) return null
+            const num = parseInt(value, 10)
+            return isNaN(num) ? null : num
+        }
+
+        // Gender enumの値を検証
+        const validGenders = ['MALE', 'FEMALE', 'OTHER']
+        const gender = data.gender && validGenders.includes(data.gender) ? data.gender : null
+
+        // 顧客データを準備
+        const customerData: any = {
+            deceasedName: data.deceasedName || '',
+            deceasedLastName: toNullIfEmpty(data.deceasedLastName),
+            deceasedFirstName: toNullIfEmpty(data.deceasedFirstName),
+            gender: gender,
+            age: toIntOrNull(data.age),
+            religion: toNullIfEmpty(data.religion),
+            receptionAt: data.receptionAt ? new Date(data.receptionAt) : null,
+            chiefMournerName: toNullIfEmpty(data.chiefMournerName),
+            chiefMournerRelation: toNullIfEmpty(data.chiefMournerRelation),
+            chiefMournerCityId: data.chiefMournerCityId ? BigInt(data.chiefMournerCityId) : null,
+            chiefMournerTownId: data.chiefMournerTownId ? BigInt(data.chiefMournerTownId) : null,
+            chiefMournerAddress: toNullIfEmpty(data.chiefMournerAddress),
+            chiefMournerTel: toNullIfEmpty(data.chiefMournerTel),
+            payerName: toNullIfEmpty(data.payerName),
+            payerRelation: toNullIfEmpty(data.payerRelation),
+            payerAddress: toNullIfEmpty(data.payerAddress),
+            payerTel: toNullIfEmpty(data.payerTel),
+            pickupPlace: toNullIfEmpty(data.pickupPlace),
+            wakeAt: data.wakeAt ? new Date(data.wakeAt) : null,
+            wakePlace: toNullIfEmpty(data.wakePlace),
+            departureAt: data.departureAt ? new Date(data.departureAt) : null,
+            departurePlace: toNullIfEmpty(data.departurePlace),
+            funeralFrom: data.funeralFrom ? new Date(data.funeralFrom) : null,
+            funeralTo: data.funeralTo ? new Date(data.funeralTo) : null,
+            funeralPlace: toNullIfEmpty(data.funeralPlace),
+            returnAt: data.returnAt ? new Date(data.returnAt) : null,
+            returnPlace: toNullIfEmpty(data.returnPlace),
+            notes: toNullIfEmpty(data.notes),
+            memberCardNote: toNullIfEmpty(data.memberCardNote),
+        }
+
+        // 顧客を更新
+        const customer = await prisma.customer.update({
+            where: { id: BigInt(id) },
+            data: customerData,
+            include: {
+                chiefMournerCity: true,
+                chiefMournerTown: true,
+            },
+        })
+
+        // 会員情報を更新
+        if (data.memberships) {
+            // 既存の会員情報を削除
+            await prisma.customerMembership.deleteMany({
+                where: { customerId: BigInt(id) },
+            })
+
+            // 新しい会員情報を作成
+            await Promise.all(
+                data.memberships
+                    .filter((m: any) => m.rowNo >= 1 && m.rowNo <= 3)
+                    .map((membership: any) =>
+                        prisma.customerMembership.create({
+                            data: {
+                                customerId: BigInt(id),
+                                rowNo: membership.rowNo,
+                                memberNo: toNullIfEmpty(membership.memberNo),
+                                joinedAt: membership.joinedAt ? new Date(membership.joinedAt) : null,
+                                memberName: toNullIfEmpty(membership.memberName),
+                                courseUnits: toIntOrNull(membership.courseUnits),
+                                maturityAmount: toIntOrNull(membership.maturityAmount),
+                                paymentTimes: toIntOrNull(membership.paymentTimes),
+                                paymentAmount: toIntOrNull(membership.paymentAmount),
+                                salesStaffName: toNullIfEmpty(membership.salesStaffName),
+                                relationToDeceased: toNullIfEmpty(membership.relationToDeceased),
+                            },
+                        })
+                    )
+            )
+        }
+
+        // レスポンスを返す
+        return NextResponse.json(
+            serializeBigInt({
+                ...customer,
+                id: customer.id.toString(),
+                chiefMournerCityId: customer.chiefMournerCityId?.toString(),
+                chiefMournerTownId: customer.chiefMournerTownId?.toString(),
+            })
+        )
+    } catch (error: any) {
+        console.error('Update customer error:', error)
+        return NextResponse.json({ error: 'Internal server error', message: error.message }, { status: 500 })
     }
-
-    const { id } = params;
-    const data = await request.json();
-
-    // 空文字列をnullに変換するヘルパー関数
-    const toNullIfEmpty = (value: any) => {
-      if (value === '' || value === undefined) return null;
-      return value;
-    };
-
-    // 数値に変換するヘルパー関数
-    const toIntOrNull = (value: any) => {
-      if (value === '' || value === undefined || value === null) return null;
-      const num = parseInt(value, 10);
-      return isNaN(num) ? null : num;
-    };
-
-    // Gender enumの値を検証
-    const validGenders = ['MALE', 'FEMALE', 'OTHER'];
-    const gender = data.gender && validGenders.includes(data.gender) ? data.gender : null;
-
-    // 顧客データを準備
-    const customerData: any = {
-      deceasedName: data.deceasedName || '',
-      deceasedLastName: toNullIfEmpty(data.deceasedLastName),
-      deceasedFirstName: toNullIfEmpty(data.deceasedFirstName),
-      gender: gender,
-      age: toIntOrNull(data.age),
-      religion: toNullIfEmpty(data.religion),
-      receptionAt: data.receptionAt ? new Date(data.receptionAt) : null,
-      chiefMournerName: toNullIfEmpty(data.chiefMournerName),
-      chiefMournerRelation: toNullIfEmpty(data.chiefMournerRelation),
-      chiefMournerCityId: data.chiefMournerCityId
-        ? BigInt(data.chiefMournerCityId)
-        : null,
-      chiefMournerTownId: data.chiefMournerTownId
-        ? BigInt(data.chiefMournerTownId)
-        : null,
-      chiefMournerAddress: toNullIfEmpty(data.chiefMournerAddress),
-      chiefMournerTel: toNullIfEmpty(data.chiefMournerTel),
-      payerName: toNullIfEmpty(data.payerName),
-      payerRelation: toNullIfEmpty(data.payerRelation),
-      payerAddress: toNullIfEmpty(data.payerAddress),
-      payerTel: toNullIfEmpty(data.payerTel),
-      pickupPlace: toNullIfEmpty(data.pickupPlace),
-      wakeAt: data.wakeAt ? new Date(data.wakeAt) : null,
-      wakePlace: toNullIfEmpty(data.wakePlace),
-      departureAt: data.departureAt ? new Date(data.departureAt) : null,
-      departurePlace: toNullIfEmpty(data.departurePlace),
-      funeralFrom: data.funeralFrom ? new Date(data.funeralFrom) : null,
-      funeralTo: data.funeralTo ? new Date(data.funeralTo) : null,
-      funeralPlace: toNullIfEmpty(data.funeralPlace),
-      returnAt: data.returnAt ? new Date(data.returnAt) : null,
-      returnPlace: toNullIfEmpty(data.returnPlace),
-      notes: toNullIfEmpty(data.notes),
-      memberCardNote: toNullIfEmpty(data.memberCardNote),
-    };
-
-    // 顧客を更新
-    const customer = await prisma.customer.update({
-      where: { id: BigInt(id) },
-      data: customerData,
-      include: {
-        chiefMournerCity: true,
-        chiefMournerTown: true,
-      },
-    });
-
-    // 会員情報を更新
-    if (data.memberships) {
-      // 既存の会員情報を削除
-      await prisma.customerMembership.deleteMany({
-        where: { customerId: BigInt(id) },
-      });
-
-      // 新しい会員情報を作成
-      await Promise.all(
-        data.memberships
-          .filter((m: any) => m.rowNo >= 1 && m.rowNo <= 3)
-          .map((membership: any) =>
-            prisma.customerMembership.create({
-              data: {
-                customerId: BigInt(id),
-                rowNo: membership.rowNo,
-                memberNo: toNullIfEmpty(membership.memberNo),
-                joinedAt: membership.joinedAt
-                  ? new Date(membership.joinedAt)
-                  : null,
-                memberName: toNullIfEmpty(membership.memberName),
-                courseUnits: toIntOrNull(membership.courseUnits),
-                maturityAmount: toIntOrNull(membership.maturityAmount),
-                paymentTimes: toIntOrNull(membership.paymentTimes),
-                paymentAmount: toIntOrNull(membership.paymentAmount),
-                salesStaffName: toNullIfEmpty(membership.salesStaffName),
-                relationToDeceased: toNullIfEmpty(membership.relationToDeceased),
-              },
-            }),
-          ),
-      );
-    }
-
-    // レスポンスを返す
-    return NextResponse.json(serializeBigInt({
-      ...customer,
-      id: customer.id.toString(),
-      chiefMournerCityId: customer.chiefMournerCityId?.toString(),
-      chiefMournerTownId: customer.chiefMournerTownId?.toString(),
-    }));
-  } catch (error: any) {
-    console.error('Update customer error:', error);
-    return NextResponse.json(
-      { error: 'Internal server error', message: error.message },
-      { status: 500 }
-    );
-  }
 }

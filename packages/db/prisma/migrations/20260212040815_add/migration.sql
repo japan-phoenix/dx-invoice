@@ -1,0 +1,2 @@
+-- RenameIndex
+ALTER INDEX "flower_billing_target_items_flower_billing_target_id_flower_id_" RENAME TO "flower_billing_target_items_flower_billing_target_id_flower_key";

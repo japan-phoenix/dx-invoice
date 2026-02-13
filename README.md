@@ -9,6 +9,7 @@
 - DB: PostgreSQL
 - ORM: Prisma
 - 認証: JWT (TEL + パスワード)
+- UI: shadcn/ui + TailWind(v3)
 
 ## セットアップ
 

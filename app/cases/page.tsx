@@ -144,7 +144,7 @@ export default function CasesPage() {
 
   return (
     <div style={{ padding: '2rem' }}>
-      <h1 style={{ marginBottom: '2rem' }}>葬儀案件検索一覧</h1>
+      <h1 style={{ marginBottom: '2rem' }}>葬儀案件検索一覧<div className="text-red-500 text-2xl">Tailwind OK</div></h1>
 
       {/* 検索条件エリア */}
       <div

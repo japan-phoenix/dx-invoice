@@ -1,12 +1,11 @@
-import * as jwt from 'jsonwebtoken';
-import type { SignOptions } from 'jsonwebtoken';
-import { NextRequest } from 'next/server';
+import * as jwt from 'jsonwebtoken'
+import { NextRequest } from 'next/server'
 
-const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
+const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key'
 
 export interface JWTPayload {
-  sub: string;
-  tel: string;
+    sub: string
+    tel: string
 }
 
 /**
@@ -15,22 +14,34 @@ export interface JWTPayload {
  * @returns 検証成功時はペイロード、失敗時はnull
  */
 export async function verifyToken(request: NextRequest): Promise<JWTPayload | null> {
-  const authHeader = request.headers.get('authorization');
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return null;
-  }
-
-  const token = authHeader.substring(7);
-
-  try {
-    const payload = jwt.verify(token, JWT_SECRET) as JWTPayload;
-    if (!payload.sub) {
-      return null;
+    // まず Authorization ヘッダを確認
+    const authHeader = request.headers.get('authorization')
+    let token: string | null = null
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+        token = authHeader.substring(7)
     }
-    return payload;
-  } catch (error) {
-    return null;
-  }
+
+    // Authorization がなければクッキーを確認（ブラウザのナビゲーションやSSR時に有効）
+    if (!token) {
+        const cookie = request.cookies.get('access_token')
+        if (cookie) {
+            token = cookie.value
+        }
+    }
+
+    if (!token) {
+        return null
+    }
+
+    try {
+        const payload = jwt.verify(token, JWT_SECRET) as JWTPayload
+        if (!payload.sub) {
+            return null
+        }
+        return payload
+    } catch (error) {
+        return null
+    }
 }
 
 /**
@@ -39,9 +50,6 @@ export async function verifyToken(request: NextRequest): Promise<JWTPayload | nu
  * @returns JWTトークン
  */
 export function signToken(payload: JWTPayload): string {
-  const expiresIn = process.env.JWT_EXPIRES_IN || '7d';
-  // SignOptionsのexpiresInはStringValue | numberを期待するが、
-  // 実際にはstring | numberも受け入れるため、型アサーションを使用
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  return jwt.sign(payload, JWT_SECRET, { expiresIn } as any);
+    const expiresIn = process.env.JWT_EXPIRES_IN || '7d'
+    return jwt.sign(payload, JWT_SECRET, { expiresIn } as any)
 }

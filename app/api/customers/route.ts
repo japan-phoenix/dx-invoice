@@ -1,11 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { PrismaClient } from '@phoenix-jpn/db'
 import { requireAuth } from '@/lib/auth-middleware'
 import { serializeBigInt } from '@/lib/prisma-utils'
-
-export const dynamic = 'force-dynamic'
-
-const prisma = new PrismaClient()
+import { prisma } from '@/lib/prisma'
 
 export async function GET(request: NextRequest) {
     try {
@@ -187,6 +183,15 @@ export async function POST(request: NextRequest) {
         }
 
         const data = await request.json()
+
+        // バリデーション: 必須フィールド
+        if (!data.receptionAt || typeof data.receptionAt !== 'string') {
+            return NextResponse.json({ error: '受付日は必須です' }, { status: 400 })
+        }
+
+        if (!data.deceasedName || typeof data.deceasedName !== 'string' || data.deceasedName.trim() === '') {
+            return NextResponse.json({ error: '故人名は必須です' }, { status: 400 })
+        }
 
         // 空文字列をnullに変換するヘルパー関数
         const toNullIfEmpty = (value: any) => {

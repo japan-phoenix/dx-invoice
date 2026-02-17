@@ -7,6 +7,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { caseFormSchema, CaseFormData } from '../schemas/CaseFormSchema'
 import { useCaseFormData, useCaseFormLoader } from '../hooks/useCaseForm'
 import { getFormDefaultValues, transformSubmitData } from '../hooks/useCaseFormConfig'
+import { logFormErrors } from '@/lib/formDebugUtils'
 import { CaseFormTabs } from '../components/CaseFormTabs'
 import { DeceasedTab } from '../components/DeceasedTab'
 import { FuneralTab } from '../components/FuneralTab'
@@ -42,7 +43,9 @@ export default function NewCustomerPage() {
 
     const onSubmit = async (data: CaseFormData): Promise<void> => {
         try {
+            console.log('Form data passed Zod validation:', JSON.stringify(data, null, 2))
             const submitData = transformSubmitData(data, formatDateForISO)
+            console.log('Submit data after transform:', JSON.stringify(submitData, null, 2))
             const result = await createMutation.mutateAsync(submitData)
             router.push(`/cases/${result.id}`)
         } catch (error) {
@@ -53,7 +56,19 @@ export default function NewCustomerPage() {
 
     return (
         <FormProvider {...methods}>
-            <form onSubmit={methods.handleSubmit(onSubmit)} className="flex h-[calc(100vh-2rem)] flex-col">
+            <form
+                onSubmit={methods.handleSubmit(onSubmit, (errors) => {
+                    console.error('Zod バリデーションエラー:', errors)
+                    logFormErrors(errors)
+                })}
+                onKeyDown={(e) => {
+                    // textareaを除く要素でEnterキーを押してもフォームがsubmitされない
+                    if (e.key === 'Enter' && !(e.target instanceof HTMLTextAreaElement)) {
+                        e.preventDefault()
+                    }
+                }}
+                className="flex h-[calc(100vh-2rem)] flex-col"
+            >
                 <div className="flex flex-1 flex-col overflow-hidden p-8">
                     <h1 className="mb-8">葬儀案件 新規登録</h1>
 

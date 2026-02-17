@@ -1,17 +1,36 @@
 import { z } from 'zod'
 
+const phoneNumberRegex = /^\d{2,4}-?\d{2,4}-?\d{3,4}$/
+const normalizePhoneNumber = (value: string) =>
+    value.replace(/[０-９]/g, (char) => String.fromCharCode(char.charCodeAt(0) - 0xfee0)).replace(/[ー－]/g, '-')
+const phoneNumberSchema = z.preprocess(
+    (value) => (typeof value === 'string' ? normalizePhoneNumber(value) : value),
+    z
+        .string()
+        .optional()
+        .refine((value) => !value || phoneNumberRegex.test(value), {
+            message: '正しい電話番号を数字で入力してください（例: 09012345678 or 090-1234-5678）',
+        })
+)
+
 // 会員情報のスキーマ
 export const customerMembershipSchema = z.object({
     rowNo: z.number(),
-    memberNo: z.string().nullable().optional(),
-    joinedAt: z.string().nullable().optional(),
-    memberName: z.string().nullable().optional(),
-    courseUnits: z.number().nullable().optional(),
-    maturityAmount: z.number().nullable().optional(),
-    paymentTimes: z.number().nullable().optional(),
-    paymentAmount: z.number().nullable().optional(),
-    salesStaffName: z.string().nullable().optional(),
-    relationToDeceased: z.string().nullable().optional(),
+    memberNo: z.string().optional(),
+    joinedAt: z.string().optional(),
+    memberName: z.string().optional(),
+    courseUnits: z.coerce.number().optional(),
+    maturityAmount: z.preprocess(
+        (value) => (typeof value === 'string' ? value.replace(/,/g, '') : value),
+        z.coerce.number().optional()
+    ),
+    paymentTimes: z.coerce.number().optional(),
+    paymentAmount: z.preprocess(
+        (value) => (typeof value === 'string' ? value.replace(/,/g, '') : value),
+        z.coerce.number().optional()
+    ),
+    salesStaffName: z.string().optional(),
+    relationToDeceased: z.string().optional(),
 })
 
 // 案件フォームのメインスキーマ
@@ -19,45 +38,54 @@ export const caseFormSchema = z.object({
     // 故人情報
     receptionAt: z.coerce.string().min(1, '必須です'),
     deceasedName: z.coerce.string().min(1, '必須です'),
-    deceasedLastName: z.string().nullable().optional(),
-    deceasedFirstName: z.string().nullable().optional(),
-    gender: z.string().nullable().optional(),
-    age: z.number().nullable().optional(),
-    religion: z.string().nullable().optional(),
+    deceasedLastName: z.string().optional(),
+    deceasedFirstName: z.string().optional(),
+    gender: z.string().optional(),
+    age: z.coerce.number().optional(),
+    religion: z.string().optional(),
 
     // 喪主情報
-    chiefMournerName: z.string().nullable().optional(),
-    chiefMournerRelation: z.string().nullable().optional(),
-    chiefMournerCityId: z.string().nullable().optional(),
-    chiefMournerTownId: z.string().nullable().optional(),
-    chiefMournerAddress: z.string().nullable().optional(),
-    chiefMournerTel: z.string().nullable().optional(),
+    chiefMournerName: z.string().optional(),
+    chiefMournerRelation: z.string().optional(),
+    chiefMournerPostalCode: z.string().optional().default(''),
+    chiefMournerCityId: z.string().optional(),
+    chiefMournerTownId: z.string().optional(),
+    chiefMournerAddress: z.string().optional(),
+    chiefMournerTel: phoneNumberSchema,
 
     // 支払者情報
-    sameAsChiefMourner: z.boolean(),
-    payerName: z.string().nullable().optional(),
-    payerRelation: z.string().nullable().optional(),
-    payerAddress: z.string().nullable().optional(),
-    payerTel: z.string().nullable().optional(),
+    sameAsChiefMourner: z.boolean().default(false),
+    payerName: z.string().optional(),
+    payerRelation: z.string().optional(),
+    payerPostalCode: z.string().optional().default(''),
+    payerAddress: z.string().optional(),
+    payerTel: phoneNumberSchema,
 
     // 葬儀情報
-    pickupPlace: z.string().nullable().optional(),
-    wakeAt: z.string().nullable().optional(),
-    wakePlace: z.string().nullable().optional(),
-    departureAt: z.string().nullable().optional(),
-    departurePlace: z.string().nullable().optional(),
-    funeralFrom: z.string().nullable().optional(),
-    funeralTo: z.string().nullable().optional(),
-    funeralPlace: z.string().nullable().optional(),
-    returnAt: z.string().nullable().optional(),
-    returnPlace: z.string().nullable().optional(),
+    pickupPlace: z.string().optional(),
+    wakeAt: z.string().optional(),
+    wakePlace: z.string().optional(),
+    departureAt: z.string().optional(),
+    departurePlace: z.string().optional(),
+    funeralFrom: z.string().optional(),
+    funeralTo: z.string().optional(),
+    funeralPlace: z.string().optional(),
+    returnAt: z.string().optional(),
+    returnPlace: z.string().optional(),
 
     // その他
-    notes: z.string().nullable().optional(),
-    memberCardNote: z.string().nullable().optional(),
+    notes: z.string().optional(),
+    memberCardNote: z.string().optional(),
 
     // 会員情報
     memberships: z.array(customerMembershipSchema),
 })
 
-export type CaseFormData = z.infer<typeof caseFormSchema>
+// API送信時は郵便番号を除外
+const caseFormApiSchema = caseFormSchema.omit({
+    chiefMournerPostalCode: true,
+    payerPostalCode: true,
+})
+
+export type CaseFormData = z.input<typeof caseFormSchema>
+export type CaseFormOutput = z.output<typeof caseFormApiSchema>

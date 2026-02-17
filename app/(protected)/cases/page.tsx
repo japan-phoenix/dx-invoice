@@ -142,21 +142,11 @@ export default function CasesPage() {
                     </div>
 
                     <div>
-                        <label className="mb-2 block text-sm">氏名（苗字）</label>
+                        <label className="mb-2 block text-sm">故人名</label>
                         <input
                             type="text"
                             value={formParams.lastName || ''}
                             onChange={(e) => setFormParams({ ...formParams, lastName: e.target.value })}
-                            className="w-full rounded border border-gray-300 px-2 py-2"
-                        />
-                    </div>
-
-                    <div>
-                        <label className="mb-2 block text-sm">氏名（名前）</label>
-                        <input
-                            type="text"
-                            value={formParams.firstName || ''}
-                            onChange={(e) => setFormParams({ ...formParams, firstName: e.target.value })}
                             className="w-full rounded border border-gray-300 px-2 py-2"
                         />
                     </div>
@@ -249,7 +239,7 @@ export default function CasesPage() {
                     columns={[
                         {
                             key: 'deceasedName',
-                            label: '氏名',
+                            label: '故人名',
                             width: '150px',
                         },
                         {

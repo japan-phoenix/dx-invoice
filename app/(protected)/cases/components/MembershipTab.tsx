@@ -3,6 +3,8 @@ import { useFormContext, useFieldArray } from 'react-hook-form'
 import { CaseFormData } from '../schemas/CaseFormSchema'
 import { FormInput } from '@/components/form/FormInput'
 import { FormCurrencyInput } from '@/components/form/FormCurrencyInput'
+import { FormAutocomplete } from '@/components/form/FormAutocomplete'
+import { RELATION_OPTIONS } from '../constants/statusOptions'
 
 export function MembershipTab() {
     const {
@@ -56,10 +58,11 @@ export function MembershipTab() {
                         </div>
 
                         {/* コース口数 */}
-                        <FormCurrencyInput<CaseFormData>
+                        <FormInput<CaseFormData>
                             name={`memberships.${index}.courseUnits`}
                             control={control}
                             label="コース口数"
+                            type="number"
                             error={errors.memberships?.[index]?.courseUnits}
                         />
 
@@ -68,14 +71,16 @@ export function MembershipTab() {
                             name={`memberships.${index}.maturityAmount`}
                             control={control}
                             label="満期額"
+                            prefix="¥"
                             error={errors.memberships?.[index]?.maturityAmount}
                         />
 
                         {/* 支払回数 */}
-                        <FormCurrencyInput<CaseFormData>
+                        <FormInput<CaseFormData>
                             name={`memberships.${index}.paymentTimes`}
                             control={control}
                             label="支払回数"
+                            type="number"
                             error={errors.memberships?.[index]?.paymentTimes}
                         />
 
@@ -84,6 +89,7 @@ export function MembershipTab() {
                             name={`memberships.${index}.paymentAmount`}
                             control={control}
                             label="支払額"
+                            prefix="¥"
                             error={errors.memberships?.[index]?.paymentAmount}
                         />
 
@@ -99,11 +105,12 @@ export function MembershipTab() {
 
                         {/* 故人との関係 */}
                         <div style={{ gridColumn: '1 / -1' }}>
-                            <FormInput<CaseFormData>
+                            <FormAutocomplete<CaseFormData>
                                 name={`memberships.${index}.relationToDeceased`}
                                 control={control}
                                 label="故人との関係"
-                                error={errors.memberships?.[index]?.relationToDeceased}
+                                options={[...RELATION_OPTIONS]}
+                                error={errors.chiefMournerRelation}
                             />
                         </div>
                     </div>

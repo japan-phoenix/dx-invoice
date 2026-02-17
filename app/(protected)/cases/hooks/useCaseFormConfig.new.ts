@@ -1,17 +1,6 @@
-import { useCallback } from 'react'
-import { UseFormSetValue } from 'react-hook-form'
-import { CaseFormData } from '../schemas/CaseFormSchema'
 import { formToApi } from '@/lib/dataTransformUtils'
+import { CaseFormData } from '../schemas/CaseFormSchema'
 
-const normalizePhoneNumber = (value: unknown): string | undefined => {
-    if (typeof value !== 'string' || !value) return undefined
-    return value.replace(/[０-９]/g, (char) => String.fromCharCode(char.charCodeAt(0) - 0xfee0)).replace(/[ー－]/g, '-')
-}
-
-/**
- * フォームのデフォルト値を取得
- * フォーム内部では undefined を使用（null は持ち込まない）
- */
 export function getFormDefaultValues(): CaseFormData {
     return {
         receptionAt: '',
@@ -48,7 +37,7 @@ export function getFormDefaultValues(): CaseFormData {
             {
                 rowNo: 1,
                 memberNo: '',
-                joinedAt: undefined,
+                joinedAt: '',
                 memberName: '',
                 courseUnits: undefined,
                 maturityAmount: undefined,
@@ -60,7 +49,7 @@ export function getFormDefaultValues(): CaseFormData {
             {
                 rowNo: 2,
                 memberNo: '',
-                joinedAt: undefined,
+                joinedAt: '',
                 memberName: '',
                 courseUnits: undefined,
                 maturityAmount: undefined,
@@ -72,7 +61,7 @@ export function getFormDefaultValues(): CaseFormData {
             {
                 rowNo: 3,
                 memberNo: '',
-                joinedAt: undefined,
+                joinedAt: '',
                 memberName: '',
                 courseUnits: undefined,
                 maturityAmount: undefined,
@@ -85,17 +74,12 @@ export function getFormDefaultValues(): CaseFormData {
     }
 }
 
-/**
- * フォーム送信データに変換（日付やnull値の処理）
- * 最終的に formToApi で undefined→削除、""→null に変換する
- */
 export function transformSubmitData(data: CaseFormData, formatDateForISO: (val: string | undefined) => string | null) {
+    // 既存の変換ロジックを維持しつつ、formToApiで最終変換
     const base = {
         ...data,
         receptionAt: formatDateForISO(data.receptionAt),
         age: data.age ? parseInt(data.age.toString()) : undefined,
-        chiefMournerTel: normalizePhoneNumber(data.chiefMournerTel),
-        payerTel: normalizePhoneNumber(data.payerTel),
         wakeAt: formatDateForISO(data.wakeAt),
         departureAt: formatDateForISO(data.departureAt),
         funeralFrom: formatDateForISO(data.funeralFrom),
@@ -104,16 +88,12 @@ export function transformSubmitData(data: CaseFormData, formatDateForISO: (val: 
         memberships: data.memberships.map((m) => ({
             ...m,
             rowNo: m.rowNo,
-            joinedAt: m.joinedAt ? new Date(m.joinedAt).toISOString() : undefined,
+            joinedAt: m.joinedAt || undefined,
             courseUnits: m.courseUnits ? parseInt(m.courseUnits.toString()) : undefined,
             maturityAmount: m.maturityAmount ? parseInt(m.maturityAmount.toString()) : undefined,
             paymentTimes: m.paymentTimes ? parseInt(m.paymentTimes.toString()) : undefined,
             paymentAmount: m.paymentAmount ? parseInt(m.paymentAmount.toString()) : undefined,
         })),
     }
-    // 郵便番号フィールドを除外（APIには送信しない）
-    const { chiefMournerPostalCode, payerPostalCode, ...dataWithoutPostalCodes } = base
-
-    // API送信用に変換: undefined→削除, ""→null
-    return formToApi(dataWithoutPostalCodes)
+    return formToApi(base)
 }

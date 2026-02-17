@@ -2,17 +2,20 @@
 
 import { useState, useCallback, useEffect } from 'react'
 import { useRouter, useParams } from 'next/navigation'
-import { useForm, FormProvider } from 'react-hook-form'
+import { useForm, FormProvider, SubmitHandler } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { caseFormSchema, CaseFormData } from '../schemas/CaseFormSchema'
 import { useCaseFormData, useCaseFormLoader } from '../hooks/useCaseForm'
 import { getFormDefaultValues, transformSubmitData } from '../hooks/useCaseFormConfig'
+import { apiToForm } from '@/lib/dataTransformUtils'
+import { logFormErrors } from '@/lib/formDebugUtils'
 import { CaseFormTabs } from '../components/CaseFormTabs'
 import { DeceasedTab } from '../components/DeceasedTab'
 import { FuneralTab } from '../components/FuneralTab'
 import { MembershipTab } from '../components/MembershipTab'
 import { useGetCustomerQuery, useUpdateCustomerMutation } from '@/hooks/useCustomer'
 import { useCitiesQuery, useTownsQuery } from '@/hooks/useAddress'
+import { toast } from '@/hooks/use-toast'
 
 export default function EditCustomerPage() {
     const router = useRouter()
@@ -21,25 +24,44 @@ export default function EditCustomerPage() {
 
     const [activeTab, setActiveTab] = useState<'deceased' | 'funeral' | 'membership'>('deceased')
 
-    // React Query フック
-    const { data: customer, isLoading, error } = useGetCustomerQuery(customerId)
-    const { data: cities = [] } = useCitiesQuery()
-    const { data: towns = [] } = useTownsQuery(customer?.chiefMournerCityId || null)
-    const updateMutation = useUpdateCustomerMutation()
-
     const methods = useForm<CaseFormData>({
         resolver: zodResolver(caseFormSchema),
         defaultValues: getFormDefaultValues(),
     })
 
-    const { formatDateForISO } = useCaseFormData()
+    // フォーム内での市区町村選択を監視
+    const formCityId = methods.watch('chiefMournerCityId')
+
+    // React Query フック
+    const { data: customer, isLoading, error } = useGetCustomerQuery(customerId)
+    const { data: cities = [] } = useCitiesQuery()
+    const { data: towns = [] } = useTownsQuery(formCityId || null)
+    const updateMutation = useUpdateCustomerMutation()
+
+    const { formatDateForISO, formatDateForInput } = useCaseFormData()
     const { handleCityChange } = useCaseFormLoader(methods.setValue)
 
     // 顧客データが取得されたら form の値を更新
     useEffect(() => {
         if (customer && !isLoading) {
-            const formData = customer as CaseFormData
-            methods.reset(formData)
+            // APIから取得したデータのnull → undefinedに変換してからformに設定
+            const formData = apiToForm(customer as CaseFormData)
+            const defaultValues = getFormDefaultValues()
+            const mergedData: CaseFormData = {
+                ...defaultValues,
+                ...formData,
+                receptionAt: formatDateForInput(formData.receptionAt),
+                wakeAt: formatDateForInput(formData.wakeAt),
+                departureAt: formatDateForInput(formData.departureAt),
+                funeralFrom: formatDateForInput(formData.funeralFrom),
+                funeralTo: formatDateForInput(formData.funeralTo),
+                returnAt: formatDateForInput(formData.returnAt),
+                memberships:
+                    formData.memberships && formData.memberships.length > 0
+                        ? formData.memberships
+                        : defaultValues.memberships,
+            }
+            methods.reset(mergedData)
         }
     }, [customer, isLoading, methods])
 
@@ -53,18 +75,28 @@ export default function EditCustomerPage() {
     const hasEstimate = customer?.estimates && customer.estimates.length > 0
     const hasInvoice = customer?.invoices && customer.invoices.length > 0
 
-    const onSubmit = async (data: CaseFormData): Promise<void> => {
+    const onSubmit: SubmitHandler<CaseFormData> = async (data) => {
         try {
+            console.log('Form data passed Zod validation:', JSON.stringify(data, null, 2))
             const submitData = transformSubmitData(data, formatDateForISO)
+            console.log('Submit data after transform:', JSON.stringify(submitData, null, 2))
             await updateMutation.mutateAsync({
                 customerId,
                 data: submitData,
             })
-            alert('更新しました')
+            toast({
+                title: '更新しました',
+                variant: 'success',
+                duration: 2000,
+            })
             router.push('/cases')
         } catch (error) {
             console.error('Failed to update customer:', error)
-            alert('更新に失敗しました')
+            toast({
+                title: '更新に失敗しました',
+                variant: 'destructive',
+                duration: 2000,
+            })
         }
     }
 
@@ -78,10 +110,92 @@ export default function EditCustomerPage() {
 
     return (
         <FormProvider {...methods}>
-            <form onSubmit={methods.handleSubmit(onSubmit)} className="flex h-[calc(100vh-2rem)] flex-col">
+            <form
+                onSubmit={methods.handleSubmit(onSubmit, (errors) => {
+                    console.error('Zod バリデーションエラー:', errors)
+                    logFormErrors(errors)
+                })}
+                onKeyDown={(e) => {
+                    // textareaを除く要素でEnterキーを押してもフォームがsubmitされない
+                    if (e.key === 'Enter' && !(e.target instanceof HTMLTextAreaElement)) {
+                        e.preventDefault()
+                    }
+                }}
+                className="flex h-[calc(100vh-2rem)] flex-col"
+            >
                 <div className="flex flex-1 flex-col overflow-hidden p-8">
-                    <h1 className="mb-8">葬儀案件 編集</h1>
-
+                    <div className="mb-8 flex items-center justify-between">
+                        <h1 className="mb-8">葬儀案件 編集</h1>
+                        {/* 関連機能へのリンク */}
+                        <div>
+                            <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
+                                {hasEstimate && (
+                                    <button
+                                        type="button"
+                                        onClick={() => router.push(`/estimates/${customerId}`)}
+                                        style={{
+                                            padding: '0.5rem 1rem',
+                                            backgroundColor: '#0070f3',
+                                            color: 'white',
+                                            border: 'none',
+                                            borderRadius: '4px',
+                                            cursor: 'pointer',
+                                        }}
+                                    >
+                                        見積書
+                                    </button>
+                                )}
+                                {!hasEstimate && (
+                                    <button
+                                        type="button"
+                                        onClick={() => router.push(`/estimates/new?customerId=${customerId}`)}
+                                        style={{
+                                            padding: '0.5rem 1rem',
+                                            backgroundColor: '#28a745',
+                                            color: 'white',
+                                            border: 'none',
+                                            borderRadius: '4px',
+                                            cursor: 'pointer',
+                                        }}
+                                    >
+                                        見積書を作成
+                                    </button>
+                                )}
+                                {hasInvoice && (
+                                    <button
+                                        type="button"
+                                        onClick={() => router.push(`/invoices/${customerId}`)}
+                                        style={{
+                                            padding: '0.5rem 1rem',
+                                            backgroundColor: '#0070f3',
+                                            color: 'white',
+                                            border: 'none',
+                                            borderRadius: '4px',
+                                            cursor: 'pointer',
+                                        }}
+                                    >
+                                        請求書
+                                    </button>
+                                )}
+                                {!hasInvoice && (
+                                    <button
+                                        type="button"
+                                        onClick={() => router.push(`/invoices/new?customerId=${customerId}`)}
+                                        style={{
+                                            padding: '0.5rem 1rem',
+                                            backgroundColor: '#28a745',
+                                            color: 'white',
+                                            border: 'none',
+                                            borderRadius: '4px',
+                                            cursor: 'pointer',
+                                        }}
+                                    >
+                                        請求書を作成
+                                    </button>
+                                )}
+                            </div>
+                        </div>
+                    </div>
                     {/* タブ */}
                     <CaseFormTabs activeTab={activeTab} onTabChange={setActiveTab} />
                     <div className="mt-4 flex-1 overflow-y-auto pb-4 pr-2">
@@ -95,85 +209,6 @@ export default function EditCustomerPage() {
 
                         {/* 会員情報タブ */}
                         {activeTab === 'membership' && <MembershipTab />}
-                    </div>
-
-                    {/* 関連機能へのリンク */}
-                    <div
-                        style={{
-                            backgroundColor: '#f5f5f5',
-                            padding: '1.5rem',
-                            borderRadius: '8px',
-                            marginTop: '2rem',
-                            marginBottom: '2rem',
-                        }}
-                    >
-                        <h3 style={{ marginBottom: '1rem' }}>関連機能</h3>
-                        <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
-                            {hasEstimate && (
-                                <button
-                                    type="button"
-                                    onClick={() => router.push(`/estimates/${customerId}`)}
-                                    style={{
-                                        padding: '0.5rem 1rem',
-                                        backgroundColor: '#0070f3',
-                                        color: 'white',
-                                        border: 'none',
-                                        borderRadius: '4px',
-                                        cursor: 'pointer',
-                                    }}
-                                >
-                                    見積書
-                                </button>
-                            )}
-                            {!hasEstimate && (
-                                <button
-                                    type="button"
-                                    onClick={() => router.push(`/estimates/new?customerId=${customerId}`)}
-                                    style={{
-                                        padding: '0.5rem 1rem',
-                                        backgroundColor: '#28a745',
-                                        color: 'white',
-                                        border: 'none',
-                                        borderRadius: '4px',
-                                        cursor: 'pointer',
-                                    }}
-                                >
-                                    見積書を作成
-                                </button>
-                            )}
-                            {hasInvoice && (
-                                <button
-                                    type="button"
-                                    onClick={() => router.push(`/invoices/${customerId}`)}
-                                    style={{
-                                        padding: '0.5rem 1rem',
-                                        backgroundColor: '#0070f3',
-                                        color: 'white',
-                                        border: 'none',
-                                        borderRadius: '4px',
-                                        cursor: 'pointer',
-                                    }}
-                                >
-                                    請求書
-                                </button>
-                            )}
-                            {!hasInvoice && (
-                                <button
-                                    type="button"
-                                    onClick={() => router.push(`/invoices/new?customerId=${customerId}`)}
-                                    style={{
-                                        padding: '0.5rem 1rem',
-                                        backgroundColor: '#28a745',
-                                        color: 'white',
-                                        border: 'none',
-                                        borderRadius: '4px',
-                                        cursor: 'pointer',
-                                    }}
-                                >
-                                    請求書を作成
-                                </button>
-                            )}
-                        </div>
                     </div>
 
                     {/* 操作ボタン */}

@@ -1,5 +1,5 @@
 import React from 'react'
-import { Controller, FieldValues, Path, Control, FieldError } from 'react-hook-form'
+import { Controller, FieldValues, Path, Control, FieldError, FieldErrorsImpl, Merge } from 'react-hook-form'
 
 interface FormInputProps<T extends FieldValues> {
     name: Path<T>
@@ -7,8 +7,10 @@ interface FormInputProps<T extends FieldValues> {
     label?: string
     placeholder?: string
     type?: string
-    error?: FieldError
+    error?: FieldError | Merge<FieldError, FieldErrorsImpl<Record<string, unknown>>>
     required?: boolean
+    prefix?: React.ReactNode
+    suffix?: React.ReactNode
 }
 
 export function FormInput<T extends FieldValues>({
@@ -19,37 +21,36 @@ export function FormInput<T extends FieldValues>({
     type = 'text',
     error,
     required,
+    prefix,
+    suffix,
 }: FormInputProps<T>) {
+    const errorMessage = error && 'message' in error ? (error.message as string) : undefined
     return (
         <div>
             {label && (
-                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500' }}>
+                <label className="mb-2 block font-medium">
                     {label}
-                    {required && <span style={{ color: 'red' }}>*</span>}
+                    {required && <span className="text-red-600">*</span>}
                 </label>
             )}
-            <Controller
-                name={name}
-                control={control}
-                render={({ field }) => (
-                    <input
-                        {...field}
-                        value={field.value || ''}
-                        type={type}
-                        placeholder={placeholder}
-                        style={{
-                            width: '100%',
-                            padding: '0.5rem',
-                            border: error ? '2px solid #dc3545' : '1px solid #ddd',
-                            borderRadius: '4px',
-                            fontSize: '1rem',
-                        }}
-                    />
-                )}
-            />
-            {error && (
-                <div style={{ color: '#dc3545', fontSize: '0.875rem', marginTop: '0.25rem' }}>{error.message}</div>
-            )}
+            <div className="flex w-full items-center">
+                {prefix && <span className="mr-2 flex-shrink-0">{prefix}</span>}
+                <Controller
+                    name={name}
+                    control={control}
+                    render={({ field }) => (
+                        <input
+                            {...field}
+                            value={field.value || ''}
+                            type={type}
+                            placeholder={placeholder}
+                            className={`w-full rounded border px-3 py-2 text-base focus:outline-none ${error ? 'border-red-500' : 'border-gray-300'}`}
+                        />
+                    )}
+                />
+                {suffix && <span className="ml-2 flex-shrink-0">{suffix}</span>}
+            </div>
+            {errorMessage && <div className="mt-1 text-sm text-red-600">{errorMessage}</div>}
         </div>
     )
 }

@@ -3,6 +3,7 @@ import '../globals.css'
 import AuthGuard from '@/components/AuthGuard'
 import Navigation from '@/components/Navigation'
 import { Providers } from '@/components/QueryProvider'
+import { Toaster } from '@/components/ui/toaster'
 
 export const metadata: Metadata = {
     title: '葬儀業務システム',
@@ -21,6 +22,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                         <Navigation />
                         {children}
                     </AuthGuard>
+                    <Toaster />
                 </Providers>
             </body>
         </html>

@@ -47,6 +47,18 @@ export default function EditCustomerPage() {
             // APIから取得したデータのnull → undefinedに変換してからformに設定
             const formData = apiToForm(customer as CaseFormData)
             const defaultValues = getFormDefaultValues()
+
+            // 喪主情報と支払者情報が一致しているか確認
+            const isSameAsMourner =
+                formData.chiefMournerName === formData.payerName &&
+                formData.chiefMournerRelation === formData.payerRelation &&
+                formData.chiefMournerAddress === formData.payerAddress &&
+                formData.chiefMournerTel === formData.payerTel &&
+                formData.chiefMournerName !== undefined &&
+                formData.chiefMournerName !== '' &&
+                formData.payerName !== undefined &&
+                formData.payerName !== ''
+
             const mergedData: CaseFormData = {
                 ...defaultValues,
                 ...formData,
@@ -56,6 +68,7 @@ export default function EditCustomerPage() {
                 funeralFrom: formatDateForInput(formData.funeralFrom),
                 funeralTo: formatDateForInput(formData.funeralTo),
                 returnAt: formatDateForInput(formData.returnAt),
+                sameAsChiefMourner: isSameAsMourner,
                 memberships:
                     formData.memberships && formData.memberships.length > 0
                         ? formData.memberships
@@ -124,8 +137,8 @@ export default function EditCustomerPage() {
                 className="flex h-[calc(100vh-2rem)] flex-col"
             >
                 <div className="flex flex-1 flex-col overflow-hidden p-8">
-                    <div className="mb-8 flex items-center justify-between">
-                        <h1 className="mb-8">葬儀案件 編集</h1>
+                    <div className="flex items-start justify-between">
+                        <h1 className="mb-8 text-2xl font-bold">葬儀案件 編集</h1>
                         {/* 関連機能へのリンク */}
                         <div>
                             <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>

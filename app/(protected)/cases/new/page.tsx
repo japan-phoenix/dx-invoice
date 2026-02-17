@@ -70,7 +70,7 @@ export default function NewCustomerPage() {
                 className="flex h-[calc(100vh-2rem)] flex-col"
             >
                 <div className="flex flex-1 flex-col overflow-hidden p-8">
-                    <h1 className="mb-8">葬儀案件 新規登録</h1>
+                    <h1 className="mb-8 text-2xl font-bold">葬儀案件 新規登録</h1>
 
                     {/* タブ */}
                     <CaseFormTabs activeTab={activeTab} onTabChange={setActiveTab} />

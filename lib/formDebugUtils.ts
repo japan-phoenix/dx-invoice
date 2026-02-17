@@ -1,5 +1,5 @@
 import { FieldErrors } from 'react-hook-form'
-import { CaseFormData } from '../schemas/CaseFormSchema'
+import { CaseFormData } from '../app/(protected)/cases/schemas/CaseFormSchema'
 
 /**
  * フォームのバリデーションエラーを詳しくログ出力

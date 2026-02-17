@@ -90,12 +90,31 @@ export function getFormDefaultValues(): CaseFormData {
  * 最終的に formToApi で undefined→削除、""→null に変換する
  */
 export function transformSubmitData(data: CaseFormData, formatDateForISO: (val: string | undefined) => string | null) {
+    // 「喪主と同じ」チェック時の処理
+    let payerData = {
+        payerName: data.payerName,
+        payerRelation: data.payerRelation,
+        payerAddress: data.payerAddress,
+        payerTel: data.payerTel,
+    }
+
+    if (data.sameAsChiefMourner) {
+        // 喪主情報を支払者情報にコピー（未入力の場合は undefined として扱う）
+        payerData = {
+            payerName: data.chiefMournerName || undefined,
+            payerRelation: data.chiefMournerRelation || undefined,
+            payerAddress: data.chiefMournerAddress || undefined,
+            payerTel: data.chiefMournerTel || undefined,
+        }
+    }
+
     const base = {
         ...data,
+        ...payerData,
         receptionAt: formatDateForISO(data.receptionAt),
         age: data.age ? parseInt(data.age.toString()) : undefined,
         chiefMournerTel: normalizePhoneNumber(data.chiefMournerTel),
-        payerTel: normalizePhoneNumber(data.payerTel),
+        payerTel: normalizePhoneNumber(payerData.payerTel),
         wakeAt: formatDateForISO(data.wakeAt),
         departureAt: formatDateForISO(data.departureAt),
         funeralFrom: formatDateForISO(data.funeralFrom),

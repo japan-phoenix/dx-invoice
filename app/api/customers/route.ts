@@ -15,8 +15,7 @@ export async function GET(request: NextRequest) {
         const { searchParams } = new URL(request.url)
         const cityId = searchParams.get('cityId') || undefined
         const townId = searchParams.get('townId') || undefined
-        const lastName = searchParams.get('lastName') || undefined
-        const firstName = searchParams.get('firstName') || undefined
+        const deceasedName = searchParams.get('deceasedName') || undefined
         const receptionFrom = searchParams.get('receptionFrom') || undefined
         const receptionTo = searchParams.get('receptionTo') || undefined
         const funeralFrom = searchParams.get('funeralFrom') || undefined
@@ -34,22 +33,24 @@ export async function GET(request: NextRequest) {
             where.chiefMournerTownId = BigInt(townId)
         }
 
-        if (lastName || firstName) {
-            where.OR = []
-            if (lastName) {
-                where.OR.push({
+        if (deceasedName) {
+            where.OR = [
+                {
+                    deceasedName: {
+                        contains: deceasedName,
+                    },
+                },
+                {
                     deceasedLastName: {
-                        contains: lastName,
+                        contains: deceasedName,
                     },
-                })
-            }
-            if (firstName) {
-                where.OR.push({
+                },
+                {
                     deceasedFirstName: {
-                        contains: firstName,
+                        contains: deceasedName,
                     },
-                })
-            }
+                },
+            ]
         }
 
         if (receptionFrom || receptionTo) {

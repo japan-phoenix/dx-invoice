@@ -1,5 +1,6 @@
 import React from 'react'
 import { Controller, FieldValues, Path, Control, FieldError } from 'react-hook-form'
+import { TextareaUI } from './ui/TextareaUI'
 
 interface FormTextareaProps<T extends FieldValues> {
     name: Path<T>
@@ -9,6 +10,7 @@ interface FormTextareaProps<T extends FieldValues> {
     rows?: number
     error?: FieldError
     required?: boolean
+    disabled?: boolean
 }
 
 export function FormTextarea<T extends FieldValues>({
@@ -19,38 +21,25 @@ export function FormTextarea<T extends FieldValues>({
     rows = 4,
     error,
     required,
+    disabled,
 }: FormTextareaProps<T>) {
     return (
-        <div>
-            {label && (
-                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500' }}>
-                    {label}
-                    {required && <span style={{ color: 'red' }}>*</span>}
-                </label>
+        <Controller
+            name={name}
+            control={control}
+            render={({ field }) => (
+                <TextareaUI
+                    value={field.value || ''}
+                    onChange={field.onChange}
+                    onBlur={field.onBlur}
+                    label={label}
+                    placeholder={placeholder}
+                    rows={rows}
+                    error={error?.message as string}
+                    required={required}
+                    disabled={disabled}
+                />
             )}
-            <Controller
-                name={name}
-                control={control}
-                render={({ field }) => (
-                    <textarea
-                        {...field}
-                        value={field.value || ''}
-                        placeholder={placeholder}
-                        rows={rows}
-                        style={{
-                            width: '100%',
-                            padding: '0.5rem',
-                            border: error ? '2px solid #dc3545' : '1px solid #ddd',
-                            borderRadius: '4px',
-                            fontSize: '1rem',
-                            fontFamily: 'inherit',
-                        }}
-                    />
-                )}
-            />
-            {error && (
-                <div style={{ color: '#dc3545', fontSize: '0.875rem', marginTop: '0.25rem' }}>{error.message}</div>
-            )}
-        </div>
+        />
     )
 }

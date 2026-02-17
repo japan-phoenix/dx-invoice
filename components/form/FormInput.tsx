@@ -1,5 +1,6 @@
 import React from 'react'
 import { Controller, FieldValues, Path, Control, FieldError, FieldErrorsImpl, Merge } from 'react-hook-form'
+import { InputUI } from './ui/InputUI'
 
 interface FormInputProps<T extends FieldValues> {
     name: Path<T>
@@ -11,6 +12,7 @@ interface FormInputProps<T extends FieldValues> {
     required?: boolean
     prefix?: React.ReactNode
     suffix?: React.ReactNode
+    disabled?: boolean
 }
 
 export function FormInput<T extends FieldValues>({
@@ -23,34 +25,29 @@ export function FormInput<T extends FieldValues>({
     required,
     prefix,
     suffix,
+    disabled,
 }: FormInputProps<T>) {
     const errorMessage = error && 'message' in error ? (error.message as string) : undefined
+
     return (
-        <div>
-            {label && (
-                <label className="mb-2 block font-medium">
-                    {label}
-                    {required && <span className="text-red-600">*</span>}
-                </label>
-            )}
-            <div className="flex w-full items-center">
-                {prefix && <span className="mr-2 flex-shrink-0">{prefix}</span>}
-                <Controller
-                    name={name}
-                    control={control}
-                    render={({ field }) => (
-                        <input
-                            {...field}
-                            value={field.value || ''}
-                            type={type}
-                            placeholder={placeholder}
-                            className={`w-full rounded border px-3 py-2 text-base focus:outline-none ${error ? 'border-red-500' : 'border-gray-300'}`}
-                        />
-                    )}
+        <Controller
+            name={name}
+            control={control}
+            render={({ field }) => (
+                <InputUI
+                    value={field.value || ''}
+                    onChange={field.onChange}
+                    onBlur={field.onBlur}
+                    label={label}
+                    placeholder={placeholder}
+                    type={type}
+                    error={errorMessage}
+                    required={required}
+                    prefix={prefix}
+                    suffix={suffix}
+                    disabled={disabled}
                 />
-                {suffix && <span className="ml-2 flex-shrink-0">{suffix}</span>}
-            </div>
-            {errorMessage && <div className="mt-1 text-sm text-red-600">{errorMessage}</div>}
-        </div>
+            )}
+        />
     )
 }

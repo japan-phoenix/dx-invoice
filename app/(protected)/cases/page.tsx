@@ -1,20 +1,25 @@
 'use client'
 
 import { CreateButton } from '@/components/button/CreateButton'
-import { ResetButton } from '@/components/button/ResetButton'
-import { SearchButton } from '@/components/button/SearchButton'
 import { DataTable } from '@/components/table/DataTable'
 import { CustomerListItem, SearchCustomersParams } from '@/lib/customers'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 import { useCustomersQuery } from '@/hooks/useCustomer'
-import { useCitiesQuery, useTownsQuery } from '@/hooks/useAddress'
 import { useCreatePaymentMutation, useCancelPaymentMutation } from '@/hooks/usePayment'
+import { CaseSearchForm } from './components/CaseSearchForm'
+
+interface FormParams extends SearchCustomersParams {
+    receptionFromInput?: string
+    receptionToInput?: string
+    funeralFromInput?: string
+    funeralToInput?: string
+}
 
 export default function CasesPage() {
     const router = useRouter()
-    // 検索用フォームの入力状態
-    const [formParams, setFormParams] = useState<SearchCustomersParams>({})
+    // フォーム入力値（検索後も保持）
+    const [formParams, setFormParams] = useState<FormParams>({})
     // 実際に検索に使用するパラメータ
     const [searchParams, setSearchParams] = useState<SearchCustomersParams>({})
     const [paymentDialog, setPaymentDialog] = useState<{
@@ -27,22 +32,19 @@ export default function CasesPage() {
 
     // React Query フック
     const { data: customers = [], isLoading: customersLoading } = useCustomersQuery(searchParams)
-    const { data: cities = [] } = useCitiesQuery()
-    const { data: towns = [] } = useTownsQuery(formParams.cityId || null)
     const createPaymentMutation = useCreatePaymentMutation()
     const cancelPaymentMutation = useCancelPaymentMutation()
 
     const loading = customersLoading
 
-    const handleCityChange = (cityId: string) => {
-        setFormParams({ ...formParams, cityId, townId: undefined })
-    }
-
-    const handleSearch = () => {
-        setSearchParams(formParams)
+    const handleSearch = (params: SearchCustomersParams) => {
+        // searchParams を更新して検索を実行
+        setSearchParams(params)
+        // formParams は既に更新されているので、ここでは何もしない
     }
 
     const handleReset = () => {
+        // フォーム入力値と検索パラメータをリセット
         setFormParams({})
         setSearchParams({})
     }
@@ -103,135 +105,19 @@ export default function CasesPage() {
 
     return (
         <div className="p-8">
-            <h1 className="mb-8 text-2xl font-bold">葬儀案件検索一覧</h1>
+            <div className="flex items-start justify-between">
+                <h1 className="mb-8 text-2xl font-bold">葬儀案件検索一覧</h1>
+                <CreateButton onClick={() => router.push('/cases/new')}>新規登録</CreateButton>
+            </div>
 
             {/* 検索条件エリア */}
-            <div className="mb-8 rounded-lg bg-gray-100 p-6">
-                <div className="mb-4 grid grid-cols-3 gap-4">
-                    <div>
-                        <label className="mb-2 block text-sm">市区町村</label>
-                        <select
-                            value={formParams.cityId || ''}
-                            onChange={(e) => handleCityChange(e.target.value)}
-                            className="w-full rounded border border-gray-300 px-2 py-2"
-                        >
-                            <option value="">選択してください</option>
-                            {cities.map((city) => (
-                                <option key={city.id} value={city.id}>
-                                    {city.name}
-                                </option>
-                            ))}
-                        </select>
-                    </div>
-
-                    <div>
-                        <label className="mb-2 block text-sm">町字</label>
-                        <select
-                            value={formParams.townId || ''}
-                            onChange={(e) => setFormParams({ ...formParams, townId: e.target.value })}
-                            disabled={!formParams.cityId}
-                            className="w-full rounded border border-gray-300 px-2 py-2 disabled:cursor-not-allowed disabled:bg-gray-200"
-                        >
-                            <option value="">選択してください</option>
-                            {towns.map((town) => (
-                                <option key={town.id} value={town.id}>
-                                    {town.name}
-                                </option>
-                            ))}
-                        </select>
-                    </div>
-
-                    <div>
-                        <label className="mb-2 block text-sm">故人名</label>
-                        <input
-                            type="text"
-                            value={formParams.lastName || ''}
-                            onChange={(e) => setFormParams({ ...formParams, lastName: e.target.value })}
-                            className="w-full rounded border border-gray-300 px-2 py-2"
-                        />
-                    </div>
-
-                    <div>
-                        <label className="mb-2 block text-sm">受付日（From）</label>
-                        <input
-                            type="date"
-                            value={formParams.receptionFrom || ''}
-                            onChange={(e) => setFormParams({ ...formParams, receptionFrom: e.target.value })}
-                            className="w-full rounded border border-gray-300 px-2 py-2"
-                        />
-                    </div>
-
-                    <div>
-                        <label className="mb-2 block text-sm">受付日（To）</label>
-                        <input
-                            type="date"
-                            value={formParams.receptionTo || ''}
-                            onChange={(e) => setFormParams({ ...formParams, receptionTo: e.target.value })}
-                            className="w-full rounded border border-gray-300 px-2 py-2"
-                        />
-                    </div>
-
-                    <div>
-                        <label className="mb-2 block text-sm">葬儀日（From）</label>
-                        <input
-                            type="date"
-                            value={formParams.funeralFrom || ''}
-                            onChange={(e) => setFormParams({ ...formParams, funeralFrom: e.target.value })}
-                            className="w-full rounded border border-gray-300 px-2 py-2"
-                        />
-                    </div>
-
-                    <div>
-                        <label className="mb-2 block text-sm">葬儀日（To）</label>
-                        <input
-                            type="date"
-                            value={formParams.funeralTo || ''}
-                            onChange={(e) => setFormParams({ ...formParams, funeralTo: e.target.value })}
-                            className="w-full rounded border border-gray-300 px-2 py-2"
-                        />
-                    </div>
-
-                    <div>
-                        <label className="mb-2 block text-sm">入金状態</label>
-                        <div className="flex gap-4">
-                            <label className="flex items-center gap-2">
-                                <input
-                                    type="checkbox"
-                                    checked={formParams.paid === true}
-                                    onChange={(e) =>
-                                        setFormParams({
-                                            ...formParams,
-                                            paid: e.target.checked ? true : undefined,
-                                            unpaid: e.target.checked ? undefined : formParams.unpaid,
-                                        })
-                                    }
-                                />
-                                入金済
-                            </label>
-                            <label className="flex items-center gap-2">
-                                <input
-                                    type="checkbox"
-                                    checked={formParams.unpaid === true}
-                                    onChange={(e) =>
-                                        setFormParams({
-                                            ...formParams,
-                                            unpaid: e.target.checked ? true : undefined,
-                                            paid: e.target.checked ? undefined : formParams.paid,
-                                        })
-                                    }
-                                />
-                                未入金
-                            </label>
-                        </div>
-                    </div>
-                </div>
-
-                <div className="flex gap-4">
-                    <SearchButton onClick={handleSearch} isLoading={loading} />
-                    <ResetButton onClick={handleReset} />
-                    <CreateButton onClick={() => router.push('/cases/new')}>新規登録</CreateButton>
-                </div>
-            </div>
+            <CaseSearchForm
+                formParams={formParams}
+                setFormParams={setFormParams}
+                onSearch={handleSearch}
+                onReset={handleReset}
+                isLoading={loading}
+            />
 
             {/* 検索結果一覧 */}
             <div className="flex h-96 flex-col">

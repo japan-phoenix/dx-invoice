@@ -1,17 +1,12 @@
 import { Controller, useFormContext, useWatch } from 'react-hook-form'
-import { useCallback, useState } from 'react'
 import { CaseFormData } from '../schemas/CaseFormSchema'
-import { AddressCity, AddressTown, searchPostalCode } from '@/lib/address'
+import { AddressCity, AddressTown } from '@/lib/address'
 import { FormInput } from '@/components/form/FormInput'
 import { FormSelect } from '@/components/form/FormSelect'
 import { FormCheckbox } from '@/components/form/FormCheckbox'
 import { FormAutocomplete } from '@/components/form/FormAutocomplete'
+import { FormInputWithPostalSearch } from '@/components/form/FormInputWithPostalSearch'
 import { RELATION_OPTIONS } from '../constants/statusOptions'
-import { toast } from '@/hooks/use-toast'
-
-const normalizeFullWidthToHalfWidth = (value: string): string => {
-    return value.replace(/[０-９]/g, (char) => String.fromCharCode(char.charCodeAt(0) - 0xfee0))
-}
 
 interface DeceasedTabProps {
     cities: AddressCity[]
@@ -25,17 +20,7 @@ export function DeceasedTab({ cities, towns, onCityChange }: DeceasedTabProps) {
         setValue,
         formState: { errors },
     } = useFormContext<CaseFormData>()
-    const [isSearchingChief, setIsSearchingChief] = useState(false)
-    const [isSearchingPayer, setIsSearchingPayer] = useState(false)
 
-    const chiefMournerPostalCode = useWatch({
-        control,
-        name: 'chiefMournerPostalCode',
-    })
-    const payerPostalCode = useWatch({
-        control,
-        name: 'payerPostalCode',
-    })
     const chiefMournerCityId = useWatch({
         control,
         name: 'chiefMournerCityId',
@@ -60,115 +45,6 @@ export function DeceasedTab({ cities, towns, onCityChange }: DeceasedTabProps) {
         control,
         name: 'chiefMournerTel',
     })
-
-    // 喪主の郵便番号検索
-    const handleChiefPostalSearch = useCallback(async () => {
-        if (!chiefMournerPostalCode) {
-            toast({
-                title: '郵便番号を入力してください',
-                variant: 'destructive',
-                duration: 2000,
-            })
-            return
-        }
-
-        const normalized = normalizeFullWidthToHalfWidth(chiefMournerPostalCode)
-        if (normalized.replace(/[^0-9]/g, '').length !== 7) {
-            toast({
-                title: '郵便番号は7桁である必要があります',
-                variant: 'destructive',
-                duration: 2000,
-            })
-            return
-        }
-
-        setIsSearchingChief(true)
-        try {
-            const result = await searchPostalCode(normalized)
-            if (!result) {
-                toast({
-                    title: '該当する住所が見つかりません',
-                    variant: 'destructive',
-                    duration: 2000,
-                })
-                return
-            }
-
-            // 住所フィールドに 市区町村 + 町丁目 を設定
-            if (result.fullAddress) {
-                setValue('chiefMournerAddress', result.fullAddress)
-            }
-            toast({
-                title: '住所を検索しました',
-                variant: 'success',
-                duration: 2000,
-            })
-        } catch (error: any) {
-            console.error('喪主郵便番号検索エラー:', error)
-            const errorMessage = error?.response?.data?.error || error?.message || '住所検索に失敗しました'
-            toast({
-                title: errorMessage,
-                variant: 'destructive',
-                duration: 3000,
-            })
-        } finally {
-            setIsSearchingChief(false)
-        }
-    }, [chiefMournerPostalCode, setValue])
-
-    // 支払者の郵便番号検索
-    const handlePayerPostalSearch = useCallback(async () => {
-        if (!payerPostalCode) {
-            toast({
-                title: '郵便番号を入力してください',
-                variant: 'destructive',
-                duration: 2000,
-            })
-            return
-        }
-
-        const normalized = normalizeFullWidthToHalfWidth(payerPostalCode)
-        if (normalized.replace(/[^0-9]/g, '').length !== 7) {
-            toast({
-                title: '郵便番号は7桁である必要があります',
-                variant: 'destructive',
-                duration: 2000,
-            })
-            return
-        }
-
-        setIsSearchingPayer(true)
-        try {
-            const result = await searchPostalCode(normalized)
-            if (!result) {
-                toast({
-                    title: '該当する住所が見つかりません',
-                    variant: 'destructive',
-                    duration: 2000,
-                })
-                return
-            }
-
-            if (result.fullAddress) {
-                setValue('payerAddress', result.fullAddress)
-            }
-            toast({
-                title: '住所を検索しました',
-                variant: 'success',
-                duration: 2000,
-            })
-        } catch (error: any) {
-            console.error('支払者郵便番号検索エラー:', error)
-            const errorMessage = error?.response?.data?.error || error?.message || '住所検索に失敗しました'
-            toast({
-                title: errorMessage,
-                variant: 'destructive',
-                duration: 3000,
-            })
-        } finally {
-            setIsSearchingPayer(false)
-        }
-    }, [payerPostalCode, setValue])
 
     const handleCityChange = async (cityId: string) => {
         setValue('chiefMournerCityId', cityId)
@@ -342,69 +218,9 @@ export function DeceasedTab({ cities, towns, onCityChange }: DeceasedTabProps) {
                         )}
                     </div>
 
-                    {/* 郵便番号と検索ボタン */}
-                    <div>
-                        <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500' }}>郵便番号</label>
-                        <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'stretch' }}>
-                            <Controller
-                                name="chiefMournerPostalCode"
-                                control={control}
-                                render={({ field }) => (
-                                    <input
-                                        {...field}
-                                        type="text"
-                                        placeholder="7桁の郵便番号を入力"
-                                        onChange={(e) => {
-                                            const normalized = normalizeFullWidthToHalfWidth(e.target.value)
-                                            field.onChange(normalized)
-                                        }}
-                                        onKeyDown={(e) => {
-                                            if (e.key === 'Enter') {
-                                                e.preventDefault()
-                                                e.stopPropagation()
-                                            }
-                                        }}
-                                        style={{
-                                            flex: 1,
-                                            padding: '0.5rem',
-                                            border: errors.chiefMournerPostalCode
-                                                ? '2px solid #dc3545'
-                                                : '1px solid #ddd',
-                                            borderRadius: '4px',
-                                            fontSize: '1rem',
-                                        }}
-                                    />
-                                )}
-                            />
-                            <button
-                                type="button"
-                                onClick={handleChiefPostalSearch}
-                                disabled={isSearchingChief}
-                                style={{
-                                    padding: '0.5rem 1rem',
-                                    backgroundColor: '#007bff',
-                                    color: 'white',
-                                    border: 'none',
-                                    borderRadius: '4px',
-                                    cursor: isSearchingChief ? 'not-allowed' : 'pointer',
-                                    opacity: isSearchingChief ? 0.6 : 1,
-                                    fontWeight: '500',
-                                    whiteSpace: 'nowrap',
-                                }}
-                            >
-                                {isSearchingChief ? '検索中...' : '検索'}
-                            </button>
-                        </div>
-                        {errors.chiefMournerPostalCode && (
-                            <div style={{ color: '#dc3545', fontSize: '0.875rem', marginTop: '0.25rem' }}>
-                                {errors.chiefMournerPostalCode.message}
-                            </div>
-                        )}
-                    </div>
-
                     {/* 住所 */}
                     <div style={{ gridColumn: '1 / -1' }}>
-                        <FormInput<CaseFormData>
+                        <FormInputWithPostalSearch<CaseFormData>
                             name="chiefMournerAddress"
                             control={control}
                             label="住所"
@@ -438,6 +254,7 @@ export function DeceasedTab({ cities, towns, onCityChange }: DeceasedTabProps) {
                         control={control}
                         label="支払者名"
                         error={errors.payerName}
+                        disabled={sameAsChiefMourner}
                     />
 
                     {/* 支払者との関係 */}
@@ -447,73 +264,17 @@ export function DeceasedTab({ cities, towns, onCityChange }: DeceasedTabProps) {
                         label="支払者との関係"
                         options={[...RELATION_OPTIONS]}
                         error={errors.payerRelation}
+                        disabled={sameAsChiefMourner}
                     />
-
-                    {/* 郵便番号と検索ボタン */}
-                    <div>
-                        <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500' }}>郵便番号</label>
-                        <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'stretch' }}>
-                            <Controller
-                                name="payerPostalCode"
-                                control={control}
-                                render={({ field }) => (
-                                    <input
-                                        {...field}
-                                        type="text"
-                                        placeholder="7桁の郵便番号を入力"
-                                        onChange={(e) => {
-                                            const normalized = normalizeFullWidthToHalfWidth(e.target.value)
-                                            field.onChange(normalized)
-                                        }}
-                                        onKeyDown={(e) => {
-                                            if (e.key === 'Enter') {
-                                                e.preventDefault()
-                                                e.stopPropagation()
-                                            }
-                                        }}
-                                        style={{
-                                            flex: 1,
-                                            padding: '0.5rem',
-                                            border: errors.payerPostalCode ? '2px solid #dc3545' : '1px solid #ddd',
-                                            borderRadius: '4px',
-                                            fontSize: '1rem',
-                                        }}
-                                    />
-                                )}
-                            />
-                            <button
-                                type="button"
-                                onClick={handlePayerPostalSearch}
-                                disabled={isSearchingPayer}
-                                style={{
-                                    padding: '0.5rem 1rem',
-                                    backgroundColor: '#007bff',
-                                    color: 'white',
-                                    border: 'none',
-                                    borderRadius: '4px',
-                                    cursor: isSearchingPayer ? 'not-allowed' : 'pointer',
-                                    opacity: isSearchingPayer ? 0.6 : 1,
-                                    fontWeight: '500',
-                                    whiteSpace: 'nowrap',
-                                }}
-                            >
-                                {isSearchingPayer ? '検索中...' : '検索'}
-                            </button>
-                        </div>
-                        {errors.payerPostalCode && (
-                            <div style={{ color: '#dc3545', fontSize: '0.875rem', marginTop: '0.25rem' }}>
-                                {errors.payerPostalCode.message}
-                            </div>
-                        )}
-                    </div>
 
                     {/* 支払者住所 */}
                     <div style={{ gridColumn: '1 / -1' }}>
-                        <FormInput<CaseFormData>
+                        <FormInputWithPostalSearch<CaseFormData>
                             name="payerAddress"
                             control={control}
                             label="支払者住所"
                             error={errors.payerAddress}
+                            disabled={sameAsChiefMourner}
                         />
                     </div>
 
@@ -524,6 +285,7 @@ export function DeceasedTab({ cities, towns, onCityChange }: DeceasedTabProps) {
                         label="支払者電話番号"
                         type="tel"
                         error={errors.payerTel}
+                        disabled={sameAsChiefMourner}
                     />
                 </div>
             </div>

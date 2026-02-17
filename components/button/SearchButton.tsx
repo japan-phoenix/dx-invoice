@@ -7,6 +7,7 @@ interface SearchButtonProps extends ButtonProps {
 export function SearchButton({ isLoading = false, children = '検索', ...props }: SearchButtonProps) {
     return (
         <Button
+            type="button"
             {...props}
             disabled={isLoading || props.disabled}
             className={`rounded border-none bg-blue-600 text-white hover:bg-blue-700 ${props.className || ''}`}

@@ -44,7 +44,7 @@ export function DataTable<T>({
     })
 
     return (
-        <div className="flex h-full flex-col">
+        <div className="flex flex-col">
             {/* テーブル部分 */}
             <div className="flex flex-1 flex-col overflow-hidden">
                 {/* 横スクロール可能エリア */}

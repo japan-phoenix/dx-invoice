@@ -46,8 +46,7 @@ export default function NewCustomerPage() {
             console.log('Form data passed Zod validation:', JSON.stringify(data, null, 2))
             const submitData = transformSubmitData(data, formatDateForISO)
             console.log('Submit data after transform:', JSON.stringify(submitData, null, 2))
-            const result = await createMutation.mutateAsync(submitData)
-            router.push(`/cases/${result.id}`)
+            router.push(`/cases`)
         } catch (error) {
             console.error('Failed to create customer:', error)
             alert('登録に失敗しました')

@@ -84,19 +84,19 @@ export function DeceasedTab({ cities, towns, onCityChange }: DeceasedTabProps) {
                 suffix="様"
             />
 
-            {/* 故人姓 */}
+            {/* 故人姓（フリガナ） */}
             <FormInput<CaseFormData>
                 name="deceasedLastName"
                 control={control}
-                label="故人姓"
+                label="故人姓（フリガナ）"
                 error={errors.deceasedLastName}
             />
 
-            {/* 故人名 */}
+            {/* 故人名（フリガナ） */}
             <FormInput<CaseFormData>
                 name="deceasedFirstName"
                 control={control}
-                label="故人名"
+                label="故人名（フリガナ）"
                 error={errors.deceasedFirstName}
             />
 
@@ -148,75 +148,6 @@ export function DeceasedTab({ cities, towns, onCityChange }: DeceasedTabProps) {
                         options={[...RELATION_OPTIONS]}
                         error={errors.chiefMournerRelation}
                     />
-
-                    {/* 市区町村 */}
-                    <div>
-                        <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500' }}>市区町村</label>
-                        <select
-                            value={chiefMournerCityId || ''}
-                            onChange={(e) => handleCityChange(e.target.value)}
-                            style={{
-                                width: '100%',
-                                padding: '0.5rem',
-                                border: errors.chiefMournerCityId ? '2px solid #dc3545' : '1px solid #ddd',
-                                borderRadius: '4px',
-                                fontSize: '1rem',
-                            }}
-                        >
-                            <option value="">選択してください</option>
-                            {cities.map((city) => (
-                                <option key={city.id} value={city.id}>
-                                    {city.name}
-                                </option>
-                            ))}
-                        </select>
-                        {errors.chiefMournerCityId && (
-                            <div style={{ color: '#dc3545', fontSize: '0.875rem', marginTop: '0.25rem' }}>
-                                {errors.chiefMournerCityId.message}
-                            </div>
-                        )}
-                    </div>
-
-                    {/* 町字 */}
-                    <div>
-                        <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500' }}>町字</label>
-                        <Controller
-                            name="chiefMournerTownId"
-                            control={control}
-                            render={({ field }) => (
-                                <select
-                                    {...field}
-                                    value={field.value || ''}
-                                    disabled={!chiefMournerCityId}
-                                    onChange={(e) => {
-                                        field.onChange(e)
-                                        handleTownChange(e.target.value)
-                                    }}
-                                    style={{
-                                        width: '100%',
-                                        padding: '0.5rem',
-                                        border: errors.chiefMournerTownId ? '2px solid #dc3545' : '1px solid #ddd',
-                                        borderRadius: '4px',
-                                        fontSize: '1rem',
-                                        opacity: !chiefMournerCityId ? 0.5 : 1,
-                                        cursor: !chiefMournerCityId ? 'not-allowed' : 'pointer',
-                                    }}
-                                >
-                                    <option value="">選択してください</option>
-                                    {towns.map((town) => (
-                                        <option key={town.id} value={town.id}>
-                                            {town.name}
-                                        </option>
-                                    ))}
-                                </select>
-                            )}
-                        />
-                        {errors.chiefMournerTownId && (
-                            <div style={{ color: '#dc3545', fontSize: '0.875rem', marginTop: '0.25rem' }}>
-                                {errors.chiefMournerTownId.message}
-                            </div>
-                        )}
-                    </div>
 
                     {/* 住所 */}
                     <div style={{ gridColumn: '1 / -1' }}>

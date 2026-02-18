@@ -26,11 +26,56 @@ export async function GET(request: NextRequest) {
         // 検索条件を構築
         const where: any = {}
 
+        // cityId / townId は addressテーブルから name を取得し、
+        // chief_mourner_address または payer_address に対して部分一致検索する
         if (cityId) {
-            where.chiefMournerCityId = BigInt(cityId)
+            const city = await prisma.addressCity.findUnique({
+                where: { id: BigInt(cityId) },
+                select: { name: true },
+            })
+
+            if (city?.name) {
+                where.AND = where.AND || []
+                where.AND.push({
+                    OR: [
+                        {
+                            chiefMournerAddress: {
+                                contains: city.name,
+                            },
+                        },
+                        {
+                            payerAddress: {
+                                contains: city.name,
+                            },
+                        },
+                    ],
+                })
+            }
         }
+
         if (townId) {
-            where.chiefMournerTownId = BigInt(townId)
+            const town = await prisma.addressTown.findUnique({
+                where: { id: BigInt(townId) },
+                select: { name: true },
+            })
+
+            if (town?.name) {
+                where.AND = where.AND || []
+                where.AND.push({
+                    OR: [
+                        {
+                            chiefMournerAddress: {
+                                contains: town.name,
+                            },
+                        },
+                        {
+                            payerAddress: {
+                                contains: town.name,
+                            },
+                        },
+                    ],
+                })
+            }
         }
 
         if (deceasedName) {
@@ -243,6 +288,26 @@ export async function POST(request: NextRequest) {
             notes: toNullIfEmpty(data.notes),
             memberCardNote: toNullIfEmpty(data.memberCardNote),
         }
+
+        // receptionNo を MAX + 1 で採番（Stringカラムのため number で計算）
+        const maxReception = await prisma.customer.aggregate({
+            _max: {
+                receptionNo: true,
+            },
+        })
+
+        const currentMaxRaw = maxReception._max.receptionNo
+
+        const currentMaxNumber =
+            currentMaxRaw === null || currentMaxRaw === undefined
+                ? 0
+                : typeof currentMaxRaw === 'number'
+                  ? currentMaxRaw
+                  : parseInt(currentMaxRaw as string, 10) || 0
+
+        const nextReceptionNo = currentMaxNumber + 1
+
+        customerData.receptionNo = String(nextReceptionNo)
 
         // 顧客を作成
         const customer = await prisma.customer.create({

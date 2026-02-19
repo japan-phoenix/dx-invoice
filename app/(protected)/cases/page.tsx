@@ -124,6 +124,11 @@ export default function CasesPage() {
                 <DataTable<CustomerListItem>
                     columns={[
                         {
+                            key: 'receptionNo',
+                            label: '受付番号',
+                            width: '100px',
+                        },
+                        {
                             key: 'deceasedName',
                             label: '故人名',
                             width: '150px',
@@ -143,6 +148,8 @@ export default function CasesPage() {
                             key: 'receptionAt',
                             label: '受付日',
                             width: '120px',
+                            sortable: true,
+                            sortValue: (item) => (item.receptionAt ? new Date(item.receptionAt).getTime() : null),
                             render: (item) => formatDate(item.receptionAt),
                         },
                         {
@@ -184,7 +191,7 @@ export default function CasesPage() {
                                     }}
                                     className={`rounded px-2 py-1 text-xs text-white ${item.hasEstimate ? 'bg-cyan-600' : 'bg-gray-500'}`}
                                 >
-                                    {item.hasEstimate ? '見積' : '見積作成'}
+                                    {item.hasEstimate ? '見積書編集' : '見積書作成'}
                                 </button>
                                 <button
                                     onClick={(e) => {
@@ -194,7 +201,7 @@ export default function CasesPage() {
                                     }}
                                     className={`rounded px-2 py-1 text-xs ${item.hasInvoice ? 'bg-yellow-400 text-black' : 'bg-gray-500 text-white'}`}
                                 >
-                                    {item.hasInvoice ? '請求' : '請求作成'}
+                                    {item.hasInvoice ? '請求書編集' : '請求書作成'}
                                 </button>
                                 <button
                                     onClick={(e) => {
@@ -204,7 +211,7 @@ export default function CasesPage() {
                                     }}
                                     className="rounded bg-green-600 px-2 py-1 text-xs text-white"
                                 >
-                                    供花
+                                    供花登録
                                 </button>
                                 {item.hasInvoice && (
                                     <button
@@ -214,7 +221,7 @@ export default function CasesPage() {
                                         }}
                                         className={`rounded px-2 py-1 text-xs text-white ${item.isPaid ? 'bg-gray-500' : 'bg-red-600'}`}
                                     >
-                                        {item.isPaid ? '取消' : '入金'}
+                                        {item.isPaid ? '入金取消' : '入金登録'}
                                     </button>
                                 )}
                             </div>

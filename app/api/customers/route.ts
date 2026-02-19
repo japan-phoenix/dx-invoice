@@ -189,6 +189,7 @@ export async function GET(request: NextRequest) {
 
             return {
                 id: customer.id.toString(),
+                receptionNo: customer.receptionNo,
                 deceasedName: customer.deceasedName,
                 age: customer.age,
                 address: customer.chiefMournerAddress || '',

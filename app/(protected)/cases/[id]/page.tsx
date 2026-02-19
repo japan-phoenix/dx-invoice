@@ -88,6 +88,33 @@ export default function EditCustomerPage() {
     const hasEstimate = customer?.estimates && customer.estimates.length > 0
     const hasInvoice = customer?.invoices && customer.invoices.length > 0
 
+    const handleNavigateToEstimate = () => {
+        if (!customer) {
+            toast({ title: '顧客情報が取得できていません', variant: 'destructive', duration: 3000 })
+            router.push('/cases')
+            return
+        }
+        router.push(`/estimates/${customerId}`)
+    }
+
+    const handleNavigateToInvoice = () => {
+        if (!customer) {
+            toast({ title: '顧客情報が取得できていません', variant: 'destructive', duration: 3000 })
+            router.push('/cases')
+            return
+        }
+        router.push(`/invoices/${customerId}`)
+    }
+
+    const handleNavigateToFlowers = () => {
+        if (!customer) {
+            toast({ title: '顧客情報が取得できていません', variant: 'destructive', duration: 3000 })
+            router.push('/cases')
+            return
+        }
+        router.push(`/flowers/${customerId}`)
+    }
+
     const onSubmit: SubmitHandler<CaseFormData> = async (data) => {
         try {
             console.log('Form data passed Zod validation:', JSON.stringify(data, null, 2))
@@ -142,70 +169,48 @@ export default function EditCustomerPage() {
                         {/* 関連機能へのリンク */}
                         <div>
                             <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
-                                {hasEstimate && (
-                                    <button
-                                        type="button"
-                                        onClick={() => router.push(`/estimates/${customerId}`)}
-                                        style={{
-                                            padding: '0.5rem 1rem',
-                                            backgroundColor: '#0070f3',
-                                            color: 'white',
-                                            border: 'none',
-                                            borderRadius: '4px',
-                                            cursor: 'pointer',
-                                        }}
-                                    >
-                                        見積書
-                                    </button>
-                                )}
-                                {!hasEstimate && (
-                                    <button
-                                        type="button"
-                                        onClick={() => router.push(`/estimates/new?customerId=${customerId}`)}
-                                        style={{
-                                            padding: '0.5rem 1rem',
-                                            backgroundColor: '#28a745',
-                                            color: 'white',
-                                            border: 'none',
-                                            borderRadius: '4px',
-                                            cursor: 'pointer',
-                                        }}
-                                    >
-                                        見積書を作成
-                                    </button>
-                                )}
-                                {hasInvoice && (
-                                    <button
-                                        type="button"
-                                        onClick={() => router.push(`/invoices/${customerId}`)}
-                                        style={{
-                                            padding: '0.5rem 1rem',
-                                            backgroundColor: '#0070f3',
-                                            color: 'white',
-                                            border: 'none',
-                                            borderRadius: '4px',
-                                            cursor: 'pointer',
-                                        }}
-                                    >
-                                        請求書
-                                    </button>
-                                )}
-                                {!hasInvoice && (
-                                    <button
-                                        type="button"
-                                        onClick={() => router.push(`/invoices/new?customerId=${customerId}`)}
-                                        style={{
-                                            padding: '0.5rem 1rem',
-                                            backgroundColor: '#28a745',
-                                            color: 'white',
-                                            border: 'none',
-                                            borderRadius: '4px',
-                                            cursor: 'pointer',
-                                        }}
-                                    >
-                                        請求書を作成
-                                    </button>
-                                )}
+                                <button
+                                    type="button"
+                                    onClick={handleNavigateToEstimate}
+                                    style={{
+                                        padding: '0.5rem 1rem',
+                                        backgroundColor: hasEstimate ? '#0070f3' : '#28a745',
+                                        color: 'white',
+                                        border: 'none',
+                                        borderRadius: '4px',
+                                        cursor: 'pointer',
+                                    }}
+                                >
+                                    {hasEstimate ? '見積書編集' : '見積書作成'}
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={handleNavigateToInvoice}
+                                    style={{
+                                        padding: '0.5rem 1rem',
+                                        backgroundColor: hasInvoice ? '#0070f3' : '#28a745',
+                                        color: 'white',
+                                        border: 'none',
+                                        borderRadius: '4px',
+                                        cursor: 'pointer',
+                                    }}
+                                >
+                                    {hasInvoice ? '請求書編集' : '請求書作成'}
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={handleNavigateToFlowers}
+                                    style={{
+                                        padding: '0.5rem 1rem',
+                                        backgroundColor: '#17a2b8',
+                                        color: 'white',
+                                        border: 'none',
+                                        borderRadius: '4px',
+                                        cursor: 'pointer',
+                                    }}
+                                >
+                                    供花登録
+                                </button>
                             </div>
                         </div>
                     </div>

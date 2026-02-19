@@ -196,7 +196,7 @@ export default function EstimatePage() {
 
     return (
         <div style={{ padding: '2rem' }}>
-            <h1 style={{ marginBottom: '2rem' }}>見積書 {estimate ? '編集' : '作成'}</h1>
+            <h1 className="mb-8 text-2xl font-bold">見積書 {estimate ? '編集' : '作成'}</h1>
 
             {/* ヘッダー情報 */}
             {customer && (

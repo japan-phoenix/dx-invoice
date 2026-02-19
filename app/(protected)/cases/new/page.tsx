@@ -14,6 +14,7 @@ import { FuneralTab } from '../components/FuneralTab'
 import { MembershipTab } from '../components/MembershipTab'
 import { useCitiesQuery, useTownsQuery } from '@/hooks/useAddress'
 import { useCreateCustomerMutation } from '@/hooks/useCustomer'
+import { toast } from '@/hooks/use-toast'
 
 export default function NewCustomerPage() {
     const router = useRouter()
@@ -46,10 +47,20 @@ export default function NewCustomerPage() {
             console.log('Form data passed Zod validation:', JSON.stringify(data, null, 2))
             const submitData = transformSubmitData(data, formatDateForISO)
             console.log('Submit data after transform:', JSON.stringify(submitData, null, 2))
+            await createMutation.mutateAsync(submitData)
+            toast({
+                title: '登録しました',
+                variant: 'success',
+                duration: 2000,
+            })
             router.push(`/cases`)
         } catch (error) {
             console.error('Failed to create customer:', error)
-            alert('登録に失敗しました')
+            toast({
+                title: '登録に失敗しました',
+                variant: 'destructive',
+                duration: 2000,
+            })
         }
     }
 

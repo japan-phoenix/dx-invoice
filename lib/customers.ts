@@ -2,6 +2,7 @@ import apiClient from './api'
 
 export interface CustomerListItem {
     id: string
+    receptionNo: string
     deceasedName: string
     age: number | null
     address: string

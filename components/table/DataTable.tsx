@@ -1,10 +1,14 @@
-import React from 'react'
+import React, { useState, useMemo } from 'react'
 import { usePagination } from './usePagination'
+
+export type SortDirection = 'asc' | 'desc'
 
 export interface ColumnDef<T> {
     key: string
     label: string
     width?: string
+    sortable?: boolean
+    sortValue?: (item: T) => string | number | null | undefined
     render?: (item: T) => React.ReactNode
 }
 
@@ -38,8 +42,37 @@ export function DataTable<T>({
     emptyMessage = 'データがありません',
     rowKey,
 }: DataTableProps<T>) {
+    const [sortKey, setSortKey] = useState<string | null>(null)
+    const [sortDir, setSortDir] = useState<SortDirection>('asc')
+
+    const handleSortClick = (col: ColumnDef<T>) => {
+        if (!col.sortable) return
+        if (sortKey === col.key) {
+            setSortDir((prev) => (prev === 'asc' ? 'desc' : 'asc'))
+        } else {
+            setSortKey(col.key)
+            setSortDir('asc')
+        }
+    }
+
+    const sortedData = useMemo(() => {
+        if (!sortKey) return data
+        const col = columns.find((c) => c.key === sortKey)
+        if (!col) return data
+        return [...data].sort((a, b) => {
+            const va = col.sortValue ? col.sortValue(a) : (a as any)[sortKey]
+            const vb = col.sortValue ? col.sortValue(b) : (b as any)[sortKey]
+            if (va == null && vb == null) return 0
+            if (va == null) return 1
+            if (vb == null) return -1
+            if (va < vb) return sortDir === 'asc' ? -1 : 1
+            if (va > vb) return sortDir === 'asc' ? 1 : -1
+            return 0
+        })
+    }, [data, sortKey, sortDir, columns])
+
     const { currentPage, totalPages, paginatedItems, goToPage, prevPage, nextPage } = usePagination({
-        items: data,
+        items: sortedData,
         itemsPerPage,
     })
 
@@ -55,13 +88,23 @@ export function DataTable<T>({
                                 {columns.map((col) => (
                                     <th
                                         key={col.key}
-                                        className="border-b border-gray-200 px-3 py-3 text-left"
+                                        className={`border-b border-gray-200 px-3 py-3 text-left ${
+                                            col.sortable ? 'cursor-pointer select-none hover:bg-gray-200' : ''
+                                        }`}
                                         style={{
                                             width: col.width,
                                             minWidth: '100px',
                                         }}
+                                        onClick={() => handleSortClick(col)}
                                     >
-                                        {col.label}
+                                        <span className="inline-flex items-center gap-1">
+                                            {col.label}
+                                            {col.sortable && (
+                                                <span className="text-xs text-gray-400">
+                                                    {sortKey === col.key ? (sortDir === 'asc' ? '▲' : '▼') : '⇅'}
+                                                </span>
+                                            )}
+                                        </span>
                                     </th>
                                 ))}
                                 {actionColumn && (

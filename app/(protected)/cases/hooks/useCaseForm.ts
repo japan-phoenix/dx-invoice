@@ -84,7 +84,7 @@ export function useCaseFormLoader(setValue: UseFormSetValue<any>): {
                     deceasedLastName: customerData.deceasedLastName || '',
                     deceasedFirstName: customerData.deceasedFirstName || '',
                     gender: customerData.gender || '',
-                    age: customerData.age ? customerData.age : undefined,
+                    age: customerData.age ? customerData.age : 0,
                     religion: customerData.religion || '',
                     chiefMournerName: customerData.chiefMournerName || '',
                     chiefMournerRelation: customerData.chiefMournerRelation || '',

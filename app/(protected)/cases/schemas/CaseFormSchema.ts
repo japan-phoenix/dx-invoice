@@ -41,11 +41,18 @@ export const caseFormSchema = z.object({
     deceasedLastName: z.string().optional(),
     deceasedFirstName: z.string().optional(),
     gender: z.string().optional(),
-    age: z.coerce.number().optional(),
+    age: z.preprocess(
+        (val) => {
+            if (val === '' || val === null || val === undefined) return undefined
+            const num = Number(val)
+            return isNaN(num) ? undefined : num
+        },
+        z.number({ required_error: '必須です', invalid_type_error: '必須です' }).min(1, '必須です')
+    ),
     religion: z.string().optional(),
 
     // 喪主情報
-    chiefMournerName: z.string().optional(),
+    chiefMournerName: z.coerce.string().min(1, '必須です'),
     chiefMournerRelation: z.string().optional(),
     chiefMournerPostalCode: z.string().optional().default(''),
     chiefMournerCityId: z.string().optional(),

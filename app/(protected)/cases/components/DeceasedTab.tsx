@@ -6,7 +6,7 @@ import { FormSelect } from '@/components/form/FormSelect'
 import { FormCheckbox } from '@/components/form/FormCheckbox'
 import { FormAutocomplete } from '@/components/form/FormAutocomplete'
 import { FormInputWithPostalSearch } from '@/components/form/FormInputWithPostalSearch'
-import { RELATION_OPTIONS } from '../constants/statusOptions'
+import { RELATION_OPTIONS } from '../constants/casesOptions'
 
 interface DeceasedTabProps {
     cities: AddressCity[]

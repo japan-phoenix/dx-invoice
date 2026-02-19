@@ -9,6 +9,7 @@ export interface CustomerListItem {
     receptionAt: string | null
     funeralFrom: string | null
     hasEstimate: boolean
+    estimateId?: string
     hasInvoice: boolean
     invoiceId?: string
     isPaid: boolean

@@ -94,7 +94,11 @@ export default function EditCustomerPage() {
             router.push('/cases')
             return
         }
-        router.push(`/estimates/${customerId}`)
+        if (hasEstimate && customer.estimates[0]) {
+            router.push(`/estimates/${customer.estimates[0].id}`)
+        } else {
+            router.push(`/estimates/new?customerId=${customerId}`)
+        }
     }
 
     const handleNavigateToInvoice = () => {

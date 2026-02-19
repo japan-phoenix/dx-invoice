@@ -4,7 +4,7 @@ import { CaseFormData } from '../schemas/CaseFormSchema'
 import { FormInput } from '@/components/form/FormInput'
 import { FormCurrencyInput } from '@/components/form/FormCurrencyInput'
 import { FormAutocomplete } from '@/components/form/FormAutocomplete'
-import { RELATION_OPTIONS } from '../constants/statusOptions'
+import { RELATION_OPTIONS } from '../constants/casesOptions'
 
 export function MembershipTab() {
     const {
@@ -63,6 +63,7 @@ export function MembershipTab() {
                             control={control}
                             label="コース口数"
                             type="number"
+                            suffix="万口"
                             error={errors.memberships?.[index]?.courseUnits}
                         />
 
@@ -72,23 +73,25 @@ export function MembershipTab() {
                             control={control}
                             label="満期額"
                             prefix="¥"
+                            suffix="万"
                             error={errors.memberships?.[index]?.maturityAmount}
                         />
 
-                        {/* 支払回数 */}
+                        {/* 入金回数 */}
                         <FormInput<CaseFormData>
                             name={`memberships.${index}.paymentTimes`}
                             control={control}
-                            label="支払回数"
+                            label="入金回数"
                             type="number"
+                            suffix="回"
                             error={errors.memberships?.[index]?.paymentTimes}
                         />
 
-                        {/* 支払額 */}
+                        {/* 入金額 */}
                         <FormCurrencyInput<CaseFormData>
                             name={`memberships.${index}.paymentAmount`}
                             control={control}
-                            label="支払額"
+                            label="入金額"
                             prefix="¥"
                             error={errors.memberships?.[index]?.paymentAmount}
                         />

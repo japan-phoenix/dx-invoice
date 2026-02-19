@@ -11,6 +11,8 @@ interface FormTextareaProps<T extends FieldValues> {
     error?: FieldError
     required?: boolean
     disabled?: boolean
+    noResize?: boolean
+    maxRows?: number
 }
 
 export function FormTextarea<T extends FieldValues>({
@@ -22,6 +24,8 @@ export function FormTextarea<T extends FieldValues>({
     error,
     required,
     disabled,
+    noResize,
+    maxRows,
 }: FormTextareaProps<T>) {
     return (
         <Controller
@@ -38,6 +42,8 @@ export function FormTextarea<T extends FieldValues>({
                     error={error?.message as string}
                     required={required}
                     disabled={disabled}
+                    noResize={noResize}
+                    maxRows={maxRows}
                 />
             )}
         />

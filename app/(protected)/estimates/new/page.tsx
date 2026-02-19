@@ -1,7 +1,7 @@
 'use client'
 
 import { useRouter, useSearchParams } from 'next/navigation'
-import { useForm, FormProvider } from 'react-hook-form'
+import { useForm, FormProvider, useFieldArray } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Suspense } from 'react'
 import { estimateFormSchema, EstimateFormData, DEFAULT_FORM_VALUES } from '../schemas/EstimateFormSchema'
@@ -26,12 +26,19 @@ function EstimateNewPageInner() {
         control,
         handleSubmit,
         reset,
+        watch,
         formState: { isSubmitting },
     } = methods
 
+    const {
+        fields: itemFields,
+        append: appendItemField,
+        remove: removeItemField,
+    } = useFieldArray({ control, name: 'items' })
+
     const { loading, customer, items, setItems, onSubmit } = useEstimateCreate(customerId, reset)
-    const productSearchProps = useProductSearch(items, setItems)
-    const { handleUpdateItem, handleRemoveItem } = useEstimateItems(items, setItems)
+    const productSearchProps = useProductSearch(items, setItems, appendItemField)
+    const { handleRemoveItem } = useEstimateItems(items, setItems, removeItemField)
 
     if (loading) {
         return <div className="p-8">読み込み中...</div>
@@ -41,7 +48,7 @@ function EstimateNewPageInner() {
         return null
     }
 
-    const totals = calculateTotals(items, customer)
+    const totals = calculateTotals(items, watch('items'), customer)
 
     return (
         <FormProvider {...methods}>
@@ -49,14 +56,7 @@ function EstimateNewPageInner() {
                 <h1 className="mb-8 text-2xl font-bold">見積書 作成</h1>
 
                 {/* 顧客情報サマリー */}
-                <div
-                    style={{
-                        backgroundColor: '#f5f5f5',
-                        padding: '1rem',
-                        borderRadius: '8px',
-                        marginBottom: '2rem',
-                    }}
-                >
+                <div className="mb-8 rounded-lg bg-gray-100 p-4">
                     <p>
                         <strong>故人名:</strong> {customer.deceasedName}
                     </p>
@@ -73,9 +73,9 @@ function EstimateNewPageInner() {
                 </div>
 
                 {/* 基本情報 */}
-                <div style={{ marginBottom: '2rem' }}>
-                    <h3 style={{ marginBottom: '1rem' }}>基本情報</h3>
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '1rem' }}>
+                <div className="mb-8">
+                    <h3 className="mb-4">基本情報</h3>
+                    <div className="grid grid-cols-2 gap-4">
                         <FormInput name="docNo" control={control} label="見積番号" placeholder="例: EST-0001" />
                         <FormSelect
                             name="status"
@@ -93,7 +93,8 @@ function EstimateNewPageInner() {
                 {/* 明細一覧 */}
                 <EstimateItemTable
                     items={items}
-                    handleUpdateItem={handleUpdateItem}
+                    fields={itemFields}
+                    control={control}
                     handleRemoveItem={handleRemoveItem}
                 />
 
@@ -101,9 +102,9 @@ function EstimateNewPageInner() {
                 <EstimateTotals totals={totals} />
 
                 {/* その他項目 */}
-                <div style={{ marginBottom: '2rem' }}>
-                    <h3 style={{ marginBottom: '1rem' }}>その他</h3>
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '1rem' }}>
+                <div className="mb-8">
+                    <h3 className="mb-4">その他</h3>
+                    <div className="grid grid-cols-2 gap-4">
                         <FormSelect
                             name="cremationProcessType"
                             control={control}
@@ -128,32 +129,20 @@ function EstimateNewPageInner() {
                 </div>
 
                 {/* 操作ボタン */}
-                <div style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end' }}>
+                <div className="flex justify-end gap-4">
                     <button
                         type="button"
                         onClick={() => router.back()}
-                        style={{
-                            padding: '0.75rem 1.5rem',
-                            backgroundColor: '#6c757d',
-                            color: 'white',
-                            border: 'none',
-                            borderRadius: '4px',
-                            cursor: 'pointer',
-                        }}
+                        className="cursor-pointer rounded border-0 bg-gray-500 px-6 py-3 text-white"
                     >
                         閉じる
                     </button>
                     <button
                         type="submit"
                         disabled={isSubmitting}
-                        style={{
-                            padding: '0.75rem 1.5rem',
-                            backgroundColor: isSubmitting ? '#ccc' : '#28a745',
-                            color: 'white',
-                            border: 'none',
-                            borderRadius: '4px',
-                            cursor: isSubmitting ? 'not-allowed' : 'pointer',
-                        }}
+                        className={`rounded border-0 px-6 py-3 text-white ${
+                            isSubmitting ? 'cursor-not-allowed bg-gray-300' : 'cursor-pointer bg-green-600'
+                        }`}
                     >
                         {isSubmitting ? '保存中...' : '登録'}
                     </button>

@@ -30,16 +30,9 @@ export function EstimateProductSearch({
     items,
 }: Props) {
     return (
-        <div
-            style={{
-                backgroundColor: '#f9f9f9',
-                padding: '1.5rem',
-                borderRadius: '8px',
-                marginBottom: '2rem',
-            }}
-        >
-            <h3 style={{ marginBottom: '1rem' }}>品目追加</h3>
-            <div style={{ display: 'flex', gap: '1rem', marginBottom: '1rem', flexWrap: 'wrap' }}>
+        <div className="mb-8 rounded-lg bg-gray-50 p-6">
+            <h3 className="mb-4">品目追加</h3>
+            <div className="mb-4 flex flex-wrap gap-4">
                 <input
                     type="text"
                     placeholder="品目名で検索"
@@ -51,33 +44,20 @@ export function EstimateProductSearch({
                             handleSearchProducts()
                         }
                     }}
-                    style={{
-                        flex: 1,
-                        minWidth: '200px',
-                        padding: '0.5rem',
-                        border: '1px solid #ddd',
-                        borderRadius: '4px',
-                    }}
+                    className="min-w-[200px] flex-1 rounded border border-gray-300 p-2"
                 />
                 <button
                     type="button"
                     onClick={handleSearchProducts}
-                    style={{
-                        padding: '0.5rem 1rem',
-                        backgroundColor: '#0070f3',
-                        color: 'white',
-                        border: 'none',
-                        borderRadius: '4px',
-                        cursor: 'pointer',
-                    }}
+                    className="cursor-pointer rounded border-0 bg-blue-600 px-4 py-2 text-white"
                 >
                     検索
                 </button>
             </div>
 
             {products.length > 0 && (
-                <div style={{ marginBottom: '1rem' }}>
-                    <label style={{ display: 'block', marginBottom: '0.5rem' }}>品目選択</label>
+                <div className="mb-4">
+                    <label className="mb-2 block">品目選択</label>
                     <Select
                         value={selectedProduct?.id ?? ''}
                         onValueChange={(id) => {
@@ -104,8 +84,8 @@ export function EstimateProductSearch({
             )}
 
             {selectedProduct && selectedProduct.variants.length > 0 && (
-                <div style={{ marginBottom: '1rem' }}>
-                    <label style={{ display: 'block', marginBottom: '0.5rem' }}>種類選択</label>
+                <div className="mb-4">
+                    <label className="mb-2 block">種類選択</label>
                     <Select
                         value={selectedVariant?.id ?? ''}
                         onValueChange={(id) => {
@@ -132,14 +112,7 @@ export function EstimateProductSearch({
                 <button
                     type="button"
                     onClick={handleAddItem}
-                    style={{
-                        padding: '0.5rem 1rem',
-                        backgroundColor: '#28a745',
-                        color: 'white',
-                        border: 'none',
-                        borderRadius: '4px',
-                        cursor: 'pointer',
-                    }}
+                    className="cursor-pointer rounded border-0 bg-green-600 px-4 py-2 text-white"
                 >
                     ＋ 明細行追加
                 </button>

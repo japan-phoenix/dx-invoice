@@ -1,101 +1,74 @@
 'use client'
 
+import { Control, FieldArrayWithId } from 'react-hook-form'
 import { EstimateItem } from '@/lib/estimates'
+import { EstimateFormData } from '../schemas/EstimateFormSchema'
+import { FormInput } from '@/components/form/FormInput'
+import { FormTextarea } from '@/components/form/FormTextarea'
 
 type Props = {
     items: EstimateItem[]
-    handleUpdateItem: (index: number, field: 'qty' | 'description', value: string) => void
+    fields: FieldArrayWithId<EstimateFormData, 'items', 'id'>[]
+    control: Control<EstimateFormData>
     handleRemoveItem: (index: number) => void
 }
 
-export function EstimateItemTable({ items, handleUpdateItem, handleRemoveItem }: Props) {
+export function EstimateItemTable({ items, fields, control, handleRemoveItem }: Props) {
     return (
-        <div style={{ marginBottom: '2rem' }}>
-            <h3 style={{ marginBottom: '1rem' }}>明細</h3>
-            <table style={{ width: '100%', borderCollapse: 'collapse', backgroundColor: 'white' }}>
+        <div className="mb-8">
+            <h3 className="mb-4">明細</h3>
+            <table className="w-full border-collapse bg-white">
                 <thead>
-                    <tr style={{ backgroundColor: '#f5f5f5' }}>
-                        <th style={{ padding: '0.75rem', border: '1px solid #ddd', textAlign: 'left' }}>品目</th>
-                        <th style={{ padding: '0.75rem', border: '1px solid #ddd', textAlign: 'left' }}>種類</th>
-                        <th style={{ padding: '0.75rem', border: '1px solid #ddd', textAlign: 'left' }}>摘要</th>
-                        <th style={{ padding: '0.75rem', border: '1px solid #ddd', textAlign: 'right' }}>一般単価</th>
-                        <th style={{ padding: '0.75rem', border: '1px solid #ddd', textAlign: 'right' }}>会員単価</th>
-                        <th style={{ padding: '0.75rem', border: '1px solid #ddd', textAlign: 'right' }}>個数</th>
-                        <th style={{ padding: '0.75rem', border: '1px solid #ddd', textAlign: 'right' }}>金額</th>
-                        <th style={{ padding: '0.75rem', border: '1px solid #ddd', textAlign: 'center' }}>操作</th>
+                    <tr className="bg-gray-100">
+                        <th className="w-32 border border-gray-300 p-3 text-left">品目</th>
+                        <th className="border border-gray-300 p-3 text-left">摘要</th>
+                        <th className="w-24 border border-gray-300 p-3 text-right">個数</th>
+                        <th className="w-32 border border-gray-300 p-3 text-right">金額</th>
+                        <th className="w-16 border border-gray-300 p-3 text-center">操作</th>
                     </tr>
                 </thead>
                 <tbody>
-                    {items.length === 0 ? (
+                    {fields.length === 0 ? (
                         <tr>
-                            <td colSpan={8} style={{ padding: '2rem', textAlign: 'center', color: '#666' }}>
+                            <td colSpan={5} className="p-8 text-center text-gray-500">
                                 明細がありません
                             </td>
                         </tr>
                     ) : (
-                        items.map((item, index) => (
-                            <tr key={index}>
-                                <td style={{ padding: '0.75rem', border: '1px solid #ddd' }}>
-                                    {item.productItem?.name ?? '-'}
-                                </td>
-                                <td style={{ padding: '0.75rem', border: '1px solid #ddd' }}>
-                                    {item.productVariant?.name ?? '-'}
-                                </td>
-                                <td style={{ padding: '0.75rem', border: '1px solid #ddd' }}>
-                                    <input
-                                        type="text"
-                                        value={item.description || ''}
-                                        onChange={(e) => handleUpdateItem(index, 'description', e.target.value)}
-                                        style={{
-                                            width: '100%',
-                                            padding: '0.25rem',
-                                            border: '1px solid #ddd',
-                                            borderRadius: '4px',
-                                        }}
-                                    />
-                                </td>
-                                <td style={{ padding: '0.75rem', border: '1px solid #ddd', textAlign: 'right' }}>
-                                    ¥{item.unitPriceGeneral.toLocaleString()}
-                                </td>
-                                <td style={{ padding: '0.75rem', border: '1px solid #ddd', textAlign: 'right' }}>
-                                    ¥{item.unitPriceMember.toLocaleString()}
-                                </td>
-                                <td style={{ padding: '0.75rem', border: '1px solid #ddd' }}>
-                                    <input
-                                        type="number"
-                                        value={item.qty}
-                                        onChange={(e) => handleUpdateItem(index, 'qty', e.target.value)}
-                                        min={0}
-                                        style={{
-                                            width: '80px',
-                                            padding: '0.25rem',
-                                            border: '1px solid #ddd',
-                                            borderRadius: '4px',
-                                            textAlign: 'right',
-                                        }}
-                                    />
-                                </td>
-                                <td style={{ padding: '0.75rem', border: '1px solid #ddd', textAlign: 'right' }}>
-                                    ¥{item.amount.toLocaleString()}
-                                </td>
-                                <td style={{ padding: '0.75rem', border: '1px solid #ddd', textAlign: 'center' }}>
-                                    <button
-                                        type="button"
-                                        onClick={() => handleRemoveItem(index)}
-                                        style={{
-                                            padding: '0.25rem 0.5rem',
-                                            backgroundColor: '#dc3545',
-                                            color: 'white',
-                                            border: 'none',
-                                            borderRadius: '4px',
-                                            cursor: 'pointer',
-                                        }}
-                                    >
-                                        削除
-                                    </button>
-                                </td>
-                            </tr>
-                        ))
+                        fields.map((field, index) => {
+                            const item = items[index]
+                            const amount = item != null ? item.unitPriceGeneral * (field.qty ?? item.qty) : 0
+                            return (
+                                <tr key={field.id}>
+                                    <td className="border border-gray-300 p-3">{item?.productItem?.name ?? '-'}</td>
+                                    <td className="border border-gray-300 p-3">
+                                        <FormTextarea
+                                            name={`items.${index}.description`}
+                                            control={control}
+                                            rows={2}
+                                            noResize
+                                            maxRows={2}
+                                        />
+                                    </td>
+                                    <td className="border border-gray-300 p-3">
+                                        <FormInput name={`items.${index}.qty`} control={control} type="number" />
+                                    </td>
+                                    <td className="border border-gray-300 p-3 text-right">
+                                        ¥{amount.toLocaleString()}
+                                    </td>
+                                    <td className="border border-gray-300 p-3 text-center">
+                                        <button
+                                            type="button"
+                                            onClick={() => handleRemoveItem(index)}
+                                            className="cursor-pointer rounded border-0 bg-transparent p-1 text-red-600"
+                                            title="削除"
+                                        >
+                                            <span className="material-symbols-outlined text-3xl">delete_forever</span>
+                                        </button>
+                                    </td>
+                                </tr>
+                            )
+                        })
                     )}
                 </tbody>
             </table>

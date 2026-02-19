@@ -10,6 +10,8 @@ interface TextareaUIProps {
     error?: string
     required?: boolean
     disabled?: boolean
+    noResize?: boolean
+    maxRows?: number
 }
 
 export function TextareaUI({
@@ -22,7 +24,18 @@ export function TextareaUI({
     error,
     required,
     disabled,
+    noResize,
+    maxRows,
 }: TextareaUIProps) {
+    const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+        if (maxRows !== undefined && e.key === 'Enter') {
+            const currentLines = (e.currentTarget.value.match(/\n/g) ?? []).length + 1
+            if (currentLines >= maxRows) {
+                e.preventDefault()
+            }
+        }
+    }
+
     return (
         <div>
             {label && (
@@ -35,6 +48,7 @@ export function TextareaUI({
                 value={value}
                 onChange={(e) => onChange(e.target.value)}
                 onBlur={onBlur}
+                onKeyDown={handleKeyDown}
                 placeholder={placeholder}
                 rows={rows}
                 style={{
@@ -46,6 +60,7 @@ export function TextareaUI({
                     fontFamily: 'inherit',
                     backgroundColor: disabled ? '#f5f5f5' : 'white',
                     cursor: disabled ? 'not-allowed' : 'text',
+                    resize: noResize ? 'none' : undefined,
                 }}
                 disabled={disabled}
             />

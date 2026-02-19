@@ -5,7 +5,7 @@ import { getEstimate, createEstimate, updateEstimate, Estimate, EstimateItem } f
 import { getCustomer } from '@/lib/customers'
 import { getProducts, ProductItem, ProductVariant } from '@/lib/products'
 import { toast } from '@/hooks/use-toast'
-import { EstimateFormData } from '../schemas/EstimateFormSchema'
+import { EstimateFormData, EstimateItemField } from '../schemas/EstimateFormSchema'
 
 const sortByProductItemId = (arr: EstimateItem[]): EstimateItem[] =>
     arr.slice().sort((a, b) => {
@@ -48,12 +48,14 @@ export function useEstimateCreate(customerId: string, reset: UseFormReset<Estima
 
     const onSubmit = async (formValues: EstimateFormData) => {
         try {
-            const totals = calculateTotals(items, customer)
-            const data = {
-                ...formValues,
-                ...totals,
-                items: items.map((item, index) => ({ ...item, sortNo: index })),
-            }
+            const mergedItems = items.map((item, i) => {
+                const qty = formValues.items[i]?.qty ?? item.qty
+                const description = formValues.items[i]?.description ?? item.description ?? ''
+                const amount = item.unitPriceGeneral * qty
+                return { ...item, qty, description, amount, sortNo: i }
+            })
+            const totals = calculateTotals(items, formValues.items, customer)
+            const data = { ...formValues, ...totals, items: mergedItems }
             const created = await createEstimate(customerId, data)
             toast({ title: '登録しました', variant: 'success', duration: 2000 })
             router.push(`/estimates/${created.id}`)
@@ -97,6 +99,10 @@ export function useEstimateEdit(estimateId: string, reset: UseFormReset<Estimate
                 transportStaff: (estimateData as any).transportStaff || '',
                 decorationStaff: (estimateData as any).decorationStaff || '',
                 returnStaff: (estimateData as any).returnStaff || '',
+                items: sortedItems.map((item) => ({
+                    qty: item.qty,
+                    description: item.description || '',
+                })),
             })
         } catch (error) {
             console.error('Failed to load estimate:', error)
@@ -119,12 +125,14 @@ export function useEstimateEdit(estimateId: string, reset: UseFormReset<Estimate
 
     const onSubmit = async (formValues: EstimateFormData) => {
         try {
-            const totals = calculateTotals(items, customer)
-            const data = {
-                ...formValues,
-                ...totals,
-                items: items.map((item, index) => ({ ...item, sortNo: index })),
-            }
+            const mergedItems = items.map((item, i) => {
+                const qty = formValues.items[i]?.qty ?? item.qty
+                const description = formValues.items[i]?.description ?? item.description ?? ''
+                const amount = item.unitPriceGeneral * qty
+                return { ...item, qty, description, amount, sortNo: i }
+            })
+            const totals = calculateTotals(items, formValues.items, customer)
+            const data = { ...formValues, ...totals, items: mergedItems }
             await updateEstimate(estimateId, data)
             toast({ title: '更新しました', variant: 'success', duration: 2000 })
             await loadData()
@@ -142,7 +150,8 @@ export function useEstimateEdit(estimateId: string, reset: UseFormReset<Estimate
 // -------------------------------------------------------
 export function useProductSearch(
     items: EstimateItem[],
-    setItems: React.Dispatch<React.SetStateAction<EstimateItem[]>>
+    setItems: React.Dispatch<React.SetStateAction<EstimateItem[]>>,
+    appendItemField: (val: { qty: number; description: string }) => void
 ) {
     const [products, setProducts] = useState<ProductItem[]>([])
     const [searchProductName, setSearchProductName] = useState('')
@@ -184,6 +193,7 @@ export function useProductSearch(
         }
 
         setItems((prev) => sortByProductItemId([...prev, newItem]))
+        appendItemField({ qty: 1, description: '' })
         setSelectedProduct(null)
         setSelectedVariant(null)
         setSearchProductName('')
@@ -208,35 +218,25 @@ export function useProductSearch(
 // -------------------------------------------------------
 export function useEstimateItems(
     items: EstimateItem[],
-    setItems: React.Dispatch<React.SetStateAction<EstimateItem[]>>
+    setItems: React.Dispatch<React.SetStateAction<EstimateItem[]>>,
+    removeItemField: (index: number) => void
 ) {
-    const handleUpdateItem = (index: number, field: 'qty' | 'description', value: string) => {
-        setItems((prev) => {
-            const next = [...prev]
-            const item = { ...next[index] }
-            if (field === 'qty') {
-                item.qty = parseInt(value) || 0
-                item.amount = item.unitPriceGeneral * item.qty
-            } else {
-                item.description = value
-            }
-            next[index] = item
-            return next
-        })
-    }
-
     const handleRemoveItem = (index: number) => {
         setItems((prev) => prev.filter((_, i) => i !== index))
+        removeItemField(index)
     }
 
-    return { handleUpdateItem, handleRemoveItem }
+    return { handleRemoveItem }
 }
 
 // -------------------------------------------------------
 // 合計計算ユーティリティ
 // -------------------------------------------------------
-export function calculateTotals(items: EstimateItem[], customer: any) {
-    const subtotal = items.reduce((sum, item) => sum + item.amount, 0)
+export function calculateTotals(items: EstimateItem[], itemFields: EstimateItemField[] | undefined, customer: any) {
+    const subtotal = items.reduce((sum, item, i) => {
+        const qty = itemFields?.[i]?.qty ?? item.qty
+        return sum + item.unitPriceGeneral * qty
+    }, 0)
     const tax = Math.round(subtotal * 0.1)
     const total = subtotal + tax
     const membershipPaidAmount =

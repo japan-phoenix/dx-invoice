@@ -3,6 +3,8 @@ import { useFormContext } from 'react-hook-form'
 import { CaseFormData } from '../schemas/CaseFormSchema'
 import { FormInput } from '@/components/form/FormInput'
 import { FormTextarea } from '@/components/form/FormTextarea'
+import { FormAutocomplete } from '@/components/form/FormAutocomplete'
+import { PICKUP_PLACE_OPTIONS } from '../constants/casesOptions'
 
 export function FuneralTab() {
     const {
@@ -12,12 +14,13 @@ export function FuneralTab() {
 
     return (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '1rem' }}>
-            {/* 迎送場所 */}
+            {/* 引取場所 */}
             <div style={{ gridColumn: '1 / -1' }}>
-                <FormInput<CaseFormData>
+                <FormAutocomplete<CaseFormData>
                     name="pickupPlace"
                     control={control}
-                    label="迎送場所"
+                    label="引取場所"
+                    options={[...PICKUP_PLACE_OPTIONS]}
                     error={errors.pickupPlace}
                 />
             </div>
@@ -77,28 +80,28 @@ export function FuneralTab() {
                 error={errors.funeralPlace}
             />
 
-            {/* 火葬場到着日時 */}
+            {/* 引上日時 */}
             <FormInput<CaseFormData>
                 name="returnAt"
                 control={control}
-                label="火葬場到着日時"
+                label="引上日時"
                 type="datetime-local"
                 error={errors.returnAt}
             />
 
-            {/* 火葬場 */}
-            <FormInput<CaseFormData> name="returnPlace" control={control} label="火葬場" error={errors.returnPlace} />
+            {/* 引上場所 */}
+            <FormInput<CaseFormData> name="returnPlace" control={control} label="引上場所" error={errors.returnPlace} />
 
             {/* 備考 */}
             <div style={{ gridColumn: '1 / -1' }}>
                 <FormTextarea<CaseFormData> name="notes" control={control} label="備考" rows={4} error={errors.notes} />
             </div>
 
-            {/* 会員カードメモ */}
+            {/* 会員証 */}
             <FormInput<CaseFormData>
                 name="memberCardNote"
                 control={control}
-                label="会員カードメモ"
+                label="会員証"
                 error={errors.memberCardNote}
             />
         </div>

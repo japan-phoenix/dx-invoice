@@ -12,6 +12,10 @@ interface InputUIProps {
     prefix?: React.ReactNode
     suffix?: React.ReactNode
     disabled?: boolean
+    min?: number | string
+    max?: number | string
+    minYear?: number
+    maxYear?: number
 }
 
 export function InputUI({
@@ -26,8 +30,28 @@ export function InputUI({
     prefix,
     suffix,
     disabled,
+    min,
+    max,
+    minYear,
+    maxYear,
 }: InputUIProps) {
-    const maxValue = type === 'datetime-local' ? '9999-12-31T23:59' : type === 'date' ? '9999-12-31' : undefined
+    const isDateType = type === 'date' || type === 'datetime-local'
+    const minValue =
+        min !== undefined
+            ? min
+            : minYear !== undefined && isDateType
+              ? `${minYear}-01-01${type === 'datetime-local' ? 'T00:00' : ''}`
+              : undefined
+    const maxValue =
+        max !== undefined
+            ? max
+            : maxYear !== undefined && isDateType
+              ? `${maxYear}-12-31${type === 'datetime-local' ? 'T23:59' : ''}`
+              : type === 'datetime-local'
+                ? '9999-12-31T23:59'
+                : type === 'date'
+                  ? '9999-12-31'
+                  : undefined
 
     return (
         <div>
@@ -44,6 +68,7 @@ export function InputUI({
                     onChange={(e) => onChange(e.target.value)}
                     onBlur={onBlur}
                     type={type}
+                    min={minValue}
                     max={maxValue}
                     placeholder={placeholder}
                     disabled={disabled}

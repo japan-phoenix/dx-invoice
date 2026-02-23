@@ -31,7 +31,7 @@ export function FormTextarea<T extends FieldValues>({
         <Controller
             name={name}
             control={control}
-            render={({ field }) => (
+            render={({ field, fieldState }) => (
                 <TextareaUI
                     value={field.value || ''}
                     onChange={field.onChange}
@@ -39,7 +39,7 @@ export function FormTextarea<T extends FieldValues>({
                     label={label}
                     placeholder={placeholder}
                     rows={rows}
-                    error={error?.message as string}
+                    error={(error?.message ?? fieldState.error?.message) as string}
                     required={required}
                     disabled={disabled}
                     noResize={noResize}

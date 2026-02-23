@@ -13,6 +13,10 @@ interface FormInputProps<T extends FieldValues> {
     prefix?: React.ReactNode
     suffix?: React.ReactNode
     disabled?: boolean
+    min?: number | string
+    max?: number | string
+    minYear?: number
+    maxYear?: number
 }
 
 export function FormInput<T extends FieldValues>({
@@ -26,6 +30,10 @@ export function FormInput<T extends FieldValues>({
     prefix,
     suffix,
     disabled,
+    min,
+    max,
+    minYear,
+    maxYear,
 }: FormInputProps<T>) {
     const errorMessage = error && 'message' in error ? (error.message as string) : undefined
 
@@ -33,7 +41,7 @@ export function FormInput<T extends FieldValues>({
         <Controller
             name={name}
             control={control}
-            render={({ field }) => (
+            render={({ field, fieldState }) => (
                 <InputUI
                     value={field.value || ''}
                     onChange={field.onChange}
@@ -41,11 +49,15 @@ export function FormInput<T extends FieldValues>({
                     label={label}
                     placeholder={placeholder}
                     type={type}
-                    error={errorMessage}
+                    error={errorMessage ?? fieldState.error?.message}
                     required={required}
                     prefix={prefix}
                     suffix={suffix}
                     disabled={disabled}
+                    min={min}
+                    max={max}
+                    minYear={minYear}
+                    maxYear={maxYear}
                 />
             )}
         />

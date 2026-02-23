@@ -44,6 +44,8 @@ export function MembershipTab() {
                             control={control}
                             label="加入日"
                             type="date"
+                            minYear={1950}
+                            maxYear={new Date().getFullYear()}
                             error={errors.memberships?.[index]?.joinedAt}
                         />
 

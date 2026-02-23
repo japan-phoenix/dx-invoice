@@ -6,6 +6,7 @@ import { getCustomer } from '@/lib/customers'
 import { getProducts, ProductItem, ProductVariant } from '@/lib/products'
 import { toast } from '@/hooks/use-toast'
 import { EstimateFormData, EstimateItemField } from '../schemas/EstimateFormSchema'
+import { DEFAULT_DESCRIPTION_MAP } from '../constants/estimateOptions'
 
 const sortByProductItemId = (arr: EstimateItem[]): EstimateItem[] =>
     arr.slice().sort((a, b) => {
@@ -48,10 +49,12 @@ export function useEstimateCreate(customerId: string, reset: UseFormReset<Estima
 
     const onSubmit = async (formValues: EstimateFormData) => {
         try {
+            const isMember = Boolean(customer?.memberCardNote)
             const mergedItems = items.map((item, i) => {
                 const qty = formValues.items[i]?.qty ?? item.qty
                 const description = formValues.items[i]?.description ?? item.description ?? ''
-                const amount = item.unitPriceGeneral * qty
+                const unitPrice = isMember ? item.unitPriceMember : item.unitPriceGeneral
+                const amount = unitPrice * qty
                 return { ...item, qty, description, amount, sortNo: i }
             })
             const totals = calculateTotals(items, formValues.items, customer)
@@ -93,6 +96,7 @@ export function useEstimateEdit(estimateId: string, reset: UseFormReset<Estimate
                 status: estimateData.status || 'DRAFT',
                 cremationProcessType: (estimateData as any).cremationProcessType || '',
                 altarPlaceType: (estimateData as any).altarPlaceType || '',
+                altarPlaceOther: (estimateData as any).altarPlaceOther || '',
                 ceilingHeight: (estimateData as any).ceilingHeight || '',
                 estimateStaff: (estimateData as any).estimateStaff || '',
                 ceremonyStaff: (estimateData as any).ceremonyStaff || '',
@@ -125,10 +129,12 @@ export function useEstimateEdit(estimateId: string, reset: UseFormReset<Estimate
 
     const onSubmit = async (formValues: EstimateFormData) => {
         try {
+            const isMember = Boolean(customer?.memberCardNote)
             const mergedItems = items.map((item, i) => {
                 const qty = formValues.items[i]?.qty ?? item.qty
                 const description = formValues.items[i]?.description ?? item.description ?? ''
-                const amount = item.unitPriceGeneral * qty
+                const unitPrice = isMember ? item.unitPriceMember : item.unitPriceGeneral
+                const amount = unitPrice * qty
                 return { ...item, qty, description, amount, sortNo: i }
             })
             const totals = calculateTotals(items, formValues.items, customer)
@@ -151,7 +157,8 @@ export function useEstimateEdit(estimateId: string, reset: UseFormReset<Estimate
 export function useProductSearch(
     items: EstimateItem[],
     setItems: React.Dispatch<React.SetStateAction<EstimateItem[]>>,
-    appendItemField: (val: { qty: number; description: string }) => void
+    appendItemField: (val: { qty: number; description: string }) => void,
+    moveItemField: (from: number, to: number) => void
 ) {
     const [products, setProducts] = useState<ProductItem[]>([])
     const [searchProductName, setSearchProductName] = useState('')
@@ -179,10 +186,12 @@ export function useProductSearch(
             return
         }
 
+        const defaultDescription = DEFAULT_DESCRIPTION_MAP[selectedProduct.name] ?? ''
+
         const newItem: EstimateItem = {
             productItemId: selectedProduct.id,
             productVariantId: selectedVariant.id,
-            description: '',
+            description: defaultDescription,
             unitPriceGeneral: selectedVariant.priceGeneral,
             unitPriceMember: selectedVariant.priceMember,
             qty: 1,
@@ -192,8 +201,16 @@ export function useProductSearch(
             productVariant: selectedVariant,
         }
 
-        setItems((prev) => sortByProductItemId([...prev, newItem]))
-        appendItemField({ qty: 1, description: '' })
+        const sortedItems = sortByProductItemId([...items, newItem])
+        const oldIndex = items.length
+        const newIndex = sortedItems.findIndex(
+            (item) => item.productItemId === newItem.productItemId && item.productVariantId === newItem.productVariantId
+        )
+        setItems(sortedItems)
+        appendItemField({ qty: 1, description: defaultDescription })
+        if (newIndex !== oldIndex) {
+            moveItemField(oldIndex, newIndex)
+        }
         setSelectedProduct(null)
         setSelectedVariant(null)
         setSearchProductName('')
@@ -233,9 +250,11 @@ export function useEstimateItems(
 // 合計計算ユーティリティ
 // -------------------------------------------------------
 export function calculateTotals(items: EstimateItem[], itemFields: EstimateItemField[] | undefined, customer: any) {
+    const isMember = Boolean(customer?.memberCardNote)
     const subtotal = items.reduce((sum, item, i) => {
         const qty = itemFields?.[i]?.qty ?? item.qty
-        return sum + item.unitPriceGeneral * qty
+        const unitPrice = isMember ? item.unitPriceMember : item.unitPriceGeneral
+        return sum + unitPrice * qty
     }, 0)
     const tax = Math.round(subtotal * 0.1)
     const total = subtotal + tax

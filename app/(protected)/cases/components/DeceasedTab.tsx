@@ -71,6 +71,8 @@ export function DeceasedTab({ cities, towns, onCityChange }: DeceasedTabProps) {
                 control={control}
                 label="受付日"
                 type="datetime-local"
+                minYear={1950}
+                maxYear={new Date().getFullYear()}
                 error={errors.receptionAt}
             />
 
@@ -122,6 +124,8 @@ export function DeceasedTab({ cities, towns, onCityChange }: DeceasedTabProps) {
                 type="number"
                 prefix="満"
                 suffix="歳"
+                min={0}
+                max={999}
                 error={errors.age}
             />
 

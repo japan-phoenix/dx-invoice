@@ -148,7 +148,7 @@ export async function PUT(request: NextRequest, props: { params: Promise<{ id: s
                 ? data.cremationProcessType
                 : null
 
-        const validAltarPlaceTypes = ['HOME', 'FUNERAL_HALL'] as const
+        const validAltarPlaceTypes = ['HOME', 'FUNERAL_HALL', 'OTHER'] as const
         const altarPlaceType =
             data.altarPlaceType && validAltarPlaceTypes.includes(data.altarPlaceType as any)
                 ? data.altarPlaceType
@@ -172,6 +172,7 @@ export async function PUT(request: NextRequest, props: { params: Promise<{ id: s
                 grandTotal: totals.grandTotal,
                 cremationProcessType,
                 altarPlaceType,
+                altarPlaceOther: data.altarPlaceOther || null,
                 ceilingHeight: data.ceilingHeight || null,
                 estimateStaff: data.estimateStaff || null,
                 ceremonyStaff: data.ceremonyStaff || null,

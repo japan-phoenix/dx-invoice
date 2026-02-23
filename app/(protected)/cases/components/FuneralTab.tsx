@@ -31,6 +31,8 @@ export function FuneralTab() {
                 control={control}
                 label="通夜日時"
                 type="datetime-local"
+                minYear={1950}
+                maxYear={new Date().getFullYear()}
                 error={errors.wakeAt}
             />
 
@@ -43,6 +45,8 @@ export function FuneralTab() {
                 control={control}
                 label="国への出棺日時"
                 type="datetime-local"
+                minYear={1950}
+                maxYear={new Date().getFullYear()}
                 error={errors.departureAt}
             />
 
@@ -60,6 +64,8 @@ export function FuneralTab() {
                 control={control}
                 label="葬儀・告別式開始日時"
                 type="datetime-local"
+                minYear={1950}
+                maxYear={new Date().getFullYear()}
                 error={errors.funeralFrom}
             />
 
@@ -69,6 +75,8 @@ export function FuneralTab() {
                 control={control}
                 label="葬儀・告別式終了日時"
                 type="datetime-local"
+                minYear={1950}
+                maxYear={new Date().getFullYear()}
                 error={errors.funeralTo}
             />
 

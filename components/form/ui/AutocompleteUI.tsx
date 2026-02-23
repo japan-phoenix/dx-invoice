@@ -65,7 +65,7 @@ export function AutocompleteUI({
                         onFocus={() => setOpen(filteredOptions.length > 0)}
                         onClick={() => setOpen(filteredOptions.length > 0)}
                         className={cn(
-                            'h-auto w-full rounded border px-3 py-2 text-left text-base shadow-none focus-visible:outline-none focus-visible:ring-0 focus-visible:ring-offset-0',
+                            'h-auto w-full rounded border px-3 py-2 text-left text-base shadow-none focus-visible:outline-none focus-visible:ring-0 focus-visible:ring-offset-0 md:text-base',
                             error ? 'border-red-500' : 'border-gray-300',
                             disabled ? 'cursor-not-allowed bg-gray-100 opacity-60' : ''
                         )}
@@ -85,7 +85,7 @@ export function AutocompleteUI({
                                         <CommandItem
                                             key={option}
                                             value={option}
-                                            className="justify-start text-left"
+                                            className="justify-start text-left md:text-base"
                                             onSelect={(selectedValue) => {
                                                 setInputValue(selectedValue)
                                                 onChange(selectedValue)

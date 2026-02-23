@@ -1,6 +1,6 @@
 'use client'
 
-import { Control, FieldArrayWithId } from 'react-hook-form'
+import { Control, FieldArrayWithId, useWatch } from 'react-hook-form'
 import { EstimateItem } from '@/lib/estimates'
 import { EstimateFormData } from '../schemas/EstimateFormSchema'
 import { FormInput } from '@/components/form/FormInput'
@@ -11,9 +11,12 @@ type Props = {
     fields: FieldArrayWithId<EstimateFormData, 'items', 'id'>[]
     control: Control<EstimateFormData>
     handleRemoveItem: (index: number) => void
+    customer: any
 }
 
-export function EstimateItemTable({ items, fields, control, handleRemoveItem }: Props) {
+export function EstimateItemTable({ items, fields, control, handleRemoveItem, customer }: Props) {
+    const isMember = Boolean(customer?.memberCardNote)
+    const watchedItems = useWatch({ control, name: 'items' })
     return (
         <div className="mb-8">
             <h3 className="mb-4">明細</h3>
@@ -22,8 +25,10 @@ export function EstimateItemTable({ items, fields, control, handleRemoveItem }: 
                     <tr className="bg-gray-100">
                         <th className="w-32 border border-gray-300 p-3 text-left">品目</th>
                         <th className="border border-gray-300 p-3 text-left">摘要</th>
-                        <th className="w-24 border border-gray-300 p-3 text-right">個数</th>
-                        <th className="w-32 border border-gray-300 p-3 text-right">金額</th>
+                        <th className="w-24 border border-gray-300 p-3 text-right">数量</th>
+                        <th className="w-32 border border-gray-300 p-3 text-right">
+                            {isMember ? '会員価格' : '一般価格'}
+                        </th>
                         <th className="w-16 border border-gray-300 p-3 text-center">操作</th>
                     </tr>
                 </thead>
@@ -37,7 +42,10 @@ export function EstimateItemTable({ items, fields, control, handleRemoveItem }: 
                     ) : (
                         fields.map((field, index) => {
                             const item = items[index]
-                            const amount = item != null ? item.unitPriceGeneral * (field.qty ?? item.qty) : 0
+                            const unitPrice =
+                                item != null ? (isMember ? item.unitPriceMember : item.unitPriceGeneral) : 0
+                            const liveQty = watchedItems?.[index]?.qty ?? item?.qty ?? 0
+                            const amount = unitPrice * liveQty
                             return (
                                 <tr key={field.id}>
                                     <td className="border border-gray-300 p-3">{item?.productItem?.name ?? '-'}</td>

@@ -12,6 +12,7 @@ import { EstimateItemTable } from '../components/EstimateItemTable'
 import { EstimateTotals } from '../components/EstimateTotals'
 import { FormInput } from '@/components/form/FormInput'
 import { FormSelect } from '@/components/form/FormSelect'
+import { toast } from '@/hooks/use-toast'
 
 function EstimateNewPageInner() {
     const router = useRouter()
@@ -27,17 +28,18 @@ function EstimateNewPageInner() {
         handleSubmit,
         reset,
         watch,
-        formState: { isSubmitting },
+        formState: { isSubmitting, errors },
     } = methods
 
     const {
         fields: itemFields,
         append: appendItemField,
         remove: removeItemField,
+        move: moveItemField,
     } = useFieldArray({ control, name: 'items' })
 
     const { loading, customer, items, setItems, onSubmit } = useEstimateCreate(customerId, reset)
-    const productSearchProps = useProductSearch(items, setItems, appendItemField)
+    const productSearchProps = useProductSearch(items, setItems, appendItemField, moveItemField)
     const { handleRemoveItem } = useEstimateItems(items, setItems, removeItemField)
 
     if (loading) {
@@ -50,10 +52,30 @@ function EstimateNewPageInner() {
 
     const totals = calculateTotals(items, watch('items'), customer)
 
+    const onInvalid = (errs: any) => {
+        const itemsError = errs?.items?.root?.message ?? errs?.items?.message
+        if (itemsError) {
+            toast({ title: itemsError, variant: 'destructive', duration: 3000 })
+            return
+        }
+        const first = Object.values(errs as Record<string, any>).find((e) => e?.message)
+        if (first?.message) {
+            toast({ title: first.message, variant: 'destructive', duration: 3000 })
+        }
+    }
+
     return (
         <FormProvider {...methods}>
-            <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col p-8">
+            <form onSubmit={handleSubmit(onSubmit, onInvalid)} className="flex flex-col p-8">
                 <h1 className="mb-8 text-2xl font-bold">見積書 作成</h1>
+
+                {/* 基本情報 */}
+                <div className="mb-8">
+                    <h3 className="mb-4">基本情報</h3>
+                    <div className="grid grid-cols-2 gap-4">
+                        <FormInput name="docNo" control={control} label="見積番号" placeholder="例: EST-0001" />
+                    </div>
+                </div>
 
                 {/* 顧客情報サマリー */}
                 <div className="mb-8 rounded-lg bg-gray-100 p-4">
@@ -70,32 +92,28 @@ function EstimateNewPageInner() {
                     <p>
                         <strong>住所:</strong> {customer.chiefMournerAddress}
                     </p>
-                </div>
-
-                {/* 基本情報 */}
-                <div className="mb-8">
-                    <h3 className="mb-4">基本情報</h3>
-                    <div className="grid grid-cols-2 gap-4">
-                        <FormInput name="docNo" control={control} label="見積番号" placeholder="例: EST-0001" />
-                        <FormSelect
-                            name="status"
-                            control={control}
-                            label="ステータス"
-                            options={STATUS_OPTIONS}
-                            placeholder="選択してください"
-                        />
-                    </div>
+                    {customer.memberCardNote && (
+                        <p>
+                            <strong>会員証:</strong> {customer.memberCardNote}
+                        </p>
+                    )}
                 </div>
 
                 {/* 品目検索・追加 */}
                 <EstimateProductSearch {...productSearchProps} items={items} />
 
                 {/* 明細一覧 */}
+                {(errors.items?.root?.message ?? (errors.items as any)?.message) && (
+                    <p className="-mt-4 mb-4 text-sm text-red-600">
+                        {errors.items?.root?.message ?? (errors.items as any)?.message}
+                    </p>
+                )}
                 <EstimateItemTable
                     items={items}
                     fields={itemFields}
                     control={control}
                     handleRemoveItem={handleRemoveItem}
+                    customer={customer}
                 />
 
                 {/* 合計エリア */}
@@ -112,13 +130,18 @@ function EstimateNewPageInner() {
                             options={CREMATION_OPTIONS}
                             placeholder="選択してください"
                         />
-                        <FormSelect
-                            name="altarPlaceType"
-                            control={control}
-                            label="祭壇設置場所"
-                            options={ALTAR_OPTIONS}
-                            placeholder="選択してください"
-                        />
+                        <div className="flex flex-col gap-2">
+                            <FormSelect
+                                name="altarPlaceType"
+                                control={control}
+                                label="祭壇設置場所"
+                                options={ALTAR_OPTIONS}
+                                placeholder="選択してください"
+                            />
+                            {watch('altarPlaceType') === 'OTHER' && (
+                                <FormInput name="altarPlaceOther" control={control} placeholder="祭壇設置場所" />
+                            )}
+                        </div>
                         <FormInput name="ceilingHeight" control={control} label="天井高" suffix="尺" />
                         <FormInput name="estimateStaff" control={control} label="見積担当" />
                         <FormInput name="ceremonyStaff" control={control} label="式担当" />

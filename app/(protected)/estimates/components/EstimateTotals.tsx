@@ -24,7 +24,7 @@ export function EstimateTotals({ totals }: Props) {
                 <div>合計:</div>
                 <div className="text-right">¥{totals.total.toLocaleString()}</div>
                 <div>会費入金額:</div>
-                <div className="text-right">¥{totals.membershipPaidAmount.toLocaleString()}</div>
+                <div className="text-right">¥-{totals.membershipPaidAmount.toLocaleString()}</div>
                 <div className="border-t border-gray-300 pt-2 font-bold">差引合計:</div>
                 <div className="border-t border-gray-300 pt-2 text-right text-lg font-bold">
                     ¥{totals.grandTotal.toLocaleString()}

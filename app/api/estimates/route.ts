@@ -3,6 +3,20 @@ import { prisma } from '@/lib/prisma'
 import { requireAuth } from '@/lib/auth-middleware'
 import { serializeBigInt } from '@/lib/prisma-utils'
 
+function calculateTotals(items: any[], membershipPaidAmount: number) {
+    const subtotal = items.reduce((sum, item) => sum + (item.amount || 0), 0)
+    const tax = Math.round(subtotal * 0.1)
+    const total = subtotal + tax
+    const grandTotal = total - membershipPaidAmount
+    return {
+        subtotal,
+        tax,
+        total,
+        membershipPaidAmount,
+        grandTotal: Math.max(0, grandTotal),
+    }
+}
+
 export async function GET(request: NextRequest) {
     try {
         // JWT認証
@@ -84,6 +98,118 @@ export async function GET(request: NextRequest) {
         return NextResponse.json(serializeBigInt(result))
     } catch (error: any) {
         console.error('Get estimates error:', error)
+        return NextResponse.json({ error: 'Internal server error', message: error.message }, { status: 500 })
+    }
+}
+
+export async function POST(request: NextRequest) {
+    try {
+        const authResult = await requireAuth(request)
+        if (authResult instanceof NextResponse) {
+            return authResult
+        }
+
+        const data = await request.json()
+        const { customerId } = data
+
+        if (!customerId) {
+            return NextResponse.json({ error: 'customerId は必須です' }, { status: 400 })
+        }
+
+        // 顧客を取得
+        const customer = await prisma.customer.findUnique({
+            where: { id: BigInt(customerId) },
+            include: { memberships: true },
+        })
+
+        if (!customer) {
+            return NextResponse.json({ error: '案件が見つかりません' }, { status: 404 })
+        }
+
+        // 会費入金額を計算
+        const membershipPaidAmount = customer.memberships.reduce(
+            (sum: number, m: any) => sum + (m.paymentAmount || 0),
+            0
+        )
+
+        // 合計を計算
+        const totals = calculateTotals(data.items || [], membershipPaidAmount)
+
+        // enum型の値を検証・変換
+        const validCremationProcessTypes = ['FAMILY', 'NEIGHBORHOOD', 'COMPANY'] as const
+        const cremationProcessType =
+            data.cremationProcessType && validCremationProcessTypes.includes(data.cremationProcessType as any)
+                ? data.cremationProcessType
+                : null
+
+        const validAltarPlaceTypes = ['HOME', 'FUNERAL_HALL', 'OTHER'] as const
+        const altarPlaceType =
+            data.altarPlaceType && validAltarPlaceTypes.includes(data.altarPlaceType as any)
+                ? data.altarPlaceType
+                : null
+
+        // docNo の自動採番
+        const now = new Date()
+        const pad = (n: number) => String(n).padStart(2, '0')
+        const docNo =
+            data.docNo ||
+            `EST-${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}${pad(now.getHours())}${pad(now.getMinutes())}`
+
+        // 見積を作成
+        const estimate = await prisma.estimate.create({
+            data: {
+                customerId: BigInt(customerId),
+                docNo,
+                status: data.status || 'DRAFT',
+                subtotal: totals.subtotal,
+                tax: totals.tax,
+                total: totals.total,
+                membershipPaidAmount,
+                grandTotal: totals.grandTotal,
+                cremationProcessType,
+                altarPlaceType,
+                altarPlaceOther: data.altarPlaceOther || null,
+                ceilingHeight: data.ceilingHeight || null,
+                estimateStaff: data.estimateStaff || null,
+                ceremonyStaff: data.ceremonyStaff || null,
+                transportStaff: data.transportStaff || null,
+                decorationStaff: data.decorationStaff || null,
+                returnStaff: data.returnStaff || null,
+                issuedAt: data.issuedAt ? new Date(data.issuedAt) : null,
+                items: {
+                    create: (data.items || []).map((item: any, index: number) => ({
+                        productItemId: item.productItemId ? BigInt(item.productItemId) : null,
+                        productVariantId: item.productVariantId ? BigInt(item.productVariantId) : null,
+                        description: item.description,
+                        unitPriceGeneral: item.unitPriceGeneral || 0,
+                        unitPriceMember: item.unitPriceMember || 0,
+                        qty: item.qty || 0,
+                        amount: item.amount || 0,
+                        sortNo: item.sortNo ?? index,
+                    })),
+                },
+            },
+            include: {
+                customer: true,
+                items: {
+                    include: {
+                        productItem: true,
+                        productVariant: true,
+                    },
+                },
+            },
+        })
+
+        return NextResponse.json(
+            serializeBigInt({
+                ...estimate,
+                id: estimate.id.toString(),
+                customerId: estimate.customerId.toString(),
+            }),
+            { status: 201 }
+        )
+    } catch (error: any) {
+        console.error('Create estimate error:', error)
         return NextResponse.json({ error: 'Internal server error', message: error.message }, { status: 500 })
     }
 }

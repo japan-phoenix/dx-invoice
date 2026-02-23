@@ -31,8 +31,10 @@ export async function GET(request: NextRequest) {
             include: {
                 variants: {
                     where: { isActive: true },
+                    orderBy: { id: 'asc' },
                 },
             },
+            orderBy: { id: 'asc' },
         })
 
         // BigIntを文字列に変換してレスポンスを返す

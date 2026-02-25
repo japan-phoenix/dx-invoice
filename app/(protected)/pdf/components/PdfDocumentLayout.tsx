@@ -369,17 +369,29 @@ export function PdfDocumentLayout({ contentId, containerRef, title, document: do
                                                     )
                                                 })()}
                                             </td>
-                                            <td className="border border-l-0 border-black px-0.5 text-center">
-                                                {row.estimateItem?.description ?? ''}
+                                            <td className="border border-l-0 border-black px-0.5 text-left">
+                                                <div className="whitespace-pre-wrap break-words">
+                                                    {row.estimateItem?.description ?? ''}
+                                                </div>
                                             </td>
                                             <td className="border border-black px-1 text-right">
                                                 {row.estimateItem ? `${row.estimateItem.qty.toLocaleString()}` : ''}
                                             </td>
                                             <td className="border border-r-0 border-black px-1 text-right">
-                                                {row.estimateItem
-                                                    ? (row.hasDeduction ? <span className="mr-1">△</span> : '') +
-                                                      `${isMember ? row.estimateItem.unitPriceMember.toLocaleString() : row.estimateItem.unitPriceGeneral.toLocaleString()}`
-                                                    : ''}
+                                                {row.estimateItem ? (
+                                                    <>
+                                                        {row.hasDeduction && <span className="mr-1">△</span>}
+                                                        {isMember
+                                                            ? Math.abs(
+                                                                  row.estimateItem.unitPriceMember
+                                                              ).toLocaleString()
+                                                            : Math.abs(
+                                                                  row.estimateItem.unitPriceGeneral
+                                                              ).toLocaleString()}
+                                                    </>
+                                                ) : (
+                                                    ''
+                                                )}
                                             </td>
                                             <td className="border border-r-0 border-black text-center"></td>
                                             <td className="border border-r-0 border-black text-center"></td>

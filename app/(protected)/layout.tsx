@@ -14,7 +14,17 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     return (
         <html lang="ja">
             <head>
+                {/* マテリアルアイコン */}
                 <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet" />
+                {/* Webフォント */}
+                <link
+                    href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@700;900&display=swap"
+                    rel="stylesheet"
+                />
+                <link
+                    href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&display=swap"
+                    rel="stylesheet"
+                ></link>
             </head>
             <body>
                 <Providers>

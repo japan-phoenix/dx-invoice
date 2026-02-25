@@ -9,6 +9,7 @@ import { useEstimateEdit, useProductSearch, useEstimateItems, calculateTotals } 
 import { EstimateProductSearch } from '../components/EstimateProductSearch'
 import { EstimateItemTable } from '../components/EstimateItemTable'
 import { EstimateTotals } from '../components/EstimateTotals'
+import { EstimateOtherFields } from '../components/EstimateOtherFields'
 import { FormInput } from '@/components/form/FormInput'
 import { FormSelect } from '@/components/form/FormSelect'
 import { toast } from '@/hooks/use-toast'
@@ -119,36 +120,7 @@ export default function EstimateEditPage() {
                 <EstimateTotals totals={totals} />
 
                 {/* その他項目 */}
-                <div className="mb-8">
-                    <h3 className="mb-4">その他</h3>
-                    <div className="grid grid-cols-2 gap-4">
-                        <FormSelect
-                            name="cremationProcessType"
-                            control={control}
-                            label="火葬許可証手続"
-                            options={CREMATION_OPTIONS}
-                            placeholder="選択してください"
-                        />
-                        <div className="flex flex-col gap-2">
-                            <FormSelect
-                                name="altarPlaceType"
-                                control={control}
-                                label="祭壇設置場所"
-                                options={ALTAR_OPTIONS}
-                                placeholder="選択してください"
-                            />
-                            {watch('altarPlaceType') === 'OTHER' && (
-                                <FormInput name="altarPlaceOther" control={control} placeholder="場所を入力" />
-                            )}
-                        </div>
-                        <FormInput name="ceilingHeight" control={control} label="天井高" />
-                        <FormInput name="estimateStaff" control={control} label="見積担当" />
-                        <FormInput name="ceremonyStaff" control={control} label="式担当" />
-                        <FormInput name="transportStaff" control={control} label="搬送担当" />
-                        <FormInput name="decorationStaff" control={control} label="飾り担当" />
-                        <FormInput name="returnStaff" control={control} label="引上担当" />
-                    </div>
-                </div>
+                <EstimateOtherFields control={control} />
 
                 {/* 操作ボタン */}
                 <div className="flex justify-end gap-4">

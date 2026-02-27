@@ -1,6 +1,6 @@
 import { Button, ButtonProps } from '@/components/ui/button'
 
-interface ResetButtonProps extends ButtonProps {}
+type ResetButtonProps = ButtonProps
 
 export function ResetButton({ children = 'リセット', ...props }: ResetButtonProps) {
     return (

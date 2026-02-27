@@ -1,3 +1,4 @@
+/* eslint-disable no-irregular-whitespace */
 export const CREMATION_OPTIONS = [
     { value: 'FAMILY', label: '喪家' },
     { value: 'NEIGHBORHOOD', label: '隣組' },

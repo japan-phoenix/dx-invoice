@@ -187,9 +187,11 @@ export default function CasesPage() {
                                     onClick={(e) => {
                                         e.preventDefault()
                                         e.stopPropagation()
-                                        item.hasEstimate
-                                            ? router.push(`/estimates/${item.estimateId}`)
-                                            : router.push(`/estimates/new?customerId=${item.id}`)
+                                        if (item.hasEstimate) {
+                                            router.push(`/estimates/${item.estimateId}`)
+                                        } else {
+                                            router.push(`/estimates/new?customerId=${item.id}`)
+                                        }
                                     }}
                                     className={`rounded px-2 py-1 text-xs text-white ${item.hasEstimate ? 'bg-cyan-600' : 'bg-gray-500'}`}
                                 >

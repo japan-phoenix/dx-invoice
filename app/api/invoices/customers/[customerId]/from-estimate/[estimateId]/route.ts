@@ -78,6 +78,7 @@ export async function POST(
                 fromEstimateId: BigInt(estimateId),
                 cremationProcessType: estimate.cremationProcessType,
                 altarPlaceType: estimate.altarPlaceType,
+                altarPlaceOther: estimate.altarPlaceOther,
                 ceilingHeight: estimate.ceilingHeight,
                 estimateStaff: estimate.estimateStaff,
                 ceremonyStaff: estimate.ceremonyStaff,

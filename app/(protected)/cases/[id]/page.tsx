@@ -107,7 +107,11 @@ export default function EditCustomerPage() {
             router.push('/cases')
             return
         }
-        router.push(`/invoices/${customerId}`)
+        if (hasInvoice && customer.invoices[0]) {
+            router.push(`/invoices/${customer.invoices[0].id}`)
+        } else {
+            router.push(`/invoices/new?customerId=${customerId}`)
+        }
     }
 
     const handleNavigateToFlowers = () => {

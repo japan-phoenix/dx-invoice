@@ -56,7 +56,7 @@ export async function POST(request: NextRequest, props: { params: Promise<{ cust
                 ? data.cremationProcessType
                 : null
 
-        const validAltarPlaceTypes = ['HOME', 'FUNERAL_HALL'] as const
+        const validAltarPlaceTypes = ['HOME', 'FUNERAL_HALL', 'OTHER'] as const
         const altarPlaceType =
             data.altarPlaceType && validAltarPlaceTypes.includes(data.altarPlaceType as any)
                 ? data.altarPlaceType
@@ -75,6 +75,7 @@ export async function POST(request: NextRequest, props: { params: Promise<{ cust
                 fromEstimateId: data.fromEstimateId ? BigInt(data.fromEstimateId) : null,
                 cremationProcessType,
                 altarPlaceType,
+                altarPlaceOther: data.altarPlaceOther || null,
                 ceilingHeight: data.ceilingHeight || null,
                 estimateStaff: data.estimateStaff || null,
                 ceremonyStaff: data.ceremonyStaff || null,

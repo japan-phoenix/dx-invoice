@@ -199,7 +199,11 @@ export default function CasesPage() {
                                     onClick={(e) => {
                                         e.preventDefault()
                                         e.stopPropagation()
-                                        router.push(`/invoices/${item.id}`)
+                                        if (item.hasInvoice && item.invoiceId) {
+                                            router.push(`/invoices/${item.invoiceId}`)
+                                        } else {
+                                            router.push(`/invoices/new?customerId=${item.id}`)
+                                        }
                                     }}
                                     className={`rounded px-2 py-1 text-xs ${item.hasInvoice ? 'bg-yellow-400 text-black' : 'bg-gray-500 text-white'}`}
                                 >

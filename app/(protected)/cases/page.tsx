@@ -215,7 +215,7 @@ export default function CasesPage() {
                                     onClick={(e) => {
                                         e.preventDefault()
                                         e.stopPropagation()
-                                        router.push(`/flowers/${item.id}`)
+                                        router.push(`/flowers/customer/${item.id}`)
                                     }}
                                     className="rounded bg-green-600 px-2 py-1 text-xs text-white"
                                 >

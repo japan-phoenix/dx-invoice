@@ -120,7 +120,7 @@ export default function EditCustomerPage() {
             router.push('/cases')
             return
         }
-        router.push(`/flowers/${customerId}`)
+        router.push(`/flowers/customer/${customerId}`)
     }
 
     const onSubmit: SubmitHandler<CaseFormData> = async (data) => {

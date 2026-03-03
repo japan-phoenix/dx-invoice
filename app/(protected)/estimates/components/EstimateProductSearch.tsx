@@ -99,7 +99,7 @@ export function EstimateProductSearch({
                         <SelectContent className="bg-white">
                             {selectedProduct.variants.map((v) => (
                                 <SelectItem key={v.id} value={v.id}>
-                                    {v.name}（一般: ¥{v.priceGeneral.toLocaleString()} / 会員: ¥
+                                    {v.name}（一般: ¥{v.priceGeneral.toLocaleString()}, 会員: ¥
                                     {v.priceMember.toLocaleString()}）
                                 </SelectItem>
                             ))}

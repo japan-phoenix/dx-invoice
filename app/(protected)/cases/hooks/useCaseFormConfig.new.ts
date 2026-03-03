@@ -36,9 +36,9 @@ export function getFormDefaultValues(): CaseFormData {
         memberships: [
             {
                 rowNo: 1,
-                memberNo: '',
-                joinedAt: '',
-                memberName: '',
+                memberNo: undefined,
+                joinedAt: undefined,
+                memberName: undefined,
                 courseUnits: undefined,
                 maturityAmount: undefined,
                 paymentTimes: undefined,
@@ -48,9 +48,9 @@ export function getFormDefaultValues(): CaseFormData {
             },
             {
                 rowNo: 2,
-                memberNo: '',
-                joinedAt: '',
-                memberName: '',
+                memberNo: undefined,
+                joinedAt: undefined,
+                memberName: undefined,
                 courseUnits: undefined,
                 maturityAmount: undefined,
                 paymentTimes: undefined,
@@ -60,9 +60,9 @@ export function getFormDefaultValues(): CaseFormData {
             },
             {
                 rowNo: 3,
-                memberNo: '',
-                joinedAt: '',
-                memberName: '',
+                memberNo: undefined,
+                joinedAt: undefined,
+                memberName: undefined,
                 courseUnits: undefined,
                 maturityAmount: undefined,
                 paymentTimes: undefined,

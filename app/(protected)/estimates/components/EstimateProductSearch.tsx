@@ -1,6 +1,7 @@
 'use client'
 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { ProductImageDialog } from '@/components/product/ProductImageDialog'
 import { EstimateItem } from '@/lib/estimates'
 import { ProductItem, ProductVariant } from '@/lib/products'
 
@@ -85,7 +86,10 @@ export function EstimateProductSearch({
 
             {selectedProduct && selectedProduct.variants.length > 0 && (
                 <div className="mb-4">
-                    <label className="mb-2 block">種類選択</label>
+                    <div className="mb-2 flex items-start gap-3">
+                        <label>種類選択</label>
+                        <ProductImageDialog product={selectedProduct} />
+                    </div>
                     <Select
                         value={selectedVariant?.id ?? ''}
                         onValueChange={(id) => {

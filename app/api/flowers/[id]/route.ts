@@ -2,12 +2,6 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { requireAuth } from '@/lib/auth-middleware'
 import { serializeBigInt } from '@/lib/prisma-utils'
-import * as crypto from 'crypto'
-
-function generateBillToKey(name: string, address: string, tel?: string): string {
-    const data = `${name}|${address}|${tel || ''}`
-    return crypto.createHash('sha256').update(data).digest('hex')
-}
 
 export async function GET(request: NextRequest, props: { params: Promise<{ id: string }> }) {
     const params = await props.params
@@ -58,6 +52,9 @@ export async function PUT(request: NextRequest, props: { params: Promise<{ id: s
         // 供花を取得
         const flower = await prisma.flower.findUnique({
             where: { id: BigInt(id) },
+            include: {
+                billingTargetItems: { take: 1 },
+            },
         })
 
         if (!flower) {
@@ -69,48 +66,35 @@ export async function PUT(request: NextRequest, props: { params: Promise<{ id: s
             where: { id: BigInt(id) },
             data: {
                 requesterName: data.requesterName,
-                labelName: data.labelName,
-                jointNames: data.jointNames,
+                labelName: data.labelName || null,
+                jointNames: data.jointNames || null,
                 billToName: data.billToName,
                 billToAddress: data.billToAddress,
-                billToTel: data.billToTel,
-                deliveryTo: data.deliveryTo,
+                billToTel: data.billToTel || null,
+                deliveryTo: data.deliveryTo || null,
                 amount: data.amount || 0,
             },
         })
 
-        // 請求先が変更された場合、紐付けを更新
-        const billToKey = generateBillToKey(data.billToName, data.billToAddress, data.billToTel)
+        // 請求先が変更された場合、中間テーブルを更新
+        if (data.flowerBillingTargetId) {
+            const newTargetId = BigInt(data.flowerBillingTargetId)
+            const currentTargetId = flower.billingTargetItems[0]?.flowerBillingTargetId
 
-        const target = await prisma.flowerBillingTarget.upsert({
-            where: {
-                customerId_billToKey: {
-                    customerId: flower.customerId,
-                    billToKey,
-                },
-            },
-            update: {},
-            create: {
-                customerId: flower.customerId,
-                billToName: data.billToName,
-                billToAddress: data.billToAddress,
-                billToTel: data.billToTel,
-                billToKey,
-            },
-        })
-
-        // 既存の紐付けを削除
-        await prisma.flowerBillingTargetItem.deleteMany({
-            where: { flowerId: BigInt(id) },
-        })
-
-        // 新しい紐付けを作成
-        await prisma.flowerBillingTargetItem.create({
-            data: {
-                flowerBillingTargetId: target.id,
-                flowerId: BigInt(id),
-            },
-        })
+            if (!currentTargetId || currentTargetId !== newTargetId) {
+                // 既存の紐付けを削除
+                await prisma.flowerBillingTargetItem.deleteMany({
+                    where: { flowerId: BigInt(id) },
+                })
+                // 新しい紐付けを作成
+                await prisma.flowerBillingTargetItem.create({
+                    data: {
+                        flowerBillingTargetId: newTargetId,
+                        flowerId: BigInt(id),
+                    },
+                })
+            }
+        }
 
         // レスポンスを返す
         return NextResponse.json(
@@ -118,6 +102,7 @@ export async function PUT(request: NextRequest, props: { params: Promise<{ id: s
                 ...updated,
                 id: updated.id.toString(),
                 customerId: updated.customerId.toString(),
+                flowerBillingTargetId: data.flowerBillingTargetId ?? null,
             })
         )
     } catch (error: any) {

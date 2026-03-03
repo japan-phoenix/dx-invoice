@@ -2,11 +2,14 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { useRouter, useParams } from 'next/navigation'
-import { getFlowers, deleteFlower, FlowerBillingTarget } from '@/lib/flowers'
+import { getBillingTargets, deleteFlower, Flower, FlowerBillingTarget } from '@/lib/flowers'
 import { getCustomer } from '@/lib/customers'
 import { createFlowerTargetPayment, cancelFlowerTargetPayment } from '@/lib/payments'
 import { toast } from '@/hooks/use-toast'
 import { FlowerCustomerInfo } from '../../components/FlowerCustomerInfo'
+import { FlowerFormDialog } from '../../components/FlowerFormDialog'
+import { BillingTargetDialog } from '../../components/BillingTargetDialog'
+import { DataTable } from '@/components/table/DataTable'
 
 export default function FlowersListPage() {
     const router = useRouter()
@@ -15,10 +18,21 @@ export default function FlowersListPage() {
     const [loading, setLoading] = useState(true)
     const [customer, setCustomer] = useState<any>(null)
     const [targets, setTargets] = useState<FlowerBillingTarget[]>([])
+    const [dialogState, setDialogState] = useState<{ open: boolean; flower: Flower | null }>({
+        open: false,
+        flower: null,
+    })
+    const [targetDialogState, setTargetDialogState] = useState<{ open: boolean; target: FlowerBillingTarget | null }>({
+        open: false,
+        target: null,
+    })
 
     const loadData = useCallback(async () => {
         try {
-            const [customerData, flowersData] = await Promise.all([getCustomer(customerId), getFlowers(customerId)])
+            const [customerData, flowersData] = await Promise.all([
+                getCustomer(customerId),
+                getBillingTargets(customerId),
+            ])
             setCustomer(customerData)
             setTargets(flowersData)
         } catch (error) {
@@ -79,10 +93,16 @@ export default function FlowersListPage() {
             {/* 操作ボタン */}
             <div className="mb-8 flex gap-4">
                 <button
-                    onClick={() => router.push(`/flowers/new?customerId=${customerId}`)}
+                    onClick={() => setDialogState({ open: true, flower: null })}
                     className="cursor-pointer rounded border-0 bg-green-600 px-6 py-3 text-white"
                 >
-                    新規登録
+                    供花 新規登録
+                </button>
+                <button
+                    onClick={() => setTargetDialogState({ open: true, target: null })}
+                    className="cursor-pointer rounded border-0 bg-blue-600 px-6 py-3 text-white"
+                >
+                    請求先 登録
                 </button>
                 <button
                     onClick={() => router.push(`/pdf/flower/${customerId}`)}
@@ -104,11 +124,17 @@ export default function FlowersListPage() {
                             <div className="mb-4 flex items-center justify-between border-b-2 border-gray-300 pb-4">
                                 <div>
                                     <h3 className="mb-1 text-lg font-bold">請求先: {target.billToName}</h3>
-                                    <p className="text-sm text-gray-500">
-                                        {target.billToAddress}
-                                        {target.billToTel && `　TEL: ${target.billToTel}`}
-                                    </p>
+                                    <div className="text-sm text-gray-500">
+                                        <p>{target.billToAddress}</p>
+                                        {target.billToTel && <p>TEL: {target.billToTel}</p>}
+                                    </div>
                                 </div>
+                                <button
+                                    onClick={() => setTargetDialogState({ open: true, target })}
+                                    className="cursor-pointer rounded border-0 bg-gray-500 px-3 py-2 text-sm text-white"
+                                >
+                                    請求先 編集
+                                </button>
                                 <div className="flex flex-col items-end gap-2">
                                     <p className="text-xl font-bold">合計: ¥{total.toLocaleString()}</p>
                                     <div className="flex gap-2">
@@ -129,51 +155,82 @@ export default function FlowersListPage() {
                             </div>
 
                             {/* 供花明細テーブル */}
-                            <table className="w-full border-collapse bg-white">
-                                <thead>
-                                    <tr className="bg-gray-100">
-                                        <th className="border border-gray-300 p-3 text-left">依頼主</th>
-                                        <th className="border border-gray-300 p-3 text-left">名札</th>
-                                        <th className="border border-gray-300 p-3 text-left">連名</th>
-                                        <th className="border border-gray-300 p-3 text-left">配送先</th>
-                                        <th className="border border-gray-300 p-3 text-right">金額</th>
-                                        <th className="border border-gray-300 p-3 text-center">操作</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {target.flowers.map((flower) => (
-                                        <tr key={flower.id}>
-                                            <td className="border border-gray-300 p-3">{flower.requesterName}</td>
-                                            <td className="border border-gray-300 p-3">{flower.labelName || '-'}</td>
-                                            <td className="border border-gray-300 p-3">{flower.jointNames || '-'}</td>
-                                            <td className="border border-gray-300 p-3">{flower.deliveryTo || '-'}</td>
-                                            <td className="border border-gray-300 p-3 text-right">
-                                                ¥{flower.amount.toLocaleString()}
-                                            </td>
-                                            <td className="border border-gray-300 p-3 text-center">
-                                                <div className="flex justify-center gap-2">
-                                                    <button
-                                                        onClick={() => router.push(`/flowers/${flower.id}`)}
-                                                        className="cursor-pointer rounded border-0 bg-cyan-600 px-3 py-1 text-sm text-white"
-                                                    >
-                                                        編集
-                                                    </button>
-                                                    <button
-                                                        onClick={() => handleDeleteFlower(flower.id)}
-                                                        className="cursor-pointer rounded border-0 bg-red-600 px-3 py-1 text-sm text-white"
-                                                    >
-                                                        削除
-                                                    </button>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
+                            <DataTable<Flower>
+                                columns={[
+                                    { key: 'requesterName', label: '依頼主', width: '150px' },
+                                    {
+                                        key: 'labelName',
+                                        label: '名札',
+                                        width: '150px',
+                                        render: (f) => f.labelName || '-',
+                                    },
+                                    {
+                                        key: 'jointNames',
+                                        label: '連名',
+                                        width: '150px',
+                                        render: (f) => f.jointNames || '-',
+                                    },
+                                    {
+                                        key: 'deliveryTo',
+                                        label: '配送先',
+                                        width: '120px',
+                                        render: (f) => f.deliveryTo || '-',
+                                    },
+                                    {
+                                        key: 'amount',
+                                        label: '金額',
+                                        render: (f) => `¥${f.amount.toLocaleString()}`,
+                                    },
+                                ]}
+                                actionColumn={{
+                                    key: 'actions',
+                                    label: '操作',
+                                    width: '130px',
+                                    render: (flower) => (
+                                        <div className="flex justify-center gap-2">
+                                            <button
+                                                onClick={() => setDialogState({ open: true, flower })}
+                                                className="cursor-pointer rounded border-0 bg-cyan-600 px-3 py-1 text-sm text-white"
+                                            >
+                                                編集
+                                            </button>
+                                            <button
+                                                onClick={() => handleDeleteFlower(flower.id)}
+                                                className="cursor-pointer rounded border-0 bg-red-600 px-3 py-1 text-sm text-white"
+                                            >
+                                                削除
+                                            </button>
+                                        </div>
+                                    ),
+                                }}
+                                data={target.flowers}
+                                itemsPerPage={50}
+                                emptyMessage="供花が登録されていません"
+                                rowKey={(f) => f.id}
+                            />
                         </div>
                     )
                 })
             )}
+
+            {/* 供花 新規登録 / 編集ダイアログ */}
+            <FlowerFormDialog
+                open={dialogState.open}
+                onOpenChange={(open) => setDialogState((prev) => ({ ...prev, open }))}
+                customerId={customerId}
+                flower={dialogState.flower}
+                billingTargets={targets}
+                onSuccess={loadData}
+            />
+
+            {/* 請求先 登録 / 編集ダイアログ */}
+            <BillingTargetDialog
+                open={targetDialogState.open}
+                onOpenChange={(open) => setTargetDialogState((prev) => ({ ...prev, open }))}
+                customerId={customerId}
+                target={targetDialogState.target}
+                onSuccess={loadData}
+            />
         </div>
     )
 }

@@ -103,7 +103,6 @@ type Props = {
 type DisplayRow = {
     label: string
     estimateItem?: PdfDocumentItem | null
-    hasDeduction: boolean // 減算行の品名（例: "御供養"） */
     showProductVariantName: boolean // 霊柩車のように、品名の下に商品詳細を表示するかどうか
     deductionLabel?: string
     deductionItem?: PdfDocumentItem | null
@@ -125,8 +124,6 @@ function buildDisplayRows(products: PdfProductItem[], items: PdfDocumentItem[]):
         rows.push({
             label: product.name,
             estimateItem,
-            // 以下は今後減算が出てくる場合、テーブル構造から変更する必要があるかも
-            hasDeduction: product.name.includes('御供養(減算)') ? true : false,
             showProductVariantName: product.name.includes('霊柩車') ? true : false,
         })
     }
@@ -351,15 +348,11 @@ export function PdfDocumentLayout({ contentId, containerRef, title, document: do
                                                             <div
                                                                 className={`mx-auto flex w-[6rem] ${chars.length === 1 ? 'justify-center' : 'justify-between'}`}
                                                             >
-                                                                {!row.hasDeduction ? (
-                                                                    chars.map((char, i) => (
-                                                                        <span key={i} className="text-center">
-                                                                            {char}
-                                                                        </span>
-                                                                    ))
-                                                                ) : (
-                                                                    <span>&nbsp;</span>
-                                                                )}
+                                                                {chars.map((char, i) => (
+                                                                    <span key={i} className="text-center">
+                                                                        {char}
+                                                                    </span>
+                                                                ))}
                                                             </div>
                                                             <div className="text-center">
                                                                 {row.estimateItem && row.showProductVariantName
@@ -381,7 +374,6 @@ export function PdfDocumentLayout({ contentId, containerRef, title, document: do
                                             <td className="border border-r-0 border-black px-1 text-right">
                                                 {row.estimateItem ? (
                                                     <>
-                                                        {row.hasDeduction && <span className="mr-1">△</span>}
                                                         {isMember
                                                             ? Math.abs(
                                                                   row.estimateItem.unitPriceMember

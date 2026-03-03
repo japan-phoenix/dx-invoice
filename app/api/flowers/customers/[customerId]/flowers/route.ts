@@ -2,143 +2,89 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { requireAuth } from '@/lib/auth-middleware'
 import { serializeBigInt } from '@/lib/prisma-utils'
-import * as crypto from 'crypto'
 
-function generateBillToKey(name: string, address: string, tel?: string): string {
-    const data = `${name}|${address}|${tel || ''}`
-    return crypto.createHash('sha256').update(data).digest('hex')
-}
-
+// 供花一覧（フラット）
 export async function GET(request: NextRequest, props: { params: Promise<{ customerId: string }> }) {
     const params = await props.params
     try {
-        // JWT認証
         const authResult = await requireAuth(request)
-        if (authResult instanceof NextResponse) {
-            return authResult
-        }
+        if (authResult instanceof NextResponse) return authResult
 
         const { customerId } = params
 
-        // 供花を取得
         const flowers = await prisma.flower.findMany({
             where: { customerId: BigInt(customerId) },
             include: {
                 billingTargetItems: {
-                    include: {
-                        flowerBillingTarget: true,
-                    },
+                    include: { flowerBillingTarget: true },
+                    take: 1,
                 },
             },
             orderBy: { createdAt: 'desc' },
         })
 
-        // 請求先単位にグループ化
-        const targetMap = new Map<string, any>()
+        const result = flowers.map((f) => ({
+            id: f.id.toString(),
+            customerId: f.customerId.toString(),
+            requesterName: f.requesterName,
+            labelName: f.labelName,
+            jointNames: f.jointNames,
+            billToName: f.billToName,
+            billToAddress: f.billToAddress,
+            billToTel: f.billToTel,
+            deliveryTo: f.deliveryTo,
+            amount: f.amount,
+            flowerBillingTargetId: f.billingTargetItems[0]?.flowerBillingTarget.id.toString() ?? null,
+        }))
 
-        for (const flower of flowers) {
-            const billToKey = generateBillToKey(flower.billToName, flower.billToAddress, flower.billToTel || undefined)
-
-            if (!targetMap.has(billToKey)) {
-                // 請求先単位を作成または取得
-                const target = await prisma.flowerBillingTarget.upsert({
-                    where: {
-                        customerId_billToKey: {
-                            customerId: BigInt(customerId),
-                            billToKey,
-                        },
-                    },
-                    update: {},
-                    create: {
-                        customerId: BigInt(customerId),
-                        billToName: flower.billToName,
-                        billToAddress: flower.billToAddress,
-                        billToTel: flower.billToTel,
-                        billToKey,
-                    },
-                })
-
-                targetMap.set(billToKey, {
-                    ...target,
-                    id: target.id.toString(),
-                    customerId: target.customerId.toString(),
-                    flowers: [],
-                })
-            }
-
-            const target = targetMap.get(billToKey)
-            target.flowers.push({
-                ...flower,
-                id: flower.id.toString(),
-                customerId: flower.customerId.toString(),
-            })
-        }
-
-        // レスポンスを返す
-        return NextResponse.json(serializeBigInt(Array.from(targetMap.values())))
+        return NextResponse.json(serializeBigInt(result))
     } catch (error: any) {
         console.error('Get flowers error:', error)
         return NextResponse.json({ error: 'Internal server error', message: error.message }, { status: 500 })
     }
 }
 
+// 供花の新規登録（請求先IDが必須）
 export async function POST(request: NextRequest, props: { params: Promise<{ customerId: string }> }) {
     const params = await props.params
     try {
-        // JWT認証
         const authResult = await requireAuth(request)
-        if (authResult instanceof NextResponse) {
-            return authResult
-        }
+        if (authResult instanceof NextResponse) return authResult
 
         const { customerId } = params
         const data = await request.json()
 
-        // 顧客を取得
-        const customer = await prisma.customer.findUnique({
-            where: { id: BigInt(customerId) },
-        })
-
-        if (!customer) {
-            return NextResponse.json({ error: '案件が見つかりません' }, { status: 404 })
+        if (!data.flowerBillingTargetId) {
+            return NextResponse.json({ error: '請求先を選択してください' }, { status: 400 })
         }
 
-        const billToKey = generateBillToKey(data.billToName, data.billToAddress, data.billToTel)
-
-        // 請求先単位を取得または作成
-        const target = await prisma.flowerBillingTarget.upsert({
+        // 請求先が同一 customer に属するか確認
+        const target = await prisma.flowerBillingTarget.findFirst({
             where: {
-                customerId_billToKey: {
-                    customerId: BigInt(customerId),
-                    billToKey,
-                },
-            },
-            update: {},
-            create: {
+                id: BigInt(data.flowerBillingTargetId),
                 customerId: BigInt(customerId),
-                billToName: data.billToName,
-                billToAddress: data.billToAddress,
-                billToTel: data.billToTel,
-                billToKey,
             },
         })
+        if (!target) {
+            return NextResponse.json({ error: '請求先が見つかりません' }, { status: 404 })
+        }
 
         // 供花を作成
         const flower = await prisma.flower.create({
             data: {
                 customerId: BigInt(customerId),
                 requesterName: data.requesterName,
-                labelName: data.labelName,
-                jointNames: data.jointNames,
-                billToName: data.billToName,
-                billToAddress: data.billToAddress,
-                billToTel: data.billToTel,
-                deliveryTo: data.deliveryTo,
+                labelName: data.labelName || null,
+                jointNames: data.jointNames || null,
+                billToName: data.billToName ?? target.billToName,
+                billToAddress: data.billToAddress ?? target.billToAddress,
+                billToTel: data.billToTel ?? target.billToTel,
+                deliveryTo: data.deliveryTo || null,
                 amount: data.amount || 0,
             },
         })
 
-        // 請求先単位との紐付け
+        // 中間テーブルに紐付け
         await prisma.flowerBillingTargetItem.create({
             data: {
                 flowerBillingTargetId: target.id,
@@ -146,12 +92,12 @@ export async function POST(request: NextRequest, props: { params: Promise<{ cust
             },
         })
 
-        // レスポンスを返す
         return NextResponse.json(
             serializeBigInt({
                 ...flower,
                 id: flower.id.toString(),
                 customerId: flower.customerId.toString(),
+                flowerBillingTargetId: target.id.toString(),
             })
         )
     } catch (error: any) {

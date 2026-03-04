@@ -66,7 +66,9 @@ export function SelectUI({
                 }}
             >
                 <>
-                    <span>{selectedOption?.label || placeholder || '選択してください'}</span>
+                    <span style={{ color: selectedOption ? 'inherit' : '#9ca3af' }}>
+                        {selectedOption?.label || placeholder || '選択してください'}
+                    </span>
                     <span
                         className="material-symbols-outlined"
                         style={{

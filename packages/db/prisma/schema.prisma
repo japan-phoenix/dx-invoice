@@ -378,6 +378,7 @@ model Payment {
 
 model CompanyProfile {
   id            BigInt   @id @default(autoincrement())
+  companyNo   String?   @db.VarChar(30) @map("company_no")
   companyName   String   @db.VarChar(200) @map("company_name")
   companyAddress String  @db.VarChar(255) @map("company_address")
   companyTel    String   @db.VarChar(30) @map("company_tel")

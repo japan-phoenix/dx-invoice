@@ -2,6 +2,12 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { requireAuth } from '@/lib/auth-middleware'
 import { serializeBigInt } from '@/lib/prisma-utils'
+import * as crypto from 'crypto'
+
+function generateBillToKey(name: string, address: string, tel?: string): string {
+    const data = `${name}|${address}|${tel || ''}`
+    return crypto.createHash('sha256').update(data).digest('hex')
+}
 
 // 供花一覧（フラット）
 export async function GET(request: NextRequest, props: { params: Promise<{ customerId: string }> }) {
@@ -54,19 +60,42 @@ export async function POST(request: NextRequest, props: { params: Promise<{ cust
         const { customerId } = params
         const data = await request.json()
 
-        if (!data.flowerBillingTargetId) {
-            return NextResponse.json({ error: '請求先を選択してください' }, { status: 400 })
-        }
+        let target
 
-        // 請求先が同一 customer に属するか確認
-        const target = await prisma.flowerBillingTarget.findFirst({
-            where: {
-                id: BigInt(data.flowerBillingTargetId),
-                customerId: BigInt(customerId),
-            },
-        })
-        if (!target) {
-            return NextResponse.json({ error: '請求先が見つかりません' }, { status: 404 })
+        if (data.flowerBillingTargetId) {
+            // 請求先が選択された場合: 同一 customer に属するか確認
+            target = await prisma.flowerBillingTarget.findFirst({
+                where: {
+                    id: BigInt(data.flowerBillingTargetId),
+                    customerId: BigInt(customerId),
+                },
+            })
+            if (!target) {
+                return NextResponse.json({ error: '請求先が見つかりません' }, { status: 404 })
+            }
+        } else {
+            // 請求先未選択時: 入力情報から自動作成（同一キーがあれば upsert）
+            const billToKey = generateBillToKey(data.billToName, data.billToAddress, data.billToTel)
+            target = await prisma.flowerBillingTarget.upsert({
+                where: {
+                    customerId_billToKey: {
+                        customerId: BigInt(customerId),
+                        billToKey,
+                    },
+                },
+                update: {
+                    billToName: data.billToName,
+                    billToAddress: data.billToAddress,
+                    billToTel: data.billToTel ?? null,
+                },
+                create: {
+                    customerId: BigInt(customerId),
+                    billToName: data.billToName,
+                    billToAddress: data.billToAddress,
+                    billToTel: data.billToTel ?? null,
+                    billToKey,
+                },
+            })
         }
 
         // 供花を作成

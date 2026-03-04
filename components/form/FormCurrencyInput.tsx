@@ -31,14 +31,14 @@ export function FormCurrencyInput<T extends FieldValues>({
         <Controller
             name={name}
             control={control}
-            render={({ field }) => (
+            render={({ field, fieldState }) => (
                 <CurrencyInputUI
                     value={field.value || ''}
                     onChange={field.onChange}
                     onBlur={field.onBlur}
                     label={label}
                     placeholder={placeholder}
-                    error={errorMessage}
+                    error={errorMessage ?? fieldState.error?.message}
                     required={required}
                     disabled={disabled}
                     prefix={prefix}

@@ -4,7 +4,5 @@
     "trailingComma": "es5",
     "printWidth": 120,
     "tabWidth": 4,
-    "proseWrap": "never",
-    "plugins": ["prettier-plugin-tailwindcss"],
-    "extends": ["next/core-web-vitals", "prettier"]
+    "proseWrap": "never"
 }

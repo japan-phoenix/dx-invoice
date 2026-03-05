@@ -18,7 +18,11 @@ export default function FlowersListPage() {
     const [loading, setLoading] = useState(true)
     const [customer, setCustomer] = useState<any>(null)
     const [targets, setTargets] = useState<FlowerBillingTarget[]>([])
-    const [dialogState, setDialogState] = useState<{ open: boolean; flower: Flower | null }>({
+    const [dialogState, setDialogState] = useState<{
+        open: boolean
+        flower: Flower | null
+        initialBillingTargetId?: string
+    }>({
         open: false,
         flower: null,
     })
@@ -106,135 +110,150 @@ export default function FlowersListPage() {
                 </button>
             </div>
 
-            {/* 供花一覧（請求先単位）: 供花明細が1件以上のもののみ表示 */}
-            {targets.filter((t) => t.flowers.length > 0).length === 0 ? (
-                <p className="text-gray-500">供花が登録されていません</p>
+            {/* 供花一覧（請求先単位）: 全ての請求先ブロックを表示 */}
+            {targets.length === 0 ? (
+                <p className="text-gray-500">請求先が登録されていません</p>
             ) : (
-                targets
-                    .filter((t) => t.flowers.length > 0)
-                    .map((target) => {
-                        const total = getTargetTotal(target)
-                        return (
-                            <div key={target.id} className="mb-8 rounded-lg border border-gray-300 p-6">
-                                {/* 請求先ヘッダー */}
-                                <div className="mb-4 flex items-center justify-between border-b-2 border-gray-300 pb-4">
-                                    <div>
-                                        <div className="flex items-start gap-4">
-                                            <h3 className="mb-1 text-lg font-bold">請求先: {target.billToName}</h3>
-                                            <button
-                                                onClick={() => setTargetDialogState({ open: true, target })}
-                                                className="cursor-pointer rounded border-0 text-sm text-white"
-                                            >
-                                                <span className="material-symbols-outlined text-gray-500">edit</span>
-                                            </button>
-                                        </div>
-                                        <div className="text-sm text-gray-500">
-                                            <p>{target.billToAddress}</p>
-                                            {target.billToTel && <p>TEL: {target.billToTel}</p>}
-                                        </div>
+                targets.map((target) => {
+                    const total = getTargetTotal(target)
+                    return (
+                        <div key={target.id} className="mb-8 rounded-lg border border-gray-300 p-6">
+                            {/* 請求先ヘッダー */}
+                            <div className="mb-4 flex items-center justify-between border-b-2 border-gray-300 pb-4">
+                                <div>
+                                    <div className="flex items-start gap-4">
+                                        <h3 className="mb-1 text-lg font-bold">請求先: {target.billToName}</h3>
+                                        <button
+                                            onClick={() => setTargetDialogState({ open: true, target })}
+                                            className="cursor-pointer rounded border-0 text-sm text-white"
+                                        >
+                                            <span className="material-symbols-outlined text-gray-500">edit</span>
+                                        </button>
                                     </div>
-
-                                    <div className="flex flex-col items-end gap-2">
-                                        {target.isPaid ? (
-                                            <button
-                                                onClick={() => handlePayment(target.id, true)}
-                                                className="cursor-pointer rounded border-0 bg-red-600 px-3 py-2 text-sm text-white"
-                                            >
-                                                入金取消
-                                            </button>
-                                        ) : (
-                                            <button
-                                                onClick={() => handlePayment(target.id, false)}
-                                                className="cursor-pointer rounded border-0 bg-green-600 px-3 py-2 text-sm text-white"
-                                            >
-                                                入金完了
-                                            </button>
-                                        )}
-
-                                        <div className="flex items-center gap-2">
-                                            <p className="text-xl font-bold">合計: ¥{total.toLocaleString()}</p>
-                                            <span
-                                                className={`rounded px-2 py-1 text-xs font-semibold ${
-                                                    target.isPaid
-                                                        ? 'bg-green-100 text-green-700'
-                                                        : 'bg-yellow-100 text-yellow-700'
-                                                }`}
-                                            >
-                                                {target.isPaid ? '入金済み' : '未入金'}
-                                            </span>
-                                        </div>
+                                    <div className="text-sm text-gray-500">
+                                        <p>{target.billToAddress}</p>
+                                        {target.billToTel && <p>TEL: {target.billToTel}</p>}
                                     </div>
                                 </div>
 
-                                {/* 供花明細テーブル */}
-                                <DataTable<Flower>
-                                    columns={[
-                                        { key: 'requesterName', label: '依頼主', width: '150px' },
-                                        {
-                                            key: 'labelName',
-                                            label: '名札',
-                                            width: '150px',
-                                            render: (f) => f.labelName || '-',
-                                        },
-                                        {
-                                            key: 'jointNames',
-                                            label: '連名',
-                                            width: '150px',
-                                            render: (f) => f.jointNames || '-',
-                                        },
-                                        {
-                                            key: 'deliveryTo',
-                                            label: '配送先',
-                                            width: '120px',
-                                            render: (f) => f.deliveryTo || '-',
-                                        },
-                                        {
-                                            key: 'amount',
-                                            label: '金額',
-                                            render: (f) => `¥${f.amount.toLocaleString()}`,
-                                        },
-                                    ]}
-                                    actionColumn={{
-                                        key: 'actions',
-                                        label: '操作',
-                                        width: '130px',
-                                        render: (flower) => (
-                                            <div className="flex justify-center gap-2">
-                                                <button
-                                                    onClick={() =>
-                                                        !target.isPaid && setDialogState({ open: true, flower })
-                                                    }
-                                                    disabled={target.isPaid}
-                                                    className={`rounded border-0 px-3 py-1 text-sm text-white ${
+                                <div className="flex flex-col items-end gap-2">
+                                    {target.flowers.length > 0 && (
+                                        <p className="text-xl font-bold">合計: ¥{total.toLocaleString()}</p>
+                                    )}
+                                    <div className="flex items-center gap-2">
+                                        {!target.isPaid && (
+                                            <button
+                                                onClick={() =>
+                                                    setDialogState({
+                                                        open: true,
+                                                        flower: null,
+                                                        initialBillingTargetId: target.id,
+                                                    })
+                                                }
+                                                className="cursor-pointer rounded border-0 bg-blue-600 px-3 py-2 text-sm text-white"
+                                            >
+                                                追加
+                                            </button>
+                                        )}
+                                        {target.flowers.length > 0 && (
+                                            <>
+                                                {target.isPaid ? (
+                                                    <button
+                                                        onClick={() => handlePayment(target.id, true)}
+                                                        className="cursor-pointer rounded border-0 bg-red-600 px-3 py-2 text-sm text-white"
+                                                    >
+                                                        入金取消
+                                                    </button>
+                                                ) : (
+                                                    <button
+                                                        onClick={() => handlePayment(target.id, false)}
+                                                        className="cursor-pointer rounded border-0 bg-green-600 px-3 py-2 text-sm text-white"
+                                                    >
+                                                        入金完了
+                                                    </button>
+                                                )}
+                                                <span
+                                                    className={`rounded px-2 py-1 text-xs font-semibold ${
                                                         target.isPaid
-                                                            ? 'cursor-not-allowed bg-gray-300'
-                                                            : 'cursor-pointer bg-cyan-600'
+                                                            ? 'bg-green-100 text-green-700'
+                                                            : 'bg-yellow-100 text-yellow-700'
                                                     }`}
                                                 >
-                                                    編集
-                                                </button>
-                                                <button
-                                                    onClick={() => !target.isPaid && handleDeleteFlower(flower.id)}
-                                                    disabled={target.isPaid}
-                                                    className={`rounded border-0 px-3 py-1 text-sm text-white ${
-                                                        target.isPaid
-                                                            ? 'cursor-not-allowed bg-gray-300'
-                                                            : 'cursor-pointer bg-red-600'
-                                                    }`}
-                                                >
-                                                    削除
-                                                </button>
-                                            </div>
-                                        ),
-                                    }}
-                                    data={target.flowers}
-                                    itemsPerPage={50}
-                                    emptyMessage="供花が登録されていません"
-                                    rowKey={(f) => f.id}
-                                />
+                                                    {target.isPaid ? '入金済み' : '未入金'}
+                                                </span>
+                                            </>
+                                        )}
+                                    </div>
+                                </div>
                             </div>
-                        )
-                    })
+
+                            {/* 供花明細テーブル */}
+                            <DataTable<Flower>
+                                columns={[
+                                    { key: 'requesterName', label: '依頼主', width: '150px' },
+                                    {
+                                        key: 'labelName',
+                                        label: '名札',
+                                        width: '150px',
+                                        render: (f) => f.labelName || '-',
+                                    },
+                                    {
+                                        key: 'jointNames',
+                                        label: '連名',
+                                        width: '150px',
+                                        render: (f) => f.jointNames || '-',
+                                    },
+                                    {
+                                        key: 'deliveryTo',
+                                        label: '配送先',
+                                        width: '120px',
+                                        render: (f) => f.deliveryTo || '-',
+                                    },
+                                    {
+                                        key: 'amount',
+                                        label: '金額',
+                                        render: (f) => `¥${f.amount.toLocaleString()}`,
+                                    },
+                                ]}
+                                actionColumn={{
+                                    key: 'actions',
+                                    label: '操作',
+                                    width: '130px',
+                                    render: (flower) => (
+                                        <div className="flex justify-center gap-2">
+                                            <button
+                                                onClick={() => !target.isPaid && setDialogState({ open: true, flower })}
+                                                disabled={target.isPaid}
+                                                className={`rounded border-0 px-3 py-1 text-sm text-white ${
+                                                    target.isPaid
+                                                        ? 'cursor-not-allowed bg-gray-300'
+                                                        : 'cursor-pointer bg-cyan-600'
+                                                }`}
+                                            >
+                                                編集
+                                            </button>
+                                            <button
+                                                onClick={() => !target.isPaid && handleDeleteFlower(flower.id)}
+                                                disabled={target.isPaid}
+                                                className={`rounded border-0 px-3 py-1 text-sm text-white ${
+                                                    target.isPaid
+                                                        ? 'cursor-not-allowed bg-gray-300'
+                                                        : 'cursor-pointer bg-red-600'
+                                                }`}
+                                            >
+                                                削除
+                                            </button>
+                                        </div>
+                                    ),
+                                }}
+                                data={target.flowers}
+                                itemsPerPage={50}
+                                emptyMessage="供花が登録されていません"
+                                rowKey={(f) => f.id}
+                            />
+                        </div>
+                    )
+                })
             )}
 
             {/* 供花 新規登録 / 編集ダイアログ */}
@@ -244,6 +263,7 @@ export default function FlowersListPage() {
                 customerId={customerId}
                 flower={dialogState.flower}
                 billingTargets={targets}
+                initialBillingTargetId={dialogState.initialBillingTargetId}
                 onSuccess={loadData}
             />
 

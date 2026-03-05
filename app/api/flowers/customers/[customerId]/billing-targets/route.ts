@@ -26,6 +26,7 @@ export async function GET(request: NextRequest, props: { params: Promise<{ custo
                     orderBy: { id: 'asc' },
                 },
                 payments: {
+                    where: { targetType: 'FLOWER_TARGET' as any },
                     orderBy: { createdAt: 'desc' },
                     take: 1,
                 },
@@ -40,7 +41,8 @@ export async function GET(request: NextRequest, props: { params: Promise<{ custo
             billToAddress: target.billToAddress,
             billToTel: target.billToTel,
             billToKey: target.billToKey,
-            isPaid: target.payments.some((p) => (p as any).status === 'PAID'),
+            isPaid: target.payments[0]?.status === 'PAID',
+            paidAt: target.payments[0]?.status === 'PAID' ? target.payments[0].paidAt : null,
             flowers: target.items.map((item) => ({
                 ...item.flower,
                 id: item.flower.id.toString(),

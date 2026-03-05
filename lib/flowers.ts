@@ -22,6 +22,7 @@ export interface FlowerBillingTarget {
     billToTel?: string
     billToKey?: string
     isPaid?: boolean
+    paidAt?: string | null
     flowers: Flower[]
 }
 

@@ -27,6 +27,7 @@ export default defineConfig([
                 },
             ],
             'react-hooks/set-state-in-effect': 'warn',
+            '@next/next/no-page-custom-font': 'off',
         },
     },
     {

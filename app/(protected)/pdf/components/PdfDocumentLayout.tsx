@@ -2,7 +2,6 @@
 import { Fragment, RefObject } from 'react'
 import { PdfCompanyAd } from './PdfCompanyAd'
 import { PdfMembershipTable } from './PdfMembershipTable'
-import { Estimate } from '../../../../lib/estimates'
 
 export type PdfProductItem = {
     id: string

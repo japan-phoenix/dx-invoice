@@ -15,11 +15,22 @@ type Props = {
     customerId: string
     flower?: Flower | null
     billingTargets: FlowerBillingTarget[]
+    initialBillingTargetId?: string
     onSuccess: () => void
 }
 
-export function FlowerFormDialog({ open, onOpenChange, customerId, flower, billingTargets, onSuccess }: Props) {
+export function FlowerFormDialog({
+    open,
+    onOpenChange,
+    customerId,
+    flower,
+    billingTargets,
+    initialBillingTargetId,
+    onSuccess,
+}: Props) {
     const isEdit = Boolean(flower)
+    // 請求先が確定している場合（追加ボタン経由 or 編集）は請求先関連フィールドを非表示
+    const hideTargetFields = Boolean(initialBillingTargetId) || isEdit
 
     const methods = useForm<FlowerFormData>({
         resolver: zodResolver(flowerFormSchema),
@@ -47,11 +58,20 @@ export function FlowerFormDialog({ open, onOpenChange, customerId, flower, billi
                     deliveryTo: flower.deliveryTo || '',
                     amount: flower.amount,
                 })
+            } else if (initialBillingTargetId) {
+                const target = billingTargets.find((t) => t.id === initialBillingTargetId)
+                reset({
+                    ...DEFAULT_FORM_VALUES,
+                    flowerBillingTargetId: initialBillingTargetId,
+                    billToName: target?.billToName || '',
+                    billToAddress: target?.billToAddress || '',
+                    billToTel: target?.billToTel || '',
+                })
             } else {
                 reset(DEFAULT_FORM_VALUES)
             }
         }
-    }, [open, flower, reset])
+    }, [open, flower, initialBillingTargetId, billingTargets, reset])
 
     const onSubmit = async (formValues: FlowerFormData) => {
         try {
@@ -78,7 +98,11 @@ export function FlowerFormDialog({ open, onOpenChange, customerId, flower, billi
                 </DialogHeader>
                 <FormProvider {...methods}>
                     <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col">
-                        <FlowerFormFields control={control} billingTargets={billingTargets} />
+                        <FlowerFormFields
+                            control={control}
+                            billingTargets={billingTargets}
+                            hideTargetFields={hideTargetFields}
+                        />
 
                         <div className="flex justify-end gap-4 pt-2">
                             <button

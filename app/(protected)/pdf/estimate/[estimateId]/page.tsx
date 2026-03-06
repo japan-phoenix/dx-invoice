@@ -8,7 +8,7 @@ import { CreateButton } from '@/components/button/CreateButton'
 import { ResetButton } from '@/components/button/ResetButton'
 import { SearchButton } from '@/components/button/SearchButton'
 import { toast } from '@/hooks/use-toast'
-import { PdfDocumentLayout } from '@/app/(protected)/pdf/components/PdfDocumentLayout'
+import { PdfInvoiceLayout } from '@/app/(protected)/pdf/components/PdfInvoiceLayout'
 
 export default function EstimatePdfPage() {
     const router = useRouter()
@@ -120,7 +120,7 @@ export default function EstimatePdfPage() {
                 <ResetButton onClick={() => router.back()}>閉じる</ResetButton>
             </div>
 
-            <PdfDocumentLayout
+            <PdfInvoiceLayout
                 contentId="estimate-pdf-content"
                 title="家御葬儀見積書"
                 document={estimate}

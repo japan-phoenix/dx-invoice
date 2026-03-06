@@ -93,7 +93,7 @@ export function DataTable<T>({
                                         }`}
                                         style={{
                                             width: col.width,
-                                            minWidth: '100px',
+                                            minWidth: col.width ?? '100px',
                                         }}
                                         onClick={() => handleSortClick(col)}
                                     >

@@ -125,8 +125,33 @@ export default function CasesPage() {
                     columns={[
                         {
                             key: 'receptionNo',
-                            label: '受付番号',
-                            width: '100px',
+                            label: 'No',
+                            width: '50px',
+                        },
+                        {
+                            key: 'isPaid',
+                            label: '入金',
+                            width: '80px',
+                            render: (item) =>
+                                item.hasInvoice ? (
+                                    <div className="flex justify-center">
+                                        <button
+                                            onClick={(e) => {
+                                                e.stopPropagation()
+                                                handlePaymentClick(item)
+                                            }}
+                                            className={`rounded px-2 py-1 text-xs text-white ${
+                                                item.isPaid
+                                                    ? 'bg-blue-600 hover:bg-blue-700'
+                                                    : 'bg-red-600 hover:bg-red-700'
+                                            }`}
+                                        >
+                                            {item.isPaid ? '取消' : '登録'}
+                                        </button>
+                                    </div>
+                                ) : (
+                                    <div className="text-center">-</div>
+                                ),
                         },
                         {
                             key: 'deceasedName',
@@ -162,19 +187,13 @@ export default function CasesPage() {
                             key: 'hasEstimate',
                             label: '見積',
                             width: '60px',
-                            render: (item) => (item.hasEstimate ? '○' : '-'),
+                            render: (item) => <p className="text-center">{item.hasEstimate ? '○' : '-'}</p>,
                         },
                         {
                             key: 'hasInvoice',
                             label: '請求',
                             width: '60px',
-                            render: (item) => (item.hasInvoice ? '○' : '-'),
-                        },
-                        {
-                            key: 'isPaid',
-                            label: '入金',
-                            width: '60px',
-                            render: (item) => (item.isPaid ? '○' : '-'),
+                            render: (item) => <p className="text-center">{item.hasInvoice ? '○' : '-'}</p>,
                         },
                     ]}
                     actionColumn={{
@@ -221,15 +240,16 @@ export default function CasesPage() {
                                 >
                                     供花登録
                                 </button>
-                                {item.hasInvoice && (
+                                {item.isPaid && item.invoiceId && (
                                     <button
                                         onClick={(e) => {
+                                            e.preventDefault()
                                             e.stopPropagation()
-                                            handlePaymentClick(item)
+                                            router.push(`/pdf/receipt/${item.invoiceId}`)
                                         }}
-                                        className={`rounded px-2 py-1 text-xs text-white ${item.isPaid ? 'bg-gray-500' : 'bg-red-600'}`}
+                                        className="rounded bg-purple-600 px-2 py-1 text-xs text-white hover:bg-purple-700"
                                     >
-                                        {item.isPaid ? '入金取消' : '入金登録'}
+                                        領収書発行
                                     </button>
                                 )}
                             </div>

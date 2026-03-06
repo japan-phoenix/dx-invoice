@@ -163,7 +163,7 @@ function fmtTime(v?: string | Date | null): string {
     return `${String(d.getHours()).padStart(2, '0')}時${String(d.getMinutes()).padStart(2, '0')}分`
 }
 
-export function PdfDocumentLayout({ contentId, containerRef, title, document: doc, products }: Props) {
+export function PdfInvoiceLayout({ contentId, containerRef, title, document: doc, products }: Props) {
     const { docNo, subtotal, tax, total, membershipPaidAmount, grandTotal, items } = doc
     const docAny = doc as any
     const customer: PdfDocumentCustomer | undefined = docAny.customer

@@ -8,7 +8,7 @@ import { CreateButton } from '@/components/button/CreateButton'
 import { ResetButton } from '@/components/button/ResetButton'
 import { SearchButton } from '@/components/button/SearchButton'
 import { toast } from '@/hooks/use-toast'
-import Image from 'next/image'
+import { PdfCompanyProfile } from '@/app/(protected)/pdf/components/PdfCompanyProfile'
 
 export default function FlowerPdfPage() {
     const router = useRouter()
@@ -22,6 +22,7 @@ export default function FlowerPdfPage() {
 
     useEffect(() => {
         loadData()
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [customerId])
 
     const loadData = async () => {
@@ -140,22 +141,13 @@ export default function FlowerPdfPage() {
                     return (
                         <div
                             key={target.id}
+                            className="mt-4"
                             style={{
                                 pageBreakAfter: targetIndex < targets.length - 1 ? 'always' : 'auto',
                                 marginBottom: targetIndex < targets.length - 1 ? 0 : '3rem',
                             }}
                         >
-                            <div
-                                style={{
-                                    backgroundColor: 'white',
-                                    paddingTop: '2rem',
-                                    paddingBottom: '2rem',
-                                    paddingLeft: '2rem',
-                                    paddingRight: '2rem',
-                                    border: '1px solid #ddd',
-                                    borderRadius: '8px',
-                                }}
-                            >
+                            <div className="bg-white px-8 py-8 border border-gray-600" style={{ borderRadius: '8px' }}>
                                 <h1
                                     className="flex w-[12rem] justify-between border-b-2 border-black px-2 text-left text-2xl font-bold"
                                     style={{ fontFamily: '"Noto Sans JP", sans-serif', letterSpacing: '-0.1rem' }}
@@ -181,50 +173,22 @@ export default function FlowerPdfPage() {
                                                 <span>様</span>
                                             </div>
                                         </div>
-                                        <div className="flex w-[90%] items-center justify-between border border-black text-3xl">
-                                            <p className="border-r border-black px-2">
-                                                <strong>金　額</strong>
-                                            </p>
-                                            <p className="px-2">
-                                                <strong>¥{totalWithTax.toLocaleString()}</strong>
-                                            </p>
+                                        {/* <div className="flex w-[90%] items-center justify-between border border-black text-3xl"> */}
+                                        {/* 金額 */}
+                                        <div className="w-[90%] rounded border border-black px-4 py-2">
+                                            <div className="flex items-center gap-2 justify-between">
+                                                <span className="text-md font-bold">金額</span>
+                                                <span className="text-3xl font-black">
+                                                    ¥{totalWithTax.toLocaleString()} −
+                                                </span>
+                                            </div>
                                         </div>
+                                        {/* </div> */}
                                     </div>
 
+                                    {/* 会社情報 */}
                                     <div className="w-[40%] text-center">
-                                        {company && (
-                                            <div className="flex items-center justify-start gap-2 border-0 border-black px-2 py-1 text-left">
-                                                <div className="relative h-[52px] w-[48px] overflow-hidden border-0">
-                                                    <Image
-                                                        src={`/images/pdf_company_logo.png`}
-                                                        alt={'玉泉院'}
-                                                        fill
-                                                        className="object-contain"
-                                                        sizes="256px"
-                                                    />
-                                                </div>
-                                                <div className="flex flex-col items-center justify-center gap-0 border-0 border-black text-left leading-[0.8]">
-                                                    <p className="text-sm leading-[1]">
-                                                        <strong>{company.companyName}</strong>
-                                                    </p>
-                                                    <div className="flex items-center gap-2">
-                                                        <p className="text-xs leading-[1.2]">
-                                                            総合
-                                                            <br />
-                                                            葬祭
-                                                        </p>
-                                                        <p className="text-xl">沖縄</p>
-                                                        <p className="text-3xl mb-1">玉泉院</p>
-                                                    </div>
-                                                    <p className="text-sm self-start leading-[1]">
-                                                        {company.companyAddress}
-                                                    </p>
-                                                    <p className="text-sm self-start leading-[1]">
-                                                        TEL: {company.companyTel}
-                                                    </p>
-                                                </div>
-                                            </div>
-                                        )}
+                                        {company && <PdfCompanyProfile company={company} />}
                                     </div>
                                 </div>
 
@@ -355,11 +319,7 @@ export default function FlowerPdfPage() {
                                             <div>備考</div>
                                             <div className="overflow-hidden">
                                                 <div className="overflow-hidden text-ellipsis whitespace-nowrap">
-                                                    {company && target.isPaid && (
-                                                        <p>
-                                                            <strong>登録番号: {company.companyNo}</strong>
-                                                        </p>
-                                                    )}
+                                                    &nbsp;
                                                 </div>
                                             </div>
                                         </div>

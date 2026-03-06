@@ -8,9 +8,9 @@ import { CreateButton } from '@/components/button/CreateButton'
 import { ResetButton } from '@/components/button/ResetButton'
 import { SearchButton } from '@/components/button/SearchButton'
 import { toast } from '@/hooks/use-toast'
-import { PdfInvoiceLayout } from '@/app/(protected)/pdf/components/PdfInvoiceLayout'
+import { PdfReceiptLayout } from '@/app/(protected)/pdf/components/PdfReceiptLayout'
 
-export default function InvoicePdfPage() {
+export default function ReceiptPdfPage() {
     const router = useRouter()
     const params = useParams()
     const invoiceId = params.invoiceId as string
@@ -22,7 +22,8 @@ export default function InvoicePdfPage() {
 
     useEffect(() => {
         loadData()
-    }, [router, invoiceId])
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [invoiceId])
 
     const loadData = async () => {
         try {
@@ -30,7 +31,7 @@ export default function InvoicePdfPage() {
             setInvoice(invoiceData)
             setProducts(productsData)
         } catch (error) {
-            console.error('Failed to load data:', error)
+            console.error('Failed to load invoice:', error)
         } finally {
             setLoading(false)
         }
@@ -39,13 +40,13 @@ export default function InvoicePdfPage() {
     const handleGeneratePDF = async () => {
         setGenerating(true)
         try {
-            const res = await fetch(`/api/pdf/invoice/${invoiceId}?download`)
+            const res = await fetch(`/api/pdf/receipt/${invoiceId}?download`)
             if (!res.ok) throw new Error(await res.text())
             const blob = await res.blob()
             const url = URL.createObjectURL(blob)
             const a = document.createElement('a')
             a.href = url
-            a.download = `請求書_${invoice?.docNo || invoiceId}_${new Date().toISOString().split('T')[0]}.pdf`
+            a.download = `領収書_${invoice?.docNo || invoiceId}_${new Date().toISOString().split('T')[0]}.pdf`
             a.click()
             URL.revokeObjectURL(url)
         } catch (error) {
@@ -59,7 +60,7 @@ export default function InvoicePdfPage() {
     const handlePreviewPDF = async () => {
         setGenerating(true)
         try {
-            const res = await fetch(`/api/pdf/invoice/${invoiceId}`)
+            const res = await fetch(`/api/pdf/receipt/${invoiceId}`)
             if (!res.ok) throw new Error(await res.text())
             const blob = await res.blob()
             const url = URL.createObjectURL(blob)
@@ -103,7 +104,7 @@ export default function InvoicePdfPage() {
     }
 
     return (
-        <div className="mx-auto max-w-3xl p-8">
+        <div className="mx-auto max-w-2xl p-8">
             {generating && (
                 <div className="fixed inset-0 z-50 flex flex-col items-center justify-center gap-4 bg-white/80 backdrop-blur-sm">
                     <div className="h-10 w-10 animate-spin rounded-full border-4 border-gray-300 border-t-gray-700" />
@@ -120,13 +121,8 @@ export default function InvoicePdfPage() {
                 <ResetButton onClick={() => router.back()}>閉じる</ResetButton>
             </div>
 
-            {/* 請求書レイアウト（PDF生成用） */}
-            <PdfInvoiceLayout
-                contentId="invoice-pdf-content"
-                title="家御葬儀請求書"
-                document={invoice}
-                products={products}
-            />
+            {/* 領収書レイアウト（PDF生成用） */}
+            <PdfReceiptLayout contentId="receipt-pdf-content" document={invoice} products={products} />
         </div>
     )
 }

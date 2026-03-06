@@ -1,4 +1,4 @@
-import type { PdfMembership } from './PdfDocumentLayout'
+import type { PdfMembership } from './PdfInvoiceLayout'
 
 type Props = {
     memberships?: PdfMembership[]

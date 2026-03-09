@@ -1,33 +1,39 @@
-import { defineConfig, globalIgnores } from "eslint/config";
-import typescriptEslint from "@typescript-eslint/eslint-plugin";
-import path from "node:path";
-import { fileURLToPath } from "node:url";
-import js from "@eslint/js";
-import { FlatCompat } from "@eslint/eslintrc";
+import { defineConfig, globalIgnores } from 'eslint/config'
+import { createRequire } from 'node:module'
+import globals from 'globals'
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-const compat = new FlatCompat({
-    baseDirectory: __dirname,
-    recommendedConfig: js.configs.recommended,
-    allConfig: js.configs.all
-});
+const require = createRequire(import.meta.url)
+const nextConfig = require('eslint-config-next')
 
-export default defineConfig([globalIgnores(["**/*"]), {
-    extends: [
-        ...compat.extends("eslint:recommended"),
-        ...compat.extends("plugin:@typescript-eslint/recommended")
-    ],
-
-    plugins: {
-        "@typescript-eslint": typescriptEslint,
+export default defineConfig([
+    globalIgnores(['node_modules/**', '.next/**', 'dist/**']),
+    ...nextConfig,
+    {
+        languageOptions: {
+            globals: {
+                ...globals.browser,
+                ...globals.node,
+            },
+        },
     },
-
-    rules: {
-        "@typescript-eslint/no-explicit-any": "off",
-
-        "@typescript-eslint/no-unused-vars": ["warn", {
-            argsIgnorePattern: "^_",
-        }],
+    {
+        files: ['**/*.ts', '**/*.tsx'],
+        rules: {
+            '@typescript-eslint/no-explicit-any': 'off',
+            '@typescript-eslint/no-unused-vars': [
+                'warn',
+                {
+                    argsIgnorePattern: '^_',
+                },
+            ],
+            'react-hooks/set-state-in-effect': 'warn',
+            '@next/next/no-page-custom-font': 'off',
+        },
     },
-}]);
+    {
+        files: ['**/*.js', '**/*.cjs'],
+        rules: {
+            '@typescript-eslint/no-require-imports': 'off',
+        },
+    },
+])

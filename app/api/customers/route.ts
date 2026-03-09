@@ -1,11 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { PrismaClient } from '@phoenix-jpn/db'
 import { requireAuth } from '@/lib/auth-middleware'
 import { serializeBigInt } from '@/lib/prisma-utils'
-
-export const dynamic = 'force-dynamic'
-
-const prisma = new PrismaClient()
+import { prisma } from '@/lib/prisma'
 
 export async function GET(request: NextRequest) {
     try {
@@ -19,8 +15,7 @@ export async function GET(request: NextRequest) {
         const { searchParams } = new URL(request.url)
         const cityId = searchParams.get('cityId') || undefined
         const townId = searchParams.get('townId') || undefined
-        const lastName = searchParams.get('lastName') || undefined
-        const firstName = searchParams.get('firstName') || undefined
+        const deceasedName = searchParams.get('deceasedName') || undefined
         const receptionFrom = searchParams.get('receptionFrom') || undefined
         const receptionTo = searchParams.get('receptionTo') || undefined
         const funeralFrom = searchParams.get('funeralFrom') || undefined
@@ -31,29 +26,76 @@ export async function GET(request: NextRequest) {
         // 検索条件を構築
         const where: any = {}
 
+        // cityId / townId は addressテーブルから name を取得し、
+        // chief_mourner_address または payer_address に対して部分一致検索する
         if (cityId) {
-            where.chiefMournerCityId = BigInt(cityId)
-        }
-        if (townId) {
-            where.chiefMournerTownId = BigInt(townId)
+            const city = await prisma.addressCity.findUnique({
+                where: { id: BigInt(cityId) },
+                select: { name: true },
+            })
+
+            if (city?.name) {
+                where.AND = where.AND || []
+                where.AND.push({
+                    OR: [
+                        {
+                            chiefMournerAddress: {
+                                contains: city.name,
+                            },
+                        },
+                        {
+                            payerAddress: {
+                                contains: city.name,
+                            },
+                        },
+                    ],
+                })
+            }
         }
 
-        if (lastName || firstName) {
-            where.OR = []
-            if (lastName) {
-                where.OR.push({
+        if (townId) {
+            const town = await prisma.addressTown.findUnique({
+                where: { id: BigInt(townId) },
+                select: { name: true },
+            })
+
+            if (town?.name) {
+                where.AND = where.AND || []
+                where.AND.push({
+                    OR: [
+                        {
+                            chiefMournerAddress: {
+                                contains: town.name,
+                            },
+                        },
+                        {
+                            payerAddress: {
+                                contains: town.name,
+                            },
+                        },
+                    ],
+                })
+            }
+        }
+
+        if (deceasedName) {
+            where.OR = [
+                {
+                    deceasedName: {
+                        contains: deceasedName,
+                    },
+                },
+                {
                     deceasedLastName: {
-                        contains: lastName,
+                        contains: deceasedName,
                     },
-                })
-            }
-            if (firstName) {
-                where.OR.push({
+                },
+                {
                     deceasedFirstName: {
-                        contains: firstName,
+                        contains: deceasedName,
                     },
-                })
-            }
+                },
+            ]
         }
 
         if (receptionFrom || receptionTo) {
@@ -147,12 +189,14 @@ export async function GET(request: NextRequest) {
 
             return {
                 id: customer.id.toString(),
+                receptionNo: customer.receptionNo,
                 deceasedName: customer.deceasedName,
                 age: customer.age,
                 address: customer.chiefMournerAddress || '',
                 receptionAt: customer.receptionAt ? customer.receptionAt.toISOString() : null,
                 funeralFrom: customer.funeralFrom ? customer.funeralFrom.toISOString() : null,
                 hasEstimate: customer.estimates.length > 0,
+                estimateId: customer.estimates[0]?.id.toString(),
                 hasInvoice: customer.invoices.length > 0,
                 invoiceId: invoice?.id.toString(),
                 isPaid: isPaid,
@@ -187,6 +231,15 @@ export async function POST(request: NextRequest) {
         }
 
         const data = await request.json()
+
+        // バリデーション: 必須フィールド
+        if (!data.receptionAt || typeof data.receptionAt !== 'string') {
+            return NextResponse.json({ error: '受付日は必須です' }, { status: 400 })
+        }
+
+        if (!data.deceasedName || typeof data.deceasedName !== 'string' || data.deceasedName.trim() === '') {
+            return NextResponse.json({ error: '故人名は必須です' }, { status: 400 })
+        }
 
         // 空文字列をnullに変換するヘルパー関数
         const toNullIfEmpty = (value: any) => {
@@ -237,6 +290,26 @@ export async function POST(request: NextRequest) {
             notes: toNullIfEmpty(data.notes),
             memberCardNote: toNullIfEmpty(data.memberCardNote),
         }
+
+        // receptionNo を MAX + 1 で採番（Stringカラムのため number で計算）
+        const maxReception = await prisma.customer.aggregate({
+            _max: {
+                receptionNo: true,
+            },
+        })
+
+        const currentMaxRaw = maxReception._max.receptionNo
+
+        const currentMaxNumber =
+            currentMaxRaw === null || currentMaxRaw === undefined
+                ? 0
+                : typeof currentMaxRaw === 'number'
+                  ? currentMaxRaw
+                  : parseInt(currentMaxRaw as string, 10) || 0
+
+        const nextReceptionNo = currentMaxNumber + 1
+
+        customerData.receptionNo = String(nextReceptionNo)
 
         // 顧客を作成
         const customer = await prisma.customer.create({

@@ -8,6 +8,9 @@
         "start": "next start",
         "lint": "eslint .",
         "type-check": "tsc --noEmit",
+        "test": "vitest run",
+        "test:watch": "vitest",
+        "test:coverage": "vitest run --coverage",
         "postinstall": "pnpm db:generate",
         "prebuild": "pnpm db:generate && pnpm db:migrate:deploy",
         "build:check": "pnpm build && node scripts/check-build.js",
@@ -67,6 +70,7 @@
         "@types/react-dom": "19.2.3",
         "@typescript-eslint/eslint-plugin": "^8.56.1",
         "@typescript-eslint/parser": "^8.56.1",
+        "@vitest/coverage-v8": "^4.0.18",
         "autoprefixer": "^10.4.24",
         "eslint": "^9",
         "eslint-config-next": "16.1.6",
@@ -77,7 +81,8 @@
         "shadcn": "^3.8.4",
         "tailwindcss": "^3.4.19",
         "tw-animate-css": "^1.4.0",
-        "typescript": "^5.3.3"
+        "typescript": "^5.3.3",
+        "vitest": "^4.0.18"
     },
     "engines": {
         "node": ">=20.9.0",

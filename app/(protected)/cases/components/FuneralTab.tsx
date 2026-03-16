@@ -39,22 +39,22 @@ export function FuneralTab() {
             {/* 通夜場所 */}
             <FormInput<CaseFormData> name="wakePlace" control={control} label="通夜場所" error={errors.wakePlace} />
 
-            {/* 国への出棺日時 */}
+            {/* 出棺日時 */}
             <FormInput<CaseFormData>
                 name="departureAt"
                 control={control}
-                label="国への出棺日時"
+                label="出棺日時"
                 type="datetime-local"
                 minYear={1950}
                 maxYear={new Date().getFullYear()}
                 error={errors.departureAt}
             />
 
-            {/* 国への出棺場所 */}
+            {/* 出棺場所 */}
             <FormInput<CaseFormData>
                 name="departurePlace"
                 control={control}
-                label="国への出棺場所"
+                label="出棺場所"
                 error={errors.departurePlace}
             />
 

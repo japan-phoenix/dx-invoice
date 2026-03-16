@@ -68,7 +68,7 @@ export function useInvoiceCreate(customerId: string, reset: UseFormReset<Invoice
 
     const onSubmit = async (formValues: InvoiceFormData) => {
         try {
-            const isMember = Boolean(customer?.memberCardNote)
+            const isMember = formValues.isMember === 'true'
             const mergedItems = items.map((item, i) => {
                 const qty = formValues.items[i]?.qty ?? item.qty
                 const description = formValues.items[i]?.description ?? item.description ?? ''
@@ -76,7 +76,7 @@ export function useInvoiceCreate(customerId: string, reset: UseFormReset<Invoice
                 const amount = unitPrice * qty
                 return { ...item, qty, description, amount, sortNo: i }
             })
-            const totals = calculateInvoiceTotals(items, formValues.items, customer)
+            const totals = calculateInvoiceTotals(items, formValues.items, isMember, customer)
             const data = { ...formValues, ...totals, items: mergedItems }
             const created = await createInvoice(customerId, data)
             toast({ title: '登録しました', variant: 'success', duration: 2000 })
@@ -113,6 +113,7 @@ export function useInvoiceEdit(invoiceId: string, reset: UseFormReset<InvoiceFor
             reset({
                 docNo: invoiceData.docNo || '',
                 status: invoiceData.status || 'DRAFT',
+                isMember: String((invoiceData as any).isMember ?? false),
                 cremationProcessType: (invoiceData as any).cremationProcessType || '',
                 altarPlaceType: (invoiceData as any).altarPlaceType || '',
                 altarPlaceOther: (invoiceData as any).altarPlaceOther || '',
@@ -148,7 +149,7 @@ export function useInvoiceEdit(invoiceId: string, reset: UseFormReset<InvoiceFor
 
     const onSubmit = async (formValues: InvoiceFormData) => {
         try {
-            const isMember = Boolean(customer?.memberCardNote)
+            const isMember = formValues.isMember === 'true'
             const mergedItems = items.map((item, i) => {
                 const qty = formValues.items[i]?.qty ?? item.qty
                 const description = formValues.items[i]?.description ?? item.description ?? ''
@@ -156,7 +157,7 @@ export function useInvoiceEdit(invoiceId: string, reset: UseFormReset<InvoiceFor
                 const amount = unitPrice * qty
                 return { ...item, qty, description, amount, sortNo: i }
             })
-            const totals = calculateInvoiceTotals(items, formValues.items, customer)
+            const totals = calculateInvoiceTotals(items, formValues.items, isMember, customer)
             const data = { ...formValues, ...totals, items: mergedItems }
             await updateInvoice(invoiceId, data)
             toast({ title: '更新しました', variant: 'success', duration: 2000 })
@@ -271,9 +272,9 @@ export function useInvoiceItems(
 export function calculateInvoiceTotals(
     items: InvoiceItem[],
     itemFields: InvoiceItemField[] | undefined,
+    isMember: boolean,
     customer: any
 ) {
-    const isMember = Boolean(customer?.memberCardNote)
     const subtotal = items.reduce((sum, item, i) => {
         const qty = itemFields?.[i]?.qty ?? item.qty
         const unitPrice = isMember ? item.unitPriceMember : item.unitPriceGeneral

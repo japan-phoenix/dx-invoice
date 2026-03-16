@@ -8,6 +8,7 @@ export const invoiceItemFieldSchema = z.object({
 export const invoiceFormSchema = z.object({
     docNo: z.string(),
     status: z.string(),
+    isMember: z.string(),
     cremationProcessType: z.string(),
     altarPlaceType: z.string(),
     altarPlaceOther: z.string(),
@@ -26,6 +27,7 @@ export type InvoiceFormData = z.infer<typeof invoiceFormSchema>
 export const DEFAULT_INVOICE_FORM_VALUES: InvoiceFormData = {
     docNo: '',
     status: 'DRAFT',
+    isMember: 'false',
     cremationProcessType: '',
     altarPlaceType: '',
     altarPlaceOther: '',

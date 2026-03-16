@@ -49,7 +49,7 @@ export function useEstimateCreate(customerId: string, reset: UseFormReset<Estima
 
     const onSubmit = async (formValues: EstimateFormData) => {
         try {
-            const isMember = Boolean(customer?.memberCardNote)
+            const isMember = formValues.isMember === 'true'
             const mergedItems = items.map((item, i) => {
                 const qty = formValues.items[i]?.qty ?? item.qty
                 const description = formValues.items[i]?.description ?? item.description ?? ''
@@ -57,7 +57,7 @@ export function useEstimateCreate(customerId: string, reset: UseFormReset<Estima
                 const amount = unitPrice * qty
                 return { ...item, qty, description, amount, sortNo: i }
             })
-            const totals = calculateTotals(items, formValues.items, customer)
+            const totals = calculateTotals(items, formValues.items, isMember, customer)
             const data = { ...formValues, ...totals, items: mergedItems }
             const created = await createEstimate(customerId, data)
             toast({ title: '登録しました', variant: 'success', duration: 2000 })
@@ -94,6 +94,7 @@ export function useEstimateEdit(estimateId: string, reset: UseFormReset<Estimate
             reset({
                 docNo: estimateData.docNo || '',
                 status: estimateData.status || 'DRAFT',
+                isMember: String((estimateData as any).isMember ?? false),
                 cremationProcessType: (estimateData as any).cremationProcessType || '',
                 altarPlaceType: (estimateData as any).altarPlaceType || '',
                 altarPlaceOther: (estimateData as any).altarPlaceOther || '',
@@ -129,7 +130,7 @@ export function useEstimateEdit(estimateId: string, reset: UseFormReset<Estimate
 
     const onSubmit = async (formValues: EstimateFormData) => {
         try {
-            const isMember = Boolean(customer?.memberCardNote)
+            const isMember = formValues.isMember === 'true'
             const mergedItems = items.map((item, i) => {
                 const qty = formValues.items[i]?.qty ?? item.qty
                 const description = formValues.items[i]?.description ?? item.description ?? ''
@@ -137,7 +138,7 @@ export function useEstimateEdit(estimateId: string, reset: UseFormReset<Estimate
                 const amount = unitPrice * qty
                 return { ...item, qty, description, amount, sortNo: i }
             })
-            const totals = calculateTotals(items, formValues.items, customer)
+            const totals = calculateTotals(items, formValues.items, isMember, customer)
             const data = { ...formValues, ...totals, items: mergedItems }
             await updateEstimate(estimateId, data)
             toast({ title: '更新しました', variant: 'success', duration: 2000 })
@@ -249,8 +250,12 @@ export function useEstimateItems(
 // -------------------------------------------------------
 // 合計計算ユーティリティ
 // -------------------------------------------------------
-export function calculateTotals(items: EstimateItem[], itemFields: EstimateItemField[] | undefined, customer: any) {
-    const isMember = Boolean(customer?.memberCardNote)
+export function calculateTotals(
+    items: EstimateItem[],
+    itemFields: EstimateItemField[] | undefined,
+    isMember: boolean,
+    customer: any
+) {
     const subtotal = items.reduce((sum, item, i) => {
         const qty = itemFields?.[i]?.qty ?? item.qty
         const unitPrice = isMember ? item.unitPriceMember : item.unitPriceGeneral

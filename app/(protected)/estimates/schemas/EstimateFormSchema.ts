@@ -8,6 +8,7 @@ export const estimateItemFieldSchema = z.object({
 export const estimateFormSchema = z.object({
     docNo: z.string(),
     status: z.string(),
+    isMember: z.string(),
     cremationProcessType: z.string(),
     altarPlaceType: z.string(),
     altarPlaceOther: z.string(),
@@ -26,6 +27,7 @@ export type EstimateFormData = z.infer<typeof estimateFormSchema>
 export const DEFAULT_FORM_VALUES: EstimateFormData = {
     docNo: '',
     status: 'DRAFT',
+    isMember: 'false',
     cremationProcessType: '',
     altarPlaceType: '',
     altarPlaceOther: '',

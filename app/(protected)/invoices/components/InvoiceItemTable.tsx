@@ -11,11 +11,10 @@ type Props = {
     fields: FieldArrayWithId<InvoiceFormData, 'items', 'id'>[]
     control: Control<InvoiceFormData>
     handleRemoveItem: (index: number) => void
-    customer: any
+    isMember: boolean
 }
 
-export function InvoiceItemTable({ items, fields, control, handleRemoveItem, customer }: Props) {
-    const isMember = Boolean(customer?.memberCardNote)
+export function InvoiceItemTable({ items, fields, control, handleRemoveItem, isMember }: Props) {
     const watchedItems = useWatch({ control, name: 'items' })
     return (
         <div className="mb-8">

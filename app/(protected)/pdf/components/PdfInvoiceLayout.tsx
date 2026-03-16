@@ -79,6 +79,7 @@ const genderLabel: Record<string, string> = {
 
 export type PdfDocument = {
     docNo?: string | null
+    isMember?: boolean | null
     subtotal: number
     tax: number
     total: number
@@ -181,7 +182,7 @@ export function PdfInvoiceLayout({ contentId, containerRef, title, document: doc
           }
         : undefined
     const displayRows = buildDisplayRows(products, items)
-    const isMember = Boolean(customer?.memberCardNote)
+    const isMember = doc.isMember === true
     return (
         <div
             id={contentId}

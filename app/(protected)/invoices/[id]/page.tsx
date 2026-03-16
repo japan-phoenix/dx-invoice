@@ -15,6 +15,7 @@ import { InvoiceItemTable } from '../components/InvoiceItemTable'
 import { InvoiceTotals } from '../components/InvoiceTotals'
 import { InvoiceOtherFields } from '../components/InvoiceOtherFields'
 import { FormInput } from '@/components/form/FormInput'
+import { FormSelect } from '@/components/form/FormSelect'
 import { toast } from '@/hooks/use-toast'
 
 export default function InvoiceEditPage() {
@@ -31,7 +32,7 @@ export default function InvoiceEditPage() {
         handleSubmit,
         reset,
         watch,
-        formState: { isSubmitting, errors },
+        formState: { isSubmitting, isDirty, errors },
     } = methods
 
     const {
@@ -53,7 +54,7 @@ export default function InvoiceEditPage() {
         return null
     }
 
-    const totals = calculateInvoiceTotals(items, watch('items'), customer)
+    const totals = calculateInvoiceTotals(items, watch('items'), watch('isMember') === 'true', customer)
 
     const onInvalid = (errs: any) => {
         const itemsError = errs?.items?.root?.message ?? errs?.items?.message
@@ -77,6 +78,15 @@ export default function InvoiceEditPage() {
                     <h3 className="mb-4">基本情報</h3>
                     <div className="grid grid-cols-2 gap-4">
                         <FormInput name="docNo" control={control} label="請求番号" placeholder="例: INV-0001" />
+                        <FormSelect
+                            name="isMember"
+                            control={control}
+                            label="一般・会員"
+                            options={[
+                                { value: 'false', label: '一般' },
+                                { value: 'true', label: '会員' },
+                            ]}
+                        />
                     </div>
                 </div>
 
@@ -116,7 +126,7 @@ export default function InvoiceEditPage() {
                     fields={itemFields}
                     control={control}
                     handleRemoveItem={handleRemoveItem}
-                    customer={customer}
+                    isMember={watch('isMember') === 'true'}
                 />
 
                 {/* 合計エリア */}
@@ -136,8 +146,11 @@ export default function InvoiceEditPage() {
                     </button>
                     <button
                         type="button"
+                        disabled={isDirty}
                         onClick={() => router.push(`/pdf/invoice/${invoice.id}`)}
-                        className="cursor-pointer rounded border-0 bg-cyan-600 px-6 py-3 text-white"
+                        className={`rounded border-0 px-6 py-3 text-white ${
+                            isDirty ? 'cursor-not-allowed bg-gray-300' : 'cursor-pointer bg-cyan-600'
+                        }`}
                     >
                         PDFプレビュー
                     </button>

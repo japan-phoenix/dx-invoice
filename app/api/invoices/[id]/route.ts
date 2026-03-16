@@ -140,56 +140,64 @@ export async function PUT(request: NextRequest, props: { params: Promise<{ id: s
                 ? data.altarPlaceType
                 : null
 
-        await prisma.invoiceItem.deleteMany({
-            where: { invoiceId: BigInt(id) },
+        await prisma.$transaction(async (tx) => {
+            await tx.invoiceItem.deleteMany({
+                where: { invoiceId: BigInt(id) },
+            })
+
+            await tx.invoice.update({
+                where: { id: BigInt(id) },
+                data: {
+                    docNo: data.docNo || null,
+                    status: data.status,
+                    isMember: data.isMember === true || data.isMember === 'true',
+                    subtotal: totals.subtotal,
+                    tax: totals.tax,
+                    total: totals.total,
+                    membershipPaidAmount,
+                    grandTotal: totals.grandTotal,
+                    cremationProcessType,
+                    altarPlaceType,
+                    altarPlaceOther: data.altarPlaceOther || null,
+                    ceilingHeight: data.ceilingHeight || null,
+                    estimateStaff: data.estimateStaff || null,
+                    ceremonyStaff: data.ceremonyStaff || null,
+                    transportStaff: data.transportStaff || null,
+                    decorationStaff: data.decorationStaff || null,
+                    returnStaff: data.returnStaff || null,
+                    issuedAt: data.issuedAt ? new Date(data.issuedAt) : null,
+                    items: {
+                        create: (data.items || []).map((item: any, index: number) => ({
+                            productItemId: item.productItemId ? BigInt(item.productItemId) : null,
+                            productVariantId: item.productVariantId ? BigInt(item.productVariantId) : null,
+                            description: item.description,
+                            unitPriceGeneral: item.unitPriceGeneral || 0,
+                            unitPriceMember: item.unitPriceMember || 0,
+                            qty: item.qty || 0,
+                            amount: item.amount || 0,
+                            sortNo: item.sortNo ?? index,
+                        })),
+                    },
+                },
+                include: {
+                    customer: true,
+                    items: true,
+                },
+            })
         })
 
-        const updated = await prisma.invoice.update({
+        const updated = await prisma.invoice.findUnique({
             where: { id: BigInt(id) },
-            data: {
-                docNo: data.docNo || null,
-                status: data.status,
-                subtotal: totals.subtotal,
-                tax: totals.tax,
-                total: totals.total,
-                membershipPaidAmount,
-                grandTotal: totals.grandTotal,
-                cremationProcessType,
-                altarPlaceType,
-                altarPlaceOther: data.altarPlaceOther || null,
-                ceilingHeight: data.ceilingHeight || null,
-                estimateStaff: data.estimateStaff || null,
-                ceremonyStaff: data.ceremonyStaff || null,
-                transportStaff: data.transportStaff || null,
-                decorationStaff: data.decorationStaff || null,
-                returnStaff: data.returnStaff || null,
-                issuedAt: data.issuedAt ? new Date(data.issuedAt) : null,
-                items: {
-                    create: (data.items || []).map((item: any, index: number) => ({
-                        productItemId: item.productItemId ? BigInt(item.productItemId) : null,
-                        productVariantId: item.productVariantId ? BigInt(item.productVariantId) : null,
-                        description: item.description,
-                        unitPriceGeneral: item.unitPriceGeneral || 0,
-                        unitPriceMember: item.unitPriceMember || 0,
-                        qty: item.qty || 0,
-                        amount: item.amount || 0,
-                        sortNo: item.sortNo ?? index,
-                    })),
-                },
-            },
-            include: {
-                customer: true,
-                items: true,
-            },
+            include: { customer: true, items: true },
         })
 
         // レスポンスを返す
         return NextResponse.json(
             serializeBigInt({
                 ...updated,
-                id: updated.id.toString(),
-                customerId: updated.customerId.toString(),
-                fromEstimateId: updated.fromEstimateId?.toString(),
+                id: updated!.id.toString(),
+                customerId: updated!.customerId.toString(),
+                fromEstimateId: updated!.fromEstimateId?.toString(),
             })
         )
     } catch (error: any) {

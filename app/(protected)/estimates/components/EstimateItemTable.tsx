@@ -11,11 +11,10 @@ type Props = {
     fields: FieldArrayWithId<EstimateFormData, 'items', 'id'>[]
     control: Control<EstimateFormData>
     handleRemoveItem: (index: number) => void
-    customer: any
+    isMember: boolean
 }
 
-export function EstimateItemTable({ items, fields, control, handleRemoveItem, customer }: Props) {
-    const isMember = Boolean(customer?.memberCardNote)
+export function EstimateItemTable({ items, fields, control, handleRemoveItem, isMember }: Props) {
     const watchedItems = useWatch({ control, name: 'items' })
     return (
         <div className="mb-8">

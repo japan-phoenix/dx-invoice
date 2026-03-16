@@ -161,6 +161,7 @@ export async function POST(request: NextRequest) {
                 customerId: BigInt(customerId),
                 docNo,
                 status: data.status || 'DRAFT',
+                isMember: data.isMember === true || data.isMember === 'true',
                 subtotal: totals.subtotal,
                 tax: totals.tax,
                 total: totals.total,

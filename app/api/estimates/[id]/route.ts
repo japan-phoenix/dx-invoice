@@ -154,54 +154,55 @@ export async function PUT(request: NextRequest, props: { params: Promise<{ id: s
                 ? data.altarPlaceType
                 : null
 
-        // 既存の明細を削除
-        await prisma.estimateItem.deleteMany({
-            where: { estimateId: BigInt(id) },
-        })
-
-        // 見積を更新
-        const updated = await prisma.estimate.update({
-            where: { id: BigInt(id) },
-            data: {
-                docNo: data.docNo || null,
-                status: data.status,
-                subtotal: totals.subtotal,
-                tax: totals.tax,
-                total: totals.total,
-                membershipPaidAmount,
-                grandTotal: totals.grandTotal,
-                cremationProcessType,
-                altarPlaceType,
-                altarPlaceOther: data.altarPlaceOther || null,
-                ceilingHeight: data.ceilingHeight || null,
-                estimateStaff: data.estimateStaff || null,
-                ceremonyStaff: data.ceremonyStaff || null,
-                transportStaff: data.transportStaff || null,
-                decorationStaff: data.decorationStaff || null,
-                returnStaff: data.returnStaff || null,
-                issuedAt: data.issuedAt ? new Date(data.issuedAt) : null,
-                items: {
-                    create: (data.items || []).map((item: any, index: number) => ({
-                        productItemId: item.productItemId ? BigInt(item.productItemId) : null,
-                        productVariantId: item.productVariantId ? BigInt(item.productVariantId) : null,
-                        description: item.description,
-                        unitPriceGeneral: item.unitPriceGeneral || 0,
-                        unitPriceMember: item.unitPriceMember || 0,
-                        qty: item.qty || 0,
-                        amount: item.amount || 0,
-                        sortNo: item.sortNo ?? index,
-                    })),
-                },
-            },
-            include: {
-                customer: true,
-                items: {
-                    include: {
-                        productItem: true,
-                        productVariant: true,
+        // 既存の明細削除 + 見積更新をトランザクションで実行
+        const updated = await prisma.$transaction(async (tx) => {
+            await tx.estimateItem.deleteMany({
+                where: { estimateId: BigInt(id) },
+            })
+            return tx.estimate.update({
+                where: { id: BigInt(id) },
+                data: {
+                    docNo: data.docNo || null,
+                    status: data.status,
+                    isMember: data.isMember === true || data.isMember === 'true',
+                    subtotal: totals.subtotal,
+                    tax: totals.tax,
+                    total: totals.total,
+                    membershipPaidAmount,
+                    grandTotal: totals.grandTotal,
+                    cremationProcessType,
+                    altarPlaceType,
+                    altarPlaceOther: data.altarPlaceOther || null,
+                    ceilingHeight: data.ceilingHeight || null,
+                    estimateStaff: data.estimateStaff || null,
+                    ceremonyStaff: data.ceremonyStaff || null,
+                    transportStaff: data.transportStaff || null,
+                    decorationStaff: data.decorationStaff || null,
+                    returnStaff: data.returnStaff || null,
+                    issuedAt: data.issuedAt ? new Date(data.issuedAt) : null,
+                    items: {
+                        create: (data.items || []).map((item: any, index: number) => ({
+                            productItemId: item.productItemId ? BigInt(item.productItemId) : null,
+                            productVariantId: item.productVariantId ? BigInt(item.productVariantId) : null,
+                            description: item.description,
+                            unitPriceGeneral: item.unitPriceGeneral || 0,
+                            unitPriceMember: item.unitPriceMember || 0,
+                            qty: item.qty || 0,
+                            amount: item.amount || 0,
+                            sortNo: item.sortNo ?? index,
+                        })),
                     },
                 },
-            },
+                include: {
+                    customer: true,
+                    items: {
+                        include: {
+                            productItem: true,
+                            productVariant: true,
+                        },
+                    },
+                },
+            })
         })
 
         // レスポンスを返す

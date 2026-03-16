@@ -51,7 +51,7 @@ function EstimateNewPageInner() {
         return null
     }
 
-    const totals = calculateTotals(items, watch('items'), customer)
+    const totals = calculateTotals(items, watch('items'), watch('isMember') === 'true', customer)
 
     const onInvalid = (errs: any) => {
         const itemsError = errs?.items?.root?.message ?? errs?.items?.message
@@ -75,6 +75,15 @@ function EstimateNewPageInner() {
                     <h3 className="mb-4">基本情報</h3>
                     <div className="grid grid-cols-2 gap-4">
                         <FormInput name="docNo" control={control} label="見積番号" placeholder="例: EST-0001" />
+                        <FormSelect
+                            name="isMember"
+                            control={control}
+                            label="一般・会員"
+                            options={[
+                                { value: 'false', label: '一般' },
+                                { value: 'true', label: '会員' },
+                            ]}
+                        />
                         <FormSelect name="status" control={control} label="見積区分" options={STATUS_OPTIONS} />
                     </div>
                 </div>
@@ -115,7 +124,7 @@ function EstimateNewPageInner() {
                     fields={itemFields}
                     control={control}
                     handleRemoveItem={handleRemoveItem}
-                    customer={customer}
+                    isMember={watch('isMember') === 'true'}
                 />
 
                 {/* 合計エリア */}

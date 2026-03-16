@@ -6,7 +6,7 @@ import { FormSelect } from '@/components/form/FormSelect'
 import { FormCheckbox } from '@/components/form/FormCheckbox'
 import { FormAutocomplete } from '@/components/form/FormAutocomplete'
 import { FormInputWithPostalSearch } from '@/components/form/FormInputWithPostalSearch'
-import { RELATION_OPTIONS } from '../constants/casesOptions'
+import { RELATION_OPTIONS, RELIGION_OPTIONS } from '../constants/casesOptions'
 
 interface DeceasedTabProps {
     cities: AddressCity[]
@@ -130,7 +130,14 @@ export function DeceasedTab({ cities, towns, onCityChange }: DeceasedTabProps) {
             />
 
             {/* 御宗旨 */}
-            <FormInput<CaseFormData> name="religion" control={control} label="御宗旨" error={errors.religion} />
+            <FormSelect<CaseFormData>
+                name="religion"
+                control={control}
+                label="御宗旨"
+                options={RELIGION_OPTIONS.map((v) => ({ value: v, label: v }))}
+                error={errors.religion}
+                placeholder="選択してください"
+            />
 
             {/* 喪主情報 */}
             <div style={{ gridColumn: '1 / -1' }}>

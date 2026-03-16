@@ -27,6 +27,7 @@ export interface SearchCustomersParams {
     funeralTo?: string
     paid?: boolean
     unpaid?: boolean
+    estimateStatusConfirmed?: boolean
 }
 
 export async function searchCustomers(params: SearchCustomersParams): Promise<CustomerListItem[]> {

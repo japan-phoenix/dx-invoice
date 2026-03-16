@@ -11,6 +11,8 @@ import { EstimateItemTable } from '../components/EstimateItemTable'
 import { EstimateTotals } from '../components/EstimateTotals'
 import { EstimateOtherFields } from '../components/EstimateOtherFields'
 import { FormInput } from '@/components/form/FormInput'
+import { FormSelect } from '@/components/form/FormSelect'
+import { STATUS_OPTIONS } from '../constants/estimateOptions'
 import { toast } from '@/hooks/use-toast'
 
 function EstimateNewPageInner() {
@@ -73,6 +75,7 @@ function EstimateNewPageInner() {
                     <h3 className="mb-4">基本情報</h3>
                     <div className="grid grid-cols-2 gap-4">
                         <FormInput name="docNo" control={control} label="見積番号" placeholder="例: EST-0001" />
+                        <FormSelect name="status" control={control} label="見積区分" options={STATUS_OPTIONS} />
                     </div>
                 </div>
 

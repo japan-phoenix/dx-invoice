@@ -154,6 +154,21 @@ export function CaseSearchForm({ formParams, setFormParams, onSearch, onReset, i
                         />
                     </div>
                 </div>
+                <div>
+                    <label className="mb-2 block text-sm">見積区分</label>
+                    <div className="flex gap-4">
+                        <CheckboxUI
+                            checked={formParams.estimateStatusConfirmed === true}
+                            onChange={(checked) =>
+                                setFormParams({
+                                    ...formParams,
+                                    estimateStatusConfirmed: checked ? true : undefined,
+                                })
+                            }
+                            label="事前相談見積のみ"
+                        />
+                    </div>
+                </div>
             </div>
 
             <div className="flex gap-4">

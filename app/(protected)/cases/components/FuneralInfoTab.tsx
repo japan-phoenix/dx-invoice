@@ -1,12 +1,9 @@
-import React from 'react'
 import { useFormContext } from 'react-hook-form'
 import { CaseFormData } from '../schemas/CaseFormSchema'
 import { FormInput } from '@/components/form/FormInput'
 import { FormTextarea } from '@/components/form/FormTextarea'
-import { FormAutocomplete } from '@/components/form/FormAutocomplete'
-import { PICKUP_PLACE_OPTIONS } from '../constants/casesOptions'
 
-export function FuneralTab() {
+export function FuneralInfoTab() {
     const {
         control,
         formState: { errors },
@@ -14,50 +11,6 @@ export function FuneralTab() {
 
     return (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '1rem' }}>
-            {/* 引取場所 */}
-            <div style={{ gridColumn: '1 / -1' }}>
-                <FormAutocomplete<CaseFormData>
-                    name="pickupPlace"
-                    control={control}
-                    label="引取場所"
-                    options={[...PICKUP_PLACE_OPTIONS]}
-                    error={errors.pickupPlace}
-                />
-            </div>
-
-            {/* 通夜日時 */}
-            <FormInput<CaseFormData>
-                name="wakeAt"
-                control={control}
-                label="通夜日時"
-                type="datetime-local"
-                minYear={1950}
-                maxYear={new Date().getFullYear()}
-                error={errors.wakeAt}
-            />
-
-            {/* 通夜場所 */}
-            <FormInput<CaseFormData> name="wakePlace" control={control} label="通夜場所" error={errors.wakePlace} />
-
-            {/* 出棺日時 */}
-            <FormInput<CaseFormData>
-                name="departureAt"
-                control={control}
-                label="出棺日時"
-                type="datetime-local"
-                minYear={1950}
-                maxYear={new Date().getFullYear()}
-                error={errors.departureAt}
-            />
-
-            {/* 出棺場所 */}
-            <FormInput<CaseFormData>
-                name="departurePlace"
-                control={control}
-                label="出棺場所"
-                error={errors.departurePlace}
-            />
-
             {/* 葬儀・告別式開始日時 */}
             <FormInput<CaseFormData>
                 name="funeralFrom"
@@ -104,14 +57,6 @@ export function FuneralTab() {
             <div style={{ gridColumn: '1 / -1' }}>
                 <FormTextarea<CaseFormData> name="notes" control={control} label="備考" rows={4} error={errors.notes} />
             </div>
-
-            {/* 会員証 */}
-            <FormInput<CaseFormData>
-                name="memberCardNote"
-                control={control}
-                label="会員証"
-                error={errors.memberCardNote}
-            />
         </div>
     )
 }

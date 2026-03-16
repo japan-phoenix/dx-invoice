@@ -9,15 +9,29 @@ import { useCaseFormData } from '../hooks/useCaseForm'
 import { getFormDefaultValues, transformSubmitData } from '../hooks/useCaseFormConfig'
 import { logFormErrors } from '@/lib/formDebugUtils'
 import { CaseFormTabs } from '../components/CaseFormTabs'
-import { DeceasedTab } from '../components/DeceasedTab'
-import { FuneralTab } from '../components/FuneralTab'
-import { MembershipTab } from '../components/MembershipTab'
+import { DeceasedInfoTab } from '../components/DeceasedInfoTab'
+import { ChiefMournerTab } from '../components/ChiefMournerTab'
+import { PayerTab } from '../components/PayerTab'
+import { WakeTab } from '../components/WakeTab'
+import { FuneralInfoTab } from '../components/FuneralInfoTab'
+import { Membership1Tab } from '../components/Membership1Tab'
+import { Membership2Tab } from '../components/Membership2Tab'
+import { Membership3Tab } from '../components/Membership3Tab'
 import { useCreateCustomerMutation } from '@/hooks/useCustomer'
 import { toast } from '@/hooks/use-toast'
 
 export default function NewCustomerPage() {
     const router = useRouter()
-    const [activeTab, setActiveTab] = useState<'deceased' | 'funeral' | 'membership'>('deceased')
+    const [activeTab, setActiveTab] = useState<
+        | 'deceasedInfo'
+        | 'chiefMourner'
+        | 'payer'
+        | 'wake'
+        | 'funeralInfo'
+        | 'membership1'
+        | 'membership2'
+        | 'membership3'
+    >('deceasedInfo')
 
     // React Query フック
     const createMutation = useCreateCustomerMutation()
@@ -72,14 +86,14 @@ export default function NewCustomerPage() {
                     {/* タブ */}
                     <CaseFormTabs activeTab={activeTab} onTabChange={setActiveTab} />
                     <div className="mt-4 flex-1 overflow-y-auto pb-4 pr-2">
-                        {/* 故人情報タブ */}
-                        {activeTab === 'deceased' && <DeceasedTab />}
-
-                        {/* 葬儀情報タブ */}
-                        {activeTab === 'funeral' && <FuneralTab />}
-
-                        {/* 会員情報タブ */}
-                        {activeTab === 'membership' && <MembershipTab />}
+                        {activeTab === 'deceasedInfo' && <DeceasedInfoTab />}
+                        {activeTab === 'chiefMourner' && <ChiefMournerTab />}
+                        {activeTab === 'payer' && <PayerTab />}
+                        {activeTab === 'wake' && <WakeTab />}
+                        {activeTab === 'funeralInfo' && <FuneralInfoTab />}
+                        {activeTab === 'membership1' && <Membership1Tab />}
+                        {activeTab === 'membership2' && <Membership2Tab />}
+                        {activeTab === 'membership3' && <Membership3Tab />}
                     </div>
 
                     {/* 操作ボタン */}

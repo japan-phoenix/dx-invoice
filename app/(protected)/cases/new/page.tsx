@@ -1,29 +1,25 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useForm, FormProvider } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { caseFormSchema, CaseFormData } from '../schemas/CaseFormSchema'
-import { useCaseFormData, useCaseFormLoader } from '../hooks/useCaseForm'
+import { useCaseFormData } from '../hooks/useCaseForm'
 import { getFormDefaultValues, transformSubmitData } from '../hooks/useCaseFormConfig'
 import { logFormErrors } from '@/lib/formDebugUtils'
 import { CaseFormTabs } from '../components/CaseFormTabs'
 import { DeceasedTab } from '../components/DeceasedTab'
 import { FuneralTab } from '../components/FuneralTab'
 import { MembershipTab } from '../components/MembershipTab'
-import { useCitiesQuery, useTownsQuery } from '@/hooks/useAddress'
 import { useCreateCustomerMutation } from '@/hooks/useCustomer'
 import { toast } from '@/hooks/use-toast'
 
 export default function NewCustomerPage() {
     const router = useRouter()
     const [activeTab, setActiveTab] = useState<'deceased' | 'funeral' | 'membership'>('deceased')
-    const [selectedCityId, setSelectedCityId] = useState<string | null>(null)
 
     // React Query フック
-    const { data: cities = [] } = useCitiesQuery()
-    const { data: towns = [] } = useTownsQuery(selectedCityId)
     const createMutation = useCreateCustomerMutation()
 
     const methods = useForm<CaseFormData>({
@@ -32,15 +28,6 @@ export default function NewCustomerPage() {
     })
 
     const { formatDateForISO } = useCaseFormData()
-    const { handleCityChange } = useCaseFormLoader(methods.setValue)
-
-    const handleCityChangeWrapper = useCallback(
-        async (cityId: string) => {
-            setSelectedCityId(cityId || null)
-            await handleCityChange(cityId)
-        },
-        [handleCityChange]
-    )
 
     const onSubmit = async (data: CaseFormData): Promise<void> => {
         try {
@@ -86,9 +73,7 @@ export default function NewCustomerPage() {
                     <CaseFormTabs activeTab={activeTab} onTabChange={setActiveTab} />
                     <div className="mt-4 flex-1 overflow-y-auto pb-4 pr-2">
                         {/* 故人情報タブ */}
-                        {activeTab === 'deceased' && (
-                            <DeceasedTab cities={cities} towns={towns} onCityChange={handleCityChangeWrapper} />
-                        )}
+                        {activeTab === 'deceased' && <DeceasedTab />}
 
                         {/* 葬儀情報タブ */}
                         {activeTab === 'funeral' && <FuneralTab />}

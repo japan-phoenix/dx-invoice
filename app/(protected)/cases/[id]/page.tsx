@@ -1,11 +1,11 @@
 'use client'
 
-import { useState, useCallback, useEffect } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import { useForm, FormProvider, SubmitHandler } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { caseFormSchema, CaseFormData } from '../schemas/CaseFormSchema'
-import { useCaseFormData, useCaseFormLoader } from '../hooks/useCaseForm'
+import { useCaseFormData } from '../hooks/useCaseForm'
 import { getFormDefaultValues, transformSubmitData } from '../hooks/useCaseFormConfig'
 import { apiToForm } from '@/lib/dataTransformUtils'
 import { logFormErrors } from '@/lib/formDebugUtils'
@@ -14,7 +14,6 @@ import { DeceasedTab } from '../components/DeceasedTab'
 import { FuneralTab } from '../components/FuneralTab'
 import { MembershipTab } from '../components/MembershipTab'
 import { useGetCustomerQuery, useUpdateCustomerMutation } from '@/hooks/useCustomer'
-import { useCitiesQuery, useTownsQuery } from '@/hooks/useAddress'
 import { toast } from '@/hooks/use-toast'
 
 export default function EditCustomerPage() {
@@ -29,17 +28,11 @@ export default function EditCustomerPage() {
         defaultValues: getFormDefaultValues(),
     })
 
-    // フォーム内での市区町村選択を監視
-    const formCityId = methods.watch('chiefMournerCityId')
-
     // React Query フック
     const { data: customer, isLoading, error } = useGetCustomerQuery(customerId)
-    const { data: cities = [] } = useCitiesQuery()
-    const { data: towns = [] } = useTownsQuery(formCityId || null)
     const updateMutation = useUpdateCustomerMutation()
 
     const { formatDateForISO, formatDateForInput } = useCaseFormData()
-    const { handleCityChange } = useCaseFormLoader(methods.setValue)
 
     // 顧客データが取得されたら form の値を更新
     useEffect(() => {
@@ -77,13 +70,6 @@ export default function EditCustomerPage() {
             methods.reset(mergedData)
         }
     }, [customer, isLoading, methods])
-
-    const handleCityChangeWrapper = useCallback(
-        async (cityId: string) => {
-            await handleCityChange(cityId)
-        },
-        [handleCityChange]
-    )
 
     const hasEstimate = customer?.estimates && customer.estimates.length > 0
     const hasInvoice = customer?.invoices && customer.invoices.length > 0
@@ -226,9 +212,7 @@ export default function EditCustomerPage() {
                     <CaseFormTabs activeTab={activeTab} onTabChange={setActiveTab} />
                     <div className="mt-4 flex-1 overflow-y-auto pb-4 pr-2">
                         {/* 故人情報タブ */}
-                        {activeTab === 'deceased' && (
-                            <DeceasedTab cities={cities} towns={towns} onCityChange={handleCityChangeWrapper} />
-                        )}
+                        {activeTab === 'deceased' && <DeceasedTab />}
 
                         {/* 葬儀情報タブ */}
                         {activeTab === 'funeral' && <FuneralTab />}

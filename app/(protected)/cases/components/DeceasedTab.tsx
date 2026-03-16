@@ -1,67 +1,22 @@
-import { Controller, useFormContext, useWatch } from 'react-hook-form'
+import { useFormContext, useWatch } from 'react-hook-form'
 import { CaseFormData } from '../schemas/CaseFormSchema'
-import { AddressCity, AddressTown } from '@/lib/address'
 import { FormInput } from '@/components/form/FormInput'
 import { FormSelect } from '@/components/form/FormSelect'
 import { FormCheckbox } from '@/components/form/FormCheckbox'
 import { FormAutocomplete } from '@/components/form/FormAutocomplete'
 import { FormInputWithPostalSearch } from '@/components/form/FormInputWithPostalSearch'
-import { RELATION_OPTIONS, RELIGION_OPTIONS } from '../constants/casesOptions'
+import { GENDER_OPTIONS, RELATION_OPTIONS, RELIGION_OPTIONS } from '../constants/casesOptions'
 
-interface DeceasedTabProps {
-    cities: AddressCity[]
-    towns: AddressTown[]
-    onCityChange: (cityId: string) => Promise<void>
-}
-
-export function DeceasedTab({ cities, towns, onCityChange }: DeceasedTabProps) {
+export function DeceasedTab() {
     const {
         control,
-        setValue,
         formState: { errors },
     } = useFormContext<CaseFormData>()
 
-    const chiefMournerCityId = useWatch({
-        control,
-        name: 'chiefMournerCityId',
-    })
     const sameAsChiefMourner = useWatch({
         control,
         name: 'sameAsChiefMourner',
     })
-    const chiefMournerName = useWatch({
-        control,
-        name: 'chiefMournerName',
-    })
-    const chiefMournerRelation = useWatch({
-        control,
-        name: 'chiefMournerRelation',
-    })
-    const chiefMournerAddress = useWatch({
-        control,
-        name: 'chiefMournerAddress',
-    })
-    const chiefMournerTel = useWatch({
-        control,
-        name: 'chiefMournerTel',
-    })
-
-    const handleCityChange = async (cityId: string) => {
-        setValue('chiefMournerCityId', cityId)
-        setValue('chiefMournerTownId', undefined)
-        await onCityChange(cityId)
-    }
-
-    const handleTownChange = (townId: string) => {
-        // townを選んだ際に、そのtown.cityIdを使ってcityを自動選択
-        if (townId) {
-            const selectedTown = towns.find((t) => t.id === townId)
-            if (selectedTown) {
-                setValue('chiefMournerCityId', selectedTown.cityId)
-            }
-        }
-        setValue('chiefMournerTownId', townId)
-    }
 
     return (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '1rem' }}>
@@ -107,11 +62,7 @@ export function DeceasedTab({ cities, towns, onCityChange }: DeceasedTabProps) {
                 name="gender"
                 control={control}
                 label="性別"
-                options={[
-                    { value: 'MALE', label: '男性' },
-                    { value: 'FEMALE', label: '女性' },
-                    { value: 'OTHER', label: 'その他' },
-                ]}
+                options={[...GENDER_OPTIONS]}
                 error={errors.gender}
                 placeholder="選択してください"
             />

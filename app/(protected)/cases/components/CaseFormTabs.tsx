@@ -1,6 +1,5 @@
 'use client'
 
-import React from 'react'
 import { useFormContext } from 'react-hook-form'
 import { CaseFormData } from '../schemas/CaseFormSchema'
 import { hasErrorInTab, TabKey } from '../utils/formErrorUtils'

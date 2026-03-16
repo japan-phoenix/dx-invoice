@@ -129,31 +129,6 @@ export default function CasesPage() {
                             width: '50px',
                         },
                         {
-                            key: 'isPaid',
-                            label: '入金',
-                            width: '80px',
-                            render: (item) =>
-                                item.hasInvoice ? (
-                                    <div className="flex justify-center">
-                                        <button
-                                            onClick={(e) => {
-                                                e.stopPropagation()
-                                                handlePaymentClick(item)
-                                            }}
-                                            className={`rounded px-2 py-1 text-xs text-white ${
-                                                item.isPaid
-                                                    ? 'bg-blue-600 hover:bg-blue-700'
-                                                    : 'bg-red-600 hover:bg-red-700'
-                                            }`}
-                                        >
-                                            {item.isPaid ? '取消' : '登録'}
-                                        </button>
-                                    </div>
-                                ) : (
-                                    <div className="text-center">-</div>
-                                ),
-                        },
-                        {
                             key: 'deceasedName',
                             label: '故人名',
                             width: '150px',
@@ -172,7 +147,7 @@ export default function CasesPage() {
                         {
                             key: 'receptionAt',
                             label: '受付日',
-                            width: '120px',
+                            width: '110px',
                             sortable: true,
                             sortValue: (item) => (item.receptionAt ? new Date(item.receptionAt).getTime() : null),
                             render: (item) => formatDate(item.receptionAt),
@@ -180,81 +155,91 @@ export default function CasesPage() {
                         {
                             key: 'funeralFrom',
                             label: '葬儀日',
-                            width: '120px',
+                            width: '110px',
                             render: (item) => formatDate(item.funeralFrom),
                         },
-                        {
-                            key: 'hasEstimate',
-                            label: '見積',
-                            width: '60px',
-                            render: (item) => <p className="text-center">{item.hasEstimate ? '○' : '-'}</p>,
-                        },
-                        {
-                            key: 'hasInvoice',
-                            label: '請求',
-                            width: '60px',
-                            render: (item) => <p className="text-center">{item.hasInvoice ? '○' : '-'}</p>,
-                        },
+                        // {
+                        //     key: 'hasEstimate',
+                        //     label: '見積',
+                        //     width: '60px',
+                        //     render: (item) => <p className="text-center">{item.hasEstimate ? '○' : '-'}</p>,
+                        // },
+                        // {
+                        //     key: 'hasInvoice',
+                        //     label: '請求',
+                        //     width: '60px',
+                        //     render: (item) => <p className="text-center">{item.hasInvoice ? '○' : '-'}</p>,
+                        // },
                     ]}
-                    actionColumn={{
-                        key: 'actions',
-                        label: '操作',
-                        width: '280px',
-                        render: (item) => (
-                            <div className="flex flex-wrap justify-center gap-2">
+                    subRow={(item) => (
+                        <div className="flex justify-start gap-3">
+                            <button
+                                onClick={(e) => {
+                                    e.stopPropagation()
+                                    if (item.hasEstimate) {
+                                        router.push(`/estimates/${item.estimateId}`)
+                                    } else {
+                                        router.push(`/estimates/new?customerId=${item.id}`)
+                                    }
+                                }}
+                                className={`rounded px-4 py-2 text-sm font-medium text-white ${
+                                    item.hasEstimate ? 'bg-cyan-600 hover:bg-cyan-700' : 'bg-gray-500 hover:bg-gray-600'
+                                }`}
+                            >
+                                {item.hasEstimate ? '見積書編集' : '見積書作成'}
+                            </button>
+                            <button
+                                onClick={(e) => {
+                                    e.stopPropagation()
+                                    if (item.hasInvoice && item.invoiceId) {
+                                        router.push(`/invoices/${item.invoiceId}`)
+                                    } else {
+                                        router.push(`/invoices/new?customerId=${item.id}`)
+                                    }
+                                }}
+                                className={`rounded px-4 py-2 text-sm font-medium ${
+                                    item.hasInvoice
+                                        ? 'bg-yellow-400 text-black hover:bg-yellow-500'
+                                        : 'bg-gray-500 text-white hover:bg-gray-600'
+                                }`}
+                            >
+                                {item.hasInvoice ? '請求書編集' : '請求書作成'}
+                            </button>
+                            <button
+                                onClick={(e) => {
+                                    e.stopPropagation()
+                                    router.push(`/flowers/customer/${item.id}`)
+                                }}
+                                className="rounded bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700"
+                            >
+                                供花登録
+                            </button>
+                            {item.hasInvoice && (
                                 <button
                                     onClick={(e) => {
-                                        e.preventDefault()
                                         e.stopPropagation()
-                                        if (item.hasEstimate) {
-                                            router.push(`/estimates/${item.estimateId}`)
-                                        } else {
-                                            router.push(`/estimates/new?customerId=${item.id}`)
-                                        }
+                                        handlePaymentClick(item)
                                     }}
-                                    className={`rounded px-2 py-1 text-xs text-white ${item.hasEstimate ? 'bg-cyan-600' : 'bg-gray-500'}`}
+                                    className={`rounded px-4 py-2 text-sm font-medium text-white ${
+                                        item.isPaid ? 'bg-blue-600 hover:bg-blue-700' : 'bg-red-600 hover:bg-red-700'
+                                    }`}
                                 >
-                                    {item.hasEstimate ? '見積書編集' : '見積書作成'}
+                                    {item.isPaid ? '入金取消' : '入金登録'}
                                 </button>
+                            )}
+                            {item.isPaid && item.invoiceId && (
                                 <button
                                     onClick={(e) => {
-                                        e.preventDefault()
                                         e.stopPropagation()
-                                        if (item.hasInvoice && item.invoiceId) {
-                                            router.push(`/invoices/${item.invoiceId}`)
-                                        } else {
-                                            router.push(`/invoices/new?customerId=${item.id}`)
-                                        }
+                                        router.push(`/pdf/receipt/${item.invoiceId}`)
                                     }}
-                                    className={`rounded px-2 py-1 text-xs ${item.hasInvoice ? 'bg-yellow-400 text-black' : 'bg-gray-500 text-white'}`}
+                                    className="rounded bg-purple-600 px-4 py-2 text-sm font-medium text-white hover:bg-purple-700"
                                 >
-                                    {item.hasInvoice ? '請求書編集' : '請求書作成'}
+                                    領収書発行
                                 </button>
-                                <button
-                                    onClick={(e) => {
-                                        e.preventDefault()
-                                        e.stopPropagation()
-                                        router.push(`/flowers/customer/${item.id}`)
-                                    }}
-                                    className="rounded bg-green-600 px-2 py-1 text-xs text-white"
-                                >
-                                    供花登録
-                                </button>
-                                {item.isPaid && item.invoiceId && (
-                                    <button
-                                        onClick={(e) => {
-                                            e.preventDefault()
-                                            e.stopPropagation()
-                                            router.push(`/pdf/receipt/${item.invoiceId}`)
-                                        }}
-                                        className="rounded bg-purple-600 px-2 py-1 text-xs text-white hover:bg-purple-700"
-                                    >
-                                        領収書発行
-                                    </button>
-                                )}
-                            </div>
-                        ),
-                    }}
+                            )}
+                        </div>
+                    )}
                     data={customers}
                     itemsPerPage={10}
                     onRowClick={(customer) => router.push(`/cases/${customer.id}`)}

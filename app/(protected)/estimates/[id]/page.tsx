@@ -5,13 +5,20 @@ import { useRouter, useParams } from 'next/navigation'
 import { useForm, FormProvider, useFieldArray, useWatch } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { estimateFormSchema, EstimateFormData, DEFAULT_FORM_VALUES } from '../schemas/EstimateFormSchema'
-import { useEstimateEdit, useProductSearch, useEstimateItems, calculateTotals } from '../hooks/useEstimateForm'
+import {
+    useEstimateEdit,
+    useProductSearch,
+    useEstimateItems,
+    useEstimateFreeItems,
+    calculateTotals,
+} from '../hooks/useEstimateForm'
 import { EstimateProductSearch } from '../components/EstimateProductSearch'
 import { EstimateItemTable } from '../components/EstimateItemTable'
 import { EstimateTotals } from '../components/EstimateTotals'
 import { EstimateOtherFields } from '../components/EstimateOtherFields'
 import { EstimateCustomerSummary } from '../components/EstimateCustomerSummary'
 import { EstimateBasicInfo } from '../components/EstimateBasicInfo'
+import { EstimateFreeItemInput } from '../components/EstimateFreeItemInput'
 import { toast } from '@/hooks/use-toast'
 
 export default function EstimateEditPage() {
@@ -37,11 +44,27 @@ export default function EstimateEditPage() {
         move: moveItemField,
     } = useFieldArray({ control, name: 'items' })
 
-    const { loading, customer, estimate, items, setItems, onSubmit } = useEstimateEdit(estimateId, reset)
+    const {
+        fields: freeItemFields,
+        append: appendFreeItemField,
+        remove: removeFreeItemField,
+    } = useFieldArray({ control, name: 'freeItems' })
+
+    const { loading, customer, estimate, items, setItems, freeItems, setFreeItems, onSubmit } = useEstimateEdit(
+        estimateId,
+        reset
+    )
     const productSearchProps = useProductSearch(items, setItems, appendItemField, moveItemField)
     const { handleRemoveItem } = useEstimateItems(items, setItems, removeItemField)
+    const { handleAddFreeItem, handleRemoveFreeItem } = useEstimateFreeItems(
+        freeItems,
+        setFreeItems,
+        appendFreeItemField,
+        removeFreeItemField
+    )
     const [activeTab, setActiveTab] = useState<'items' | 'other'>('items')
     const watchedItems = useWatch({ control, name: 'items' })
+    const watchedFreeItems = useWatch({ control, name: 'freeItems' })
     const watchedIsMember = useWatch({ control, name: 'isMember' })
 
     if (loading) {
@@ -52,7 +75,14 @@ export default function EstimateEditPage() {
         return null
     }
 
-    const totals = calculateTotals(items, watchedItems, watchedIsMember === 'true', customer)
+    const totals = calculateTotals(
+        items,
+        watchedItems,
+        watchedIsMember === 'true',
+        customer,
+        freeItems,
+        watchedFreeItems
+    )
 
     const onInvalid = (errs: any) => {
         const itemsError = errs?.items?.root?.message ?? errs?.items?.message
@@ -110,12 +140,16 @@ export default function EstimateEditPage() {
                                 {errors.items?.root?.message ?? (errors.items as any)?.message}
                             </p>
                         )}
+                        <EstimateFreeItemInput onAdd={handleAddFreeItem} count={freeItems.length} />
                         <EstimateItemTable
                             items={items}
                             fields={itemFields}
                             control={control}
                             handleRemoveItem={handleRemoveItem}
                             isMember={watchedIsMember === 'true'}
+                            freeItems={freeItems}
+                            freeFields={freeItemFields}
+                            handleRemoveFreeItem={handleRemoveFreeItem}
                         />
                         <EstimateTotals totals={totals} />
                     </>

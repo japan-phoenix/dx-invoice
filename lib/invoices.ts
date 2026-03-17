@@ -1,5 +1,16 @@
 import apiClient from './api';
 
+export interface InvoiceFreeItem {
+    id?: string
+    invoiceItemId?: string
+    productItemName: string
+    description?: string
+    unitPriceGeneral: number
+    qty: number
+    amount: number
+    sortNo: number
+}
+
 export interface InvoiceItem {
   id?: string;
   productItemId?: string;
@@ -15,17 +26,18 @@ export interface InvoiceItem {
 }
 
 export interface Invoice {
-  id: string;
-  customerId: string;
-  docNo?: string;
-  status: string;
-  subtotal: number;
-  tax: number;
-  total: number;
-  membershipPaidAmount: number;
-  grandTotal: number;
-  items: InvoiceItem[];
-  customer?: any;
+    id: string
+    customerId: string
+    docNo?: string
+    status: string
+    subtotal: number
+    tax: number
+    total: number
+    membershipPaidAmount: number
+    grandTotal: number
+    items: InvoiceItem[]
+    freeItems?: InvoiceFreeItem[]
+    customer?: any
 }
 
 export async function getInvoices(customerId?: string): Promise<Invoice[]> {

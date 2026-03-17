@@ -1,7 +1,7 @@
 'use client'
 
 import { Control, FieldArrayWithId, useWatch } from 'react-hook-form'
-import { EstimateItem } from '@/lib/estimates'
+import { EstimateItem, EstimateFreeItem } from '@/lib/estimates'
 import { EstimateFormData } from '../schemas/EstimateFormSchema'
 import { FormInput } from '@/components/form/FormInput'
 import { FormTextarea } from '@/components/form/FormTextarea'
@@ -12,10 +12,24 @@ type Props = {
     control: Control<EstimateFormData>
     handleRemoveItem: (index: number) => void
     isMember: boolean
+    freeItems?: EstimateFreeItem[]
+    freeFields?: FieldArrayWithId<EstimateFormData, 'freeItems', 'id'>[]
+    handleRemoveFreeItem?: (index: number) => void
 }
 
-export function EstimateItemTable({ items, fields, control, handleRemoveItem, isMember }: Props) {
+export function EstimateItemTable({
+    items,
+    fields,
+    control,
+    handleRemoveItem,
+    isMember,
+    freeItems = [],
+    freeFields = [],
+    handleRemoveFreeItem,
+}: Props) {
     const watchedItems = useWatch({ control, name: 'items' })
+    const watchedFreeItems = useWatch({ control, name: 'freeItems' })
+    const hasRows = fields.length > 0 || freeFields.length > 0
     return (
         <div className="mb-8">
             <h3 className="mb-4">明細</h3>
@@ -32,50 +46,97 @@ export function EstimateItemTable({ items, fields, control, handleRemoveItem, is
                     </tr>
                 </thead>
                 <tbody>
-                    {fields.length === 0 ? (
+                    {!hasRows ? (
                         <tr>
                             <td colSpan={5} className="p-8 text-center text-gray-500">
                                 明細がありません
                             </td>
                         </tr>
                     ) : (
-                        fields.map((field, index) => {
-                            const item = items[index]
-                            const unitPrice =
-                                item != null ? (isMember ? item.unitPriceMember : item.unitPriceGeneral) : 0
-                            const liveQty = watchedItems?.[index]?.qty ?? item?.qty ?? 0
-                            const amount = unitPrice * liveQty
-                            return (
-                                <tr key={field.id}>
-                                    <td className="border border-gray-300 p-3">{item?.productItem?.name ?? '-'}</td>
-                                    <td className="border border-gray-300 p-3">
-                                        <FormTextarea
-                                            name={`items.${index}.description`}
-                                            control={control}
-                                            rows={2}
-                                            noResize
-                                            maxRows={2}
-                                        />
-                                    </td>
-                                    <td className="border border-gray-300 p-3">
-                                        <FormInput name={`items.${index}.qty`} control={control} type="number" />
-                                    </td>
-                                    <td className="border border-gray-300 p-3 text-right">
-                                        ¥{amount.toLocaleString()}
-                                    </td>
-                                    <td className="border border-gray-300 p-3 text-center">
-                                        <button
-                                            type="button"
-                                            onClick={() => handleRemoveItem(index)}
-                                            className="cursor-pointer rounded border-0 bg-transparent p-1 text-red-600"
-                                            title="削除"
-                                        >
-                                            <span className="material-symbols-outlined text-3xl">delete_forever</span>
-                                        </button>
-                                    </td>
-                                </tr>
-                            )
-                        })
+                        <>
+                            {fields.map((field, index) => {
+                                const item = items[index]
+                                const unitPrice =
+                                    item != null ? (isMember ? item.unitPriceMember : item.unitPriceGeneral) : 0
+                                const liveQty = watchedItems?.[index]?.qty ?? item?.qty ?? 0
+                                const amount = unitPrice * liveQty
+                                return (
+                                    <tr key={field.id}>
+                                        <td className="border border-gray-300 p-3">{item?.productItem?.name ?? '-'}</td>
+                                        <td className="border border-gray-300 p-3">
+                                            <FormTextarea
+                                                name={`items.${index}.description`}
+                                                control={control}
+                                                rows={2}
+                                                noResize
+                                                maxRows={2}
+                                            />
+                                        </td>
+                                        <td className="border border-gray-300 p-3">
+                                            <FormInput name={`items.${index}.qty`} control={control} type="number" />
+                                        </td>
+                                        <td className="border border-gray-300 p-3 text-right">
+                                            ¥{amount.toLocaleString()}
+                                        </td>
+                                        <td className="border border-gray-300 p-3 text-center">
+                                            <button
+                                                type="button"
+                                                onClick={() => handleRemoveItem(index)}
+                                                className="cursor-pointer rounded border-0 bg-transparent p-1 text-red-600"
+                                                title="削除"
+                                            >
+                                                <span className="material-symbols-outlined text-3xl">
+                                                    delete_forever
+                                                </span>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                )
+                            })}
+                            {freeFields.map((field, index) => {
+                                const item = freeItems[index]
+                                const liveQty = watchedFreeItems?.[index]?.qty ?? item?.qty ?? 0
+                                const amount = (item?.unitPriceGeneral ?? 0) * liveQty
+                                return (
+                                    <tr key={field.id} className="bg-blue-50">
+                                        <td className="border border-gray-300 p-3 text-sm">
+                                            {item?.productItemName ?? '-'}
+                                        </td>
+                                        <td className="border border-gray-300 p-3">
+                                            <FormTextarea
+                                                name={`freeItems.${index}.description`}
+                                                control={control}
+                                                rows={2}
+                                                noResize
+                                                maxRows={2}
+                                            />
+                                        </td>
+                                        <td className="border border-gray-300 p-3">
+                                            <FormInput
+                                                name={`freeItems.${index}.qty`}
+                                                control={control}
+                                                type="number"
+                                            />
+                                        </td>
+                                        <td className="border border-gray-300 p-3 text-right">
+                                            ¥{amount.toLocaleString()}
+                                        </td>
+                                        <td className="border border-gray-300 p-3 text-center">
+                                            <button
+                                                type="button"
+                                                onClick={() => handleRemoveFreeItem?.(index)}
+                                                className="cursor-pointer rounded border-0 bg-transparent p-1 text-red-600"
+                                                title="削除"
+                                            >
+                                                <span className="material-symbols-outlined text-3xl">
+                                                    delete_forever
+                                                </span>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                )
+                            })}
+                        </>
                     )}
                 </tbody>
             </table>

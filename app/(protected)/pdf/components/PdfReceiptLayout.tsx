@@ -1,7 +1,7 @@
 import { Fragment, RefObject, useState, useEffect } from 'react'
 import { PdfCompanyProfile } from './PdfCompanyProfile'
 import { getCompanyProfile, CompanyProfile } from '@/lib/company'
-import type { PdfDocument, PdfDocumentCustomer, PdfProductItem, PdfDocumentItem } from './PdfInvoiceLayout'
+import type { PdfDocument, PdfDocumentCustomer, PdfProductItem, PdfDocumentItem, PdfFreeItem } from './PdfInvoiceLayout'
 
 export type { PdfDocument, PdfDocumentCustomer }
 
@@ -11,7 +11,11 @@ type DisplayRow = {
     showProductVariantName: boolean
 }
 
-function buildDisplayRows(products: PdfProductItem[], items: PdfDocumentItem[]): DisplayRow[] {
+function buildDisplayRows(
+    products: PdfProductItem[],
+    items: PdfDocumentItem[],
+    freeItems?: PdfFreeItem[]
+): DisplayRow[] {
     const itemByProductId = new Map<string, PdfDocumentItem>()
     for (const item of items) {
         const pid = item.productItemId ?? ''
@@ -26,6 +30,21 @@ function buildDisplayRows(products: PdfProductItem[], items: PdfDocumentItem[]):
             label: product.name,
             estimateItem,
             showProductVariantName: product.name.includes('霊柩車'),
+        })
+    }
+    // フリー項目を末尾に追加
+    for (const fi of freeItems ?? []) {
+        rows.push({
+            label: fi.productItemName,
+            estimateItem: {
+                description: fi.description ?? null,
+                qty: fi.qty,
+                unitPriceGeneral: fi.unitPriceGeneral,
+                unitPriceMember: fi.unitPriceGeneral,
+                amount: fi.amount,
+                sortNo: fi.sortNo,
+            },
+            showProductVariantName: false,
         })
     }
     return rows
@@ -48,13 +67,21 @@ function fmtDate(v?: string | Date | null): string {
 }
 
 export function PdfReceiptLayout({ contentId, containerRef, document: doc, products }: Props) {
-    const { grandTotal } = doc
+    const { membershipPaidAmount } = doc
     const docAny = doc as any
     const customer: PdfDocumentCustomer | undefined = docAny.customer ?? undefined
 
+    // DB保存値ではなく実際のitems/freeItemsから合計を再計算
+    const itemsSubtotal = doc.items.reduce((sum, item) => sum + (item.amount || 0), 0)
+    const freeSubtotal = (doc.freeItems ?? []).reduce((sum, fi) => sum + fi.unitPriceGeneral * fi.qty, 0)
+    const subtotal = itemsSubtotal + freeSubtotal
+    const tax = Math.round(subtotal * 0.1)
+    const total = subtotal + tax
+    const grandTotal = Math.max(0, total - membershipPaidAmount)
+
     const addressee = customer?.payerName || customer?.chiefMournerName || ''
     const issuedAt = fmtDate(new Date())
-    const displayRows = buildDisplayRows(products, doc.items)
+    const displayRows = buildDisplayRows(products, doc.items, doc.freeItems)
 
     const [company, setCompany] = useState<CompanyProfile | null>(null)
     useEffect(() => {

@@ -76,6 +76,16 @@ const genderLabel: Record<string, string> = {
     OTHER: '--',
 }
 
+export type PdfFreeItem = {
+    id?: string
+    productItemName: string
+    description?: string | null
+    unitPriceGeneral: number
+    qty: number
+    amount: number
+    sortNo: number
+}
+
 export type PdfDocument = {
     docNo?: string | null
     isMember?: boolean | null
@@ -85,6 +95,7 @@ export type PdfDocument = {
     membershipPaidAmount: number
     grandTotal: number
     items: PdfDocumentItem[]
+    freeItems?: PdfFreeItem[]
     customer?: PdfDocumentCustomer | null
 }
 
@@ -107,7 +118,11 @@ type DisplayRow = {
     deductionItem?: PdfDocumentItem | null
 }
 
-function buildDisplayRows(products: PdfProductItem[], items: PdfDocumentItem[]): DisplayRow[] {
+function buildDisplayRows(
+    products: PdfProductItem[],
+    items: PdfDocumentItem[],
+    freeItems?: PdfFreeItem[]
+): DisplayRow[] {
     const itemByProductId = new Map<string, PdfDocumentItem>()
     for (const item of items) {
         const pid = item.productItemId ?? ''
@@ -124,6 +139,22 @@ function buildDisplayRows(products: PdfProductItem[], items: PdfDocumentItem[]):
             label: product.name,
             estimateItem,
             showProductVariantName: product.name.includes('霊柩車') ? true : false,
+        })
+    }
+
+    // フリー項目を末尾に追加
+    for (const fi of freeItems ?? []) {
+        rows.push({
+            label: fi.productItemName,
+            estimateItem: {
+                description: fi.description ?? null,
+                qty: fi.qty,
+                unitPriceGeneral: fi.unitPriceGeneral,
+                unitPriceMember: fi.unitPriceGeneral,
+                amount: fi.amount,
+                sortNo: fi.sortNo,
+            },
+            showProductVariantName: false,
         })
     }
 
@@ -164,8 +195,15 @@ function fmtTime(v?: string | Date | null): string {
 }
 
 export function PdfInvoiceLayout({ contentId, containerRef, title, document: doc, products }: Props) {
-    const { docNo, subtotal, tax, total, membershipPaidAmount, grandTotal, items } = doc
+    const { docNo, membershipPaidAmount, items } = doc
     const docAny = doc as any
+    // DB保存値ではなく実際のitems/freeItemsから合計を再計算
+    const itemsSubtotal = items.reduce((sum, item) => sum + (item.amount || 0), 0)
+    const freeSubtotal = (doc.freeItems ?? []).reduce((sum, fi) => sum + fi.unitPriceGeneral * fi.qty, 0)
+    const subtotal = itemsSubtotal + freeSubtotal
+    const tax = Math.round(subtotal * 0.1)
+    const total = subtotal + tax
+    const grandTotal = Math.max(0, total - membershipPaidAmount)
     const customer: PdfDocumentCustomer | undefined = docAny.customer
         ? {
               ...docAny.customer,
@@ -180,7 +218,7 @@ export function PdfInvoiceLayout({ contentId, containerRef, title, document: doc
               returnStaff: docAny.returnStaff ?? null,
           }
         : undefined
-    const displayRows = buildDisplayRows(products, items)
+    const displayRows = buildDisplayRows(products, items, doc.freeItems)
     const isMember = doc.isMember === true
     return (
         <div

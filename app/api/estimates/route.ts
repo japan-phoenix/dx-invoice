@@ -3,8 +3,10 @@ import { prisma } from '@/lib/prisma'
 import { requireAuth } from '@/lib/auth-middleware'
 import { serializeBigInt } from '@/lib/prisma-utils'
 
-function calculateTotals(items: any[], membershipPaidAmount: number) {
-    const subtotal = items.reduce((sum, item) => sum + (item.amount || 0), 0)
+function calculateTotals(items: any[], membershipPaidAmount: number, freeItems: any[] = []) {
+    const itemsSubtotal = items.reduce((sum, item) => sum + (item.amount || 0), 0)
+    const freeSubtotal = freeItems.reduce((sum, item) => sum + (item.unitPriceGeneral || 0) * (item.qty || 1), 0)
+    const subtotal = itemsSubtotal + freeSubtotal
     const tax = Math.round(subtotal * 0.1)
     const total = subtotal + tax
     const grandTotal = total - membershipPaidAmount
@@ -133,7 +135,7 @@ export async function POST(request: NextRequest) {
         )
 
         // 合計を計算
-        const totals = calculateTotals(data.items || [], membershipPaidAmount)
+        const totals = calculateTotals(data.items || [], membershipPaidAmount, data.freeItems || [])
 
         // enum型の値を検証・変換
         const validCremationProcessTypes = ['FAMILY', 'NEIGHBORHOOD', 'COMPANY'] as const
@@ -200,6 +202,38 @@ export async function POST(request: NextRequest) {
                 },
             },
         })
+
+        // フリー項目を保存
+        const freeItems: any[] = data.freeItems || []
+        if (freeItems.length > 0) {
+            let anchorItemId: bigint
+            if (estimate.items.length > 0) {
+                anchorItemId = estimate.items[0].id
+            } else {
+                const dummyItem = await prisma.estimateItem.create({
+                    data: {
+                        estimateId: estimate.id,
+                        unitPriceGeneral: 0,
+                        unitPriceMember: 0,
+                        qty: 0,
+                        amount: 0,
+                        sortNo: 9999,
+                    },
+                })
+                anchorItemId = dummyItem.id
+            }
+            await prisma.estimateItemFree.createMany({
+                data: freeItems.map((item: any, index: number) => ({
+                    estimateItemId: anchorItemId,
+                    productItemName: item.productItemName || '',
+                    description: item.description || '',
+                    unitPriceGeneral: item.unitPriceGeneral || 0,
+                    qty: item.qty || 1,
+                    amount: (item.unitPriceGeneral || 0) * (item.qty || 1),
+                    sortNo: item.sortNo ?? index,
+                })),
+            })
+        }
 
         return NextResponse.json(
             serializeBigInt({

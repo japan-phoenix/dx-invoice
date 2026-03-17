@@ -10,6 +10,7 @@ import {
     useInvoiceCreate,
     useInvoiceProductSearch,
     useInvoiceItems,
+    useInvoiceFreeItems,
     calculateInvoiceTotals,
 } from '../hooks/useInvoiceForm'
 import { InvoiceProductSearch } from '../components/InvoiceProductSearch'
@@ -18,6 +19,7 @@ import { InvoiceTotals } from '../components/InvoiceTotals'
 import { InvoiceOtherFields } from '../components/InvoiceOtherFields'
 import { InvoiceCustomerSummary } from '../components/InvoiceCustomerSummary'
 import { InvoiceBasicInfo } from '../components/InvoiceBasicInfo'
+import { InvoiceFreeItemInput } from '../components/InvoiceFreeItemInput'
 import { toast } from '@/hooks/use-toast'
 
 function InvoiceNewPageInner() {
@@ -43,12 +45,35 @@ function InvoiceNewPageInner() {
         move: moveItemField,
     } = useFieldArray({ control, name: 'items' })
 
-    const { loading, customer, estimates, items, setItems, onSubmit, handleCopyFromEstimate, copyingFrom } =
-        useInvoiceCreate(customerId, reset)
+    const {
+        fields: freeItemFields,
+        append: appendFreeItemField,
+        remove: removeFreeItemField,
+    } = useFieldArray({ control, name: 'freeItems' })
+
+    const {
+        loading,
+        customer,
+        estimates,
+        items,
+        setItems,
+        freeItems,
+        setFreeItems,
+        onSubmit,
+        handleCopyFromEstimate,
+        copyingFrom,
+    } = useInvoiceCreate(customerId, reset)
     const productSearchProps = useInvoiceProductSearch(items, setItems, appendItemField, moveItemField)
     const { handleRemoveItem } = useInvoiceItems(items, setItems, removeItemField)
+    const { handleAddFreeItem, handleRemoveFreeItem } = useInvoiceFreeItems(
+        freeItems,
+        setFreeItems,
+        appendFreeItemField,
+        removeFreeItemField
+    )
     const [activeTab, setActiveTab] = useState<'items' | 'other'>('items')
     const watchedItems = useWatch({ control, name: 'items' })
+    const watchedFreeItems = useWatch({ control, name: 'freeItems' })
     const watchedIsMember = useWatch({ control, name: 'isMember' })
 
     if (loading) {
@@ -59,7 +84,14 @@ function InvoiceNewPageInner() {
         return null
     }
 
-    const totals = calculateInvoiceTotals(items, watchedItems, watchedIsMember === 'true', customer)
+    const totals = calculateInvoiceTotals(
+        items,
+        watchedItems,
+        watchedIsMember === 'true',
+        customer,
+        freeItems,
+        watchedFreeItems
+    )
 
     const onInvalid = (errs: any) => {
         const itemsError = errs?.items?.root?.message ?? errs?.items?.message
@@ -143,12 +175,16 @@ function InvoiceNewPageInner() {
                                 {errors.items?.root?.message ?? (errors.items as any)?.message}
                             </p>
                         )}
+                        <InvoiceFreeItemInput onAdd={handleAddFreeItem} count={freeItems.length} />
                         <InvoiceItemTable
                             items={items}
                             fields={itemFields}
                             control={control}
                             handleRemoveItem={handleRemoveItem}
                             isMember={watchedIsMember === 'true'}
+                            freeItems={freeItems}
+                            freeFields={freeItemFields}
+                            handleRemoveFreeItem={handleRemoveFreeItem}
                         />
                         <InvoiceTotals totals={totals} />
                     </>

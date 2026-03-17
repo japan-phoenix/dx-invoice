@@ -5,9 +5,9 @@ import { getInvoice, createInvoice, updateInvoice, createInvoiceFromEstimate } f
 import { getCustomer } from '@/lib/customers'
 import { getEstimates } from '@/lib/estimates'
 import { getProducts, ProductItem, ProductVariant } from '@/lib/products'
-import { InvoiceItem } from '@/lib/invoices'
+import { InvoiceItem, InvoiceFreeItem } from '@/lib/invoices'
 import { toast } from '@/hooks/use-toast'
-import { InvoiceFormData, InvoiceItemField } from '../schemas/InvoiceFormSchema'
+import { InvoiceFormData, InvoiceItemField, InvoiceFreeItemField } from '../schemas/InvoiceFormSchema'
 import { DEFAULT_DESCRIPTION_MAP } from '@/app/(protected)/estimates/constants/estimateOptions'
 
 const sortByProductItemId = (arr: InvoiceItem[]): InvoiceItem[] =>
@@ -26,6 +26,7 @@ export function useInvoiceCreate(customerId: string, reset: UseFormReset<Invoice
     const [customer, setCustomer] = useState<any>(null)
     const [estimates, setEstimates] = useState<any[]>([])
     const [items, setItems] = useState<InvoiceItem[]>([])
+    const [freeItems, setFreeItems] = useState<InvoiceFreeItem[]>([])
     const [copyingFrom, setCopyingFrom] = useState(false)
 
     const loadData = useCallback(async () => {
@@ -76,8 +77,21 @@ export function useInvoiceCreate(customerId: string, reset: UseFormReset<Invoice
                 const amount = unitPrice * qty
                 return { ...item, qty, description, amount, sortNo: i }
             })
-            const totals = calculateInvoiceTotals(items, formValues.items, isMember, customer)
-            const data = { ...formValues, ...totals, items: mergedItems }
+            const mergedFreeItems = freeItems.map((item, i) => {
+                const qty = formValues.freeItems[i]?.qty ?? item.qty
+                const description = formValues.freeItems[i]?.description ?? item.description ?? ''
+                const amount = item.unitPriceGeneral * qty
+                return { ...item, qty, description, amount, sortNo: i }
+            })
+            const totals = calculateInvoiceTotals(
+                items,
+                formValues.items,
+                isMember,
+                customer,
+                freeItems,
+                formValues.freeItems
+            )
+            const data = { ...formValues, ...totals, items: mergedItems, freeItems: mergedFreeItems }
             const created = await createInvoice(customerId, data)
             toast({ title: '登録しました', variant: 'success', duration: 2000 })
             router.push(`/invoices/${created.id}`)
@@ -87,7 +101,18 @@ export function useInvoiceCreate(customerId: string, reset: UseFormReset<Invoice
         }
     }
 
-    return { loading, customer, estimates, items, setItems, onSubmit, handleCopyFromEstimate, copyingFrom }
+    return {
+        loading,
+        customer,
+        estimates,
+        items,
+        setItems,
+        freeItems,
+        setFreeItems,
+        onSubmit,
+        handleCopyFromEstimate,
+        copyingFrom,
+    }
 }
 
 // -------------------------------------------------------
@@ -99,6 +124,7 @@ export function useInvoiceEdit(invoiceId: string, reset: UseFormReset<InvoiceFor
     const [customer, setCustomer] = useState<any>(null)
     const [invoice, setInvoice] = useState<any>(null)
     const [items, setItems] = useState<InvoiceItem[]>([])
+    const [freeItems, setFreeItems] = useState<InvoiceFreeItem[]>([])
 
     const loadData = useCallback(async () => {
         try {
@@ -106,6 +132,9 @@ export function useInvoiceEdit(invoiceId: string, reset: UseFormReset<InvoiceFor
             setInvoice(invoiceData)
             const sortedItems = sortByProductItemId(invoiceData.items || [])
             setItems(sortedItems)
+
+            const loadedFreeItems: InvoiceFreeItem[] = (invoiceData as any).freeItems || []
+            setFreeItems(loadedFreeItems)
 
             const customerData = await getCustomer(invoiceData.customerId)
             setCustomer(customerData)
@@ -126,6 +155,10 @@ export function useInvoiceEdit(invoiceId: string, reset: UseFormReset<InvoiceFor
                 items: sortedItems.map((item: InvoiceItem) => ({
                     qty: item.qty,
                     description: item.description || '',
+                })),
+                freeItems: loadedFreeItems.map((item) => ({
+                    description: item.description || '',
+                    qty: item.qty,
                 })),
             })
         } catch (error) {
@@ -157,8 +190,21 @@ export function useInvoiceEdit(invoiceId: string, reset: UseFormReset<InvoiceFor
                 const amount = unitPrice * qty
                 return { ...item, qty, description, amount, sortNo: i }
             })
-            const totals = calculateInvoiceTotals(items, formValues.items, isMember, customer)
-            const data = { ...formValues, ...totals, items: mergedItems }
+            const mergedFreeItems = freeItems.map((item, i) => {
+                const qty = formValues.freeItems[i]?.qty ?? item.qty
+                const description = formValues.freeItems[i]?.description ?? item.description ?? ''
+                const amount = item.unitPriceGeneral * qty
+                return { ...item, qty, description, amount, sortNo: i }
+            })
+            const totals = calculateInvoiceTotals(
+                items,
+                formValues.items,
+                isMember,
+                customer,
+                freeItems,
+                formValues.freeItems
+            )
+            const data = { ...formValues, ...totals, items: mergedItems, freeItems: mergedFreeItems }
             await updateInvoice(invoiceId, data)
             toast({ title: '更新しました', variant: 'success', duration: 2000 })
             await loadData()
@@ -168,7 +214,7 @@ export function useInvoiceEdit(invoiceId: string, reset: UseFormReset<InvoiceFor
         }
     }
 
-    return { loading, customer, invoice, items, setItems, onSubmit }
+    return { loading, customer, invoice, items, setItems, freeItems, setFreeItems, onSubmit }
 }
 
 // -------------------------------------------------------
@@ -271,19 +317,52 @@ export function useInvoiceItems(
 }
 
 // -------------------------------------------------------
+// フリー項目操作フック
+// -------------------------------------------------------
+export function useInvoiceFreeItems(
+    freeItems: InvoiceFreeItem[],
+    setFreeItems: React.Dispatch<React.SetStateAction<InvoiceFreeItem[]>>,
+    appendFreeItemField: (val: InvoiceFreeItemField) => void,
+    removeFreeItemField: (index: number) => void
+) {
+    const handleAddFreeItem = (item: Omit<InvoiceFreeItem, 'id' | 'invoiceItemId' | 'sortNo'>) => {
+        const newItem: InvoiceFreeItem = { ...item, sortNo: freeItems.length }
+        setFreeItems((prev) => [...prev, newItem])
+        appendFreeItemField({
+            description: item.description || '',
+            qty: item.qty,
+        })
+    }
+
+    const handleRemoveFreeItem = (index: number) => {
+        setFreeItems((prev) => prev.filter((_, i) => i !== index))
+        removeFreeItemField(index)
+    }
+
+    return { handleAddFreeItem, handleRemoveFreeItem }
+}
+
+// -------------------------------------------------------
 // 合計計算ユーティリティ
 // -------------------------------------------------------
 export function calculateInvoiceTotals(
     items: InvoiceItem[],
     itemFields: InvoiceItemField[] | undefined,
     isMember: boolean,
-    customer: any
+    customer: any,
+    freeItems?: InvoiceFreeItem[],
+    freeItemFields?: InvoiceFreeItemField[]
 ) {
-    const subtotal = items.reduce((sum, item, i) => {
+    const regularSubtotal = items.reduce((sum, item, i) => {
         const qty = itemFields?.[i]?.qty ?? item.qty
         const unitPrice = isMember ? item.unitPriceMember : item.unitPriceGeneral
         return sum + unitPrice * qty
     }, 0)
+    const freeSubtotal = (freeItems || []).reduce((sum, item, i) => {
+        const qty = freeItemFields?.[i]?.qty ?? item.qty
+        return sum + item.unitPriceGeneral * qty
+    }, 0)
+    const subtotal = regularSubtotal + freeSubtotal
     const tax = Math.round(subtotal * 0.1)
     const total = subtotal + tax
     const membershipPaidAmount =

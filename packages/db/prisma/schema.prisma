@@ -242,8 +242,26 @@ model EstimateItem {
   estimate          Estimate      @relation(fields: [estimateId], references: [id], onDelete: Cascade)
   productItem       ProductItem?  @relation(fields: [productItemId], references: [id])
   productVariant    ProductVariant? @relation(fields: [productVariantId], references: [id])
+  freeItems         EstimateItemFree[]
 
   @@map("estimate_items")
+}
+
+model EstimateItemFree {
+  id                  BigInt   @id @default(autoincrement())
+  estimateItemId      BigInt   @map("estimate_item_id")
+  productItemName     String?  @db.VarChar(255) @map("product_item_name")
+  description         String?  @db.VarChar(255)
+  unitPriceGeneral    Int      @default(0) @map("unit_price_general")
+  qty                 Int      @default(0)
+  amount              Int      @default(0)
+  sortNo              Int      @default(0) @map("sort_no")
+  createdAt           DateTime @default(now()) @db.Timestamptz(6) @map("created_at")
+  updatedAt           DateTime @updatedAt @db.Timestamptz(6) @map("updated_at")
+
+  estimateItem        EstimateItem @relation(fields: [estimateItemId], references: [id], onDelete: Cascade)
+
+  @@map("estimate_items_free")
 }
 
 model Invoice {
@@ -296,8 +314,26 @@ model InvoiceItem {
   invoice           Invoice          @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
   productItem       ProductItem?     @relation(fields: [productItemId], references: [id])
   productVariant     ProductVariant? @relation(fields: [productVariantId], references: [id])
+  freeItems          InvoiceItemFree[]
 
   @@map("invoice_items")
+}
+
+model InvoiceItemFree {
+  id                  BigInt   @id @default(autoincrement())
+  invoiceItemId       BigInt   @map("invoice_item_id")
+  productItemName     String?  @db.VarChar(255) @map("product_item_name")
+  description         String?  @db.VarChar(255)
+  unitPriceGeneral    Int      @default(0) @map("unit_price_general")
+  qty                 Int      @default(0)
+  amount              Int      @default(0)
+  sortNo              Int      @default(0) @map("sort_no")
+  createdAt           DateTime @default(now()) @db.Timestamptz(6) @map("created_at")
+  updatedAt           DateTime @updatedAt @db.Timestamptz(6) @map("updated_at")
+
+  invoiceItem         InvoiceItem @relation(fields: [invoiceItemId], references: [id], onDelete: Cascade)
+
+  @@map("invoice_items_free")
 }
 
 model Flower {

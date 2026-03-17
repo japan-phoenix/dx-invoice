@@ -158,18 +158,6 @@ export default function CasesPage() {
                             width: '110px',
                             render: (item) => formatDate(item.funeralFrom),
                         },
-                        // {
-                        //     key: 'hasEstimate',
-                        //     label: '見積',
-                        //     width: '60px',
-                        //     render: (item) => <p className="text-center">{item.hasEstimate ? '○' : '-'}</p>,
-                        // },
-                        // {
-                        //     key: 'hasInvoice',
-                        //     label: '請求',
-                        //     width: '60px',
-                        //     render: (item) => <p className="text-center">{item.hasInvoice ? '○' : '-'}</p>,
-                        // },
                     ]}
                     subRow={(item) => (
                         <div className="flex justify-start gap-3">

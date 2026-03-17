@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { useForm, FormProvider, useFieldArray } from 'react-hook-form'
+import { useForm, FormProvider, useFieldArray, useWatch } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Suspense } from 'react'
 import { estimateFormSchema, EstimateFormData, DEFAULT_FORM_VALUES } from '../schemas/EstimateFormSchema'
@@ -28,7 +28,6 @@ function EstimateNewPageInner() {
         control,
         handleSubmit,
         reset,
-        watch,
         formState: { isSubmitting, errors },
     } = methods
 
@@ -43,6 +42,8 @@ function EstimateNewPageInner() {
     const productSearchProps = useProductSearch(items, setItems, appendItemField, moveItemField)
     const { handleRemoveItem } = useEstimateItems(items, setItems, removeItemField)
     const [activeTab, setActiveTab] = useState<'items' | 'other'>('items')
+    const watchedItems = useWatch({ control, name: 'items' })
+    const watchedIsMember = useWatch({ control, name: 'isMember' })
 
     if (loading) {
         return <div className="p-8">読み込み中...</div>
@@ -52,7 +53,7 @@ function EstimateNewPageInner() {
         return null
     }
 
-    const totals = calculateTotals(items, watch('items'), watch('isMember') === 'true', customer)
+    const totals = calculateTotals(items, watchedItems, watchedIsMember === 'true', customer)
 
     const onInvalid = (errs: any) => {
         const itemsError = errs?.items?.root?.message ?? errs?.items?.message
@@ -115,7 +116,7 @@ function EstimateNewPageInner() {
                             fields={itemFields}
                             control={control}
                             handleRemoveItem={handleRemoveItem}
-                            isMember={watch('isMember') === 'true'}
+                            isMember={watchedIsMember === 'true'}
                         />
                         <EstimateTotals totals={totals} />
                     </>

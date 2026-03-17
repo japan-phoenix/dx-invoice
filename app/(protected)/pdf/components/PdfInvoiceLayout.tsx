@@ -463,7 +463,7 @@ export function PdfInvoiceLayout({ contentId, containerRef, title, document: doc
                                 </tr>
                             </tfoot>
                         </table>
-                        <div className="border border-x-0 border-black px-4 py-1 text-right">
+                        <div className="border border-x-0 border-b-0 border-black px-4 py-1 text-right">
                             <p className="text-lg font-bold">差引合計: ¥{grandTotal.toLocaleString()}</p>
                         </div>
                     </div>
@@ -590,12 +590,12 @@ export function PdfInvoiceLayout({ contentId, containerRef, title, document: doc
                                 </tbody>
                             </table>
                         </div>
-                        {/* 備考: 可変エリア */}
+                        {/* 備考 */}
                         <div className="min-h-0 flex-1 overflow-hidden border-b border-black px-1 text-[0.75rem]">
                             <div>(備考)</div>
-                            <div className="overflow-hidden">
+                            <div>
                                 {(customer?.notes ?? '').split('\n').map((line, i) => (
-                                    <div key={i} className="overflow-hidden text-ellipsis whitespace-nowrap">
+                                    <div key={i} className="whitespace-pre-wrap break-words">
                                         {line || '\u00a0'}
                                     </div>
                                 ))}

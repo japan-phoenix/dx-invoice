@@ -1,5 +1,6 @@
 'use client'
 
+import { useState } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import { useForm, FormProvider, useFieldArray } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -9,9 +10,8 @@ import { EstimateProductSearch } from '../components/EstimateProductSearch'
 import { EstimateItemTable } from '../components/EstimateItemTable'
 import { EstimateTotals } from '../components/EstimateTotals'
 import { EstimateOtherFields } from '../components/EstimateOtherFields'
-import { FormInput } from '@/components/form/FormInput'
-import { FormSelect } from '@/components/form/FormSelect'
-import { STATUS_OPTIONS } from '../constants/estimateOptions'
+import { EstimateCustomerSummary } from '../components/EstimateCustomerSummary'
+import { EstimateBasicInfo } from '../components/EstimateBasicInfo'
 import { toast } from '@/hooks/use-toast'
 
 export default function EstimateEditPage() {
@@ -41,6 +41,7 @@ export default function EstimateEditPage() {
     const { loading, customer, estimate, items, setItems, onSubmit } = useEstimateEdit(estimateId, reset)
     const productSearchProps = useProductSearch(items, setItems, appendItemField, moveItemField)
     const { handleRemoveItem } = useEstimateItems(items, setItems, removeItemField)
+    const [activeTab, setActiveTab] = useState<'items' | 'other'>('items')
 
     if (loading) {
         return <div className="p-8">読み込み中...</div>
@@ -66,100 +67,93 @@ export default function EstimateEditPage() {
 
     return (
         <FormProvider {...methods}>
-            <form onSubmit={handleSubmit(onSubmit, onInvalid)} className="flex flex-col p-8">
+            <form onSubmit={handleSubmit(onSubmit, onInvalid)} className="flex flex-col p-8 pb-24">
                 <h1 className="mb-8 text-2xl font-bold">見積書 編集</h1>
 
-                {/* 基本情報 */}
-                <div className="mb-8">
-                    <h3 className="mb-4">基本情報</h3>
-                    <div className="grid grid-cols-2 gap-4">
-                        <FormInput name="docNo" control={control} label="見積番号" placeholder="例: EST-0001" />
-                        <FormSelect
-                            name="isMember"
-                            control={control}
-                            label="一般・会員"
-                            options={[
-                                { value: 'false', label: '一般' },
-                                { value: 'true', label: '会員' },
-                            ]}
-                        />
-                        <FormSelect name="status" control={control} label="見積区分" options={STATUS_OPTIONS} />
-                    </div>
-                </div>
-
                 {/* 顧客情報サマリー */}
-                <div className="mb-8 rounded-lg bg-gray-100 p-4">
-                    <p>
-                        <strong>故人名:</strong> {customer.deceasedName}
-                    </p>
-                    <p>
-                        <strong>受付日:</strong>{' '}
-                        {customer.receptionAt ? new Date(customer.receptionAt).toLocaleDateString('ja-JP') : ''}
-                    </p>
-                    <p>
-                        <strong>喪主名:</strong> {customer.chiefMournerName}
-                    </p>
-                    <p>
-                        <strong>住所:</strong> {customer.chiefMournerAddress}
-                    </p>
-                    {customer.memberCardNote && (
-                        <p>
-                            <strong>会員証:</strong> {customer.memberCardNote}
-                        </p>
-                    )}
+                <EstimateCustomerSummary customer={customer} />
+
+                {/* タブ */}
+                <div className="mb-4 flex border-b-2 border-gray-300">
+                    <button
+                        type="button"
+                        onClick={() => setActiveTab('items')}
+                        className={`cursor-pointer border-none px-6 py-3 ${
+                            activeTab === 'items'
+                                ? 'border-b-2 border-blue-600 bg-blue-600 text-white'
+                                : 'bg-transparent text-gray-700'
+                        }`}
+                    >
+                        明細
+                    </button>
+                    <button
+                        type="button"
+                        onClick={() => setActiveTab('other')}
+                        className={`cursor-pointer border-none px-6 py-3 ${
+                            activeTab === 'other'
+                                ? 'border-b-2 border-blue-600 bg-blue-600 text-white'
+                                : 'bg-transparent text-gray-700'
+                        }`}
+                    >
+                        その他
+                    </button>
                 </div>
 
-                {/* 品目検索・追加 */}
-                <EstimateProductSearch {...productSearchProps} items={items} />
-
-                {/* 明細一覧 */}
-                {(errors.items?.root?.message ?? (errors.items as any)?.message) && (
-                    <p className="-mt-4 mb-4 text-sm text-red-600">
-                        {errors.items?.root?.message ?? (errors.items as any)?.message}
-                    </p>
+                {/* 明細タブ */}
+                {activeTab === 'items' && (
+                    <>
+                        <EstimateBasicInfo control={control} />
+                        <EstimateProductSearch {...productSearchProps} items={items} />
+                        {(errors.items?.root?.message ?? (errors.items as any)?.message) && (
+                            <p className="-mt-4 mb-4 text-sm text-red-600">
+                                {errors.items?.root?.message ?? (errors.items as any)?.message}
+                            </p>
+                        )}
+                        <EstimateItemTable
+                            items={items}
+                            fields={itemFields}
+                            control={control}
+                            handleRemoveItem={handleRemoveItem}
+                            isMember={watch('isMember') === 'true'}
+                        />
+                        <EstimateTotals totals={totals} />
+                    </>
                 )}
-                <EstimateItemTable
-                    items={items}
-                    fields={itemFields}
-                    control={control}
-                    handleRemoveItem={handleRemoveItem}
-                    isMember={watch('isMember') === 'true'}
-                />
 
-                {/* 合計エリア */}
-                <EstimateTotals totals={totals} />
+                {/* その他タブ */}
+                {activeTab === 'other' && <EstimateOtherFields control={control} />}
 
-                {/* その他項目 */}
-                <EstimateOtherFields control={control} />
-
-                {/* 操作ボタン */}
-                <div className="flex justify-end gap-4">
-                    <button
-                        type="button"
-                        onClick={() => router.back()}
-                        className="cursor-pointer rounded border-0 bg-gray-500 px-6 py-3 text-white"
-                    >
-                        閉じる
-                    </button>
-                    <button
-                        type="button"
-                        disabled={isDirty}
-                        onClick={() => router.push(`/pdf/estimate/${estimate.id}`)}
-                        className={`rounded border-0 px-6 py-3 text-white ${
-                            isDirty ? 'cursor-not-allowed bg-gray-300' : 'cursor-pointer bg-cyan-600'
-                        }`}
-                    >
-                        PDFプレビュー
-                    </button>
-                    <button
-                        type="submit"
-                        disabled={isSubmitting}
-                        className={`rounded border-0 px-6 py-3 text-white ${
-                            isSubmitting ? 'cursor-not-allowed bg-gray-300' : 'cursor-pointer bg-green-600'
-                        }`}
-                    >
-                        {isSubmitting ? '保存中...' : '更新'}
-                    </button>
+                {/* 操作ボタン（画面右下固定） */}
+                <div className="fixed bottom-0 right-0 p-2">
+                    {isDirty && <div className="text-red-600 text-right pb-1 text-sm">未保存の変更があります</div>}
+                    <div className="flex gap-4 bg-white">
+                        <button
+                            type="button"
+                            onClick={() => router.back()}
+                            className="cursor-pointer rounded border-0 bg-gray-500 px-6 py-3 text-white"
+                        >
+                            閉じる
+                        </button>
+                        <button
+                            type="button"
+                            disabled={isDirty}
+                            onClick={() => router.push(`/pdf/estimate/${estimate.id}`)}
+                            className={`rounded border-0 px-6 py-3 text-white ${
+                                isDirty ? 'cursor-not-allowed bg-gray-300' : 'cursor-pointer bg-cyan-600'
+                            }`}
+                        >
+                            PDFプレビュー
+                        </button>
+                        <button
+                            type="submit"
+                            disabled={isSubmitting}
+                            className={`rounded border-0 px-6 py-3 text-white ${
+                                isSubmitting ? 'cursor-not-allowed bg-gray-300' : 'cursor-pointer bg-green-600'
+                            }`}
+                        >
+                            {isSubmitting ? '保存中...' : '更新'}
+                        </button>
+                    </div>
                 </div>
             </form>
         </FormProvider>

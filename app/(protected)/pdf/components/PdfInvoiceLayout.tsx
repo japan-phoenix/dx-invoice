@@ -1,4 +1,3 @@
-/* eslint-disable no-irregular-whitespace */
 import { Fragment, RefObject } from 'react'
 import { PdfCompanyAd } from './PdfCompanyAd'
 import { PdfMembershipTable } from './PdfMembershipTable'

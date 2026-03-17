@@ -1,17 +1,21 @@
 'use client'
 
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { ProductImageDialog } from '@/components/product/ProductImageDialog'
+import { useState } from 'react'
+import { ImageOff, X } from 'lucide-react'
+import { Command, CommandEmpty, CommandGroup, CommandItem, CommandList } from '@/components/ui/command'
+import { Popover, PopoverContent, PopoverAnchor } from '@/components/ui/popover'
+import Image from 'next/image'
 import { EstimateItem } from '@/lib/estimates'
 import { ProductItem, ProductVariant } from '@/lib/products'
 
 type Props = {
     searchProductName: string
     setSearchProductName: (v: string) => void
-    handleSearchProducts: () => void
+    handleSearchProducts: (query?: string) => void
     products: ProductItem[]
     selectedProduct: ProductItem | null
     handleSelectProduct: (p: ProductItem) => void
+    clearSelectedProduct: () => void
     selectedVariant: ProductVariant | null
     setSelectedVariant: (v: ProductVariant) => void
     handleAddItem: () => void
@@ -25,90 +29,166 @@ export function EstimateProductSearch({
     products,
     selectedProduct,
     handleSelectProduct,
+    clearSelectedProduct,
     selectedVariant,
     setSelectedVariant,
     handleAddItem,
     items,
 }: Props) {
+    const [open, setOpen] = useState(false)
+    const [enlargedImage, setEnlargedImage] = useState<string | null>(null)
+
+    const filteredProducts = searchProductName ? products.filter((p) => p.name.includes(searchProductName)) : products
+
     return (
         <div className="mb-8 rounded-lg bg-gray-50 p-6">
-            <h3 className="mb-4">品目追加</h3>
-            <div className="mb-4 flex flex-wrap gap-4">
-                <input
-                    type="text"
-                    placeholder="品目名で検索"
-                    value={searchProductName}
-                    onChange={(e) => setSearchProductName(e.target.value)}
-                    onKeyDown={(e) => {
-                        if (e.key === 'Enter') {
-                            e.preventDefault()
-                            handleSearchProducts()
-                        }
-                    }}
-                    className="min-w-[200px] flex-1 rounded border border-gray-300 p-2"
-                />
-                <button
-                    type="button"
-                    onClick={handleSearchProducts}
-                    className="cursor-pointer rounded border-0 bg-blue-600 px-4 py-2 text-white"
+            {/* 画像拡大モーダル */}
+            {enlargedImage && (
+                <div
+                    className="fixed inset-0 z-50 flex items-center justify-center bg-black/70"
+                    onClick={() => setEnlargedImage(null)}
                 >
-                    検索
-                </button>
-            </div>
-
-            {products.length > 0 && (
-                <div className="mb-4">
-                    <label className="mb-2 block">品目選択</label>
-                    <Select
-                        value={selectedProduct?.id ?? ''}
-                        onValueChange={(id) => {
-                            const p = products.find((p) => p.id === id)
-                            if (p) handleSelectProduct(p)
-                        }}
-                    >
-                        <SelectTrigger className="bg-white">
-                            <SelectValue placeholder="選択してください" />
-                        </SelectTrigger>
-                        <SelectContent className="bg-white">
-                            {products.map((p) => {
-                                const alreadyAdded = items.some((item) => item.productItemId === p.id)
-                                return (
-                                    <SelectItem key={p.id} value={p.id} disabled={alreadyAdded}>
-                                        {p.name}
-                                        {alreadyAdded ? '（追加済み）' : ''}
-                                    </SelectItem>
-                                )
-                            })}
-                        </SelectContent>
-                    </Select>
+                    <div className="relative" onClick={(e) => e.stopPropagation()}>
+                        <button
+                            type="button"
+                            onClick={() => setEnlargedImage(null)}
+                            className="absolute -right-3 -top-3 flex h-7 w-7 items-center justify-center rounded-full bg-white shadow"
+                            aria-label="閉じる"
+                        >
+                            <X className="h-4 w-4" />
+                        </button>
+                        <Image
+                            src={enlargedImage}
+                            alt="拡大画像"
+                            width={480}
+                            height={480}
+                            className="max-h-[80vh] max-w-[80vw] rounded object-contain"
+                        />
+                    </div>
                 </div>
             )}
+            <div className="mb-4">
+                <label className="mb-2 block text-sm font-medium">品目選択</label>
+                <div className="relative">
+                    <Popover
+                        open={open}
+                        onOpenChange={(o) => {
+                            setOpen(o)
+                            if (o && products.length === 0) handleSearchProducts('')
+                        }}
+                    >
+                        <PopoverAnchor asChild>
+                            <input
+                                type="text"
+                                placeholder="品目名で検索..."
+                                value={open ? searchProductName : (selectedProduct?.name ?? '')}
+                                readOnly={!open}
+                                onChange={(e) => setSearchProductName(e.target.value)}
+                                onFocus={() => {
+                                    setOpen(true)
+                                    if (products.length === 0) handleSearchProducts('')
+                                }}
+                                className="w-full rounded border border-gray-300 bg-white px-3 py-2 pr-8 text-sm outline-none focus:ring-2 focus:ring-blue-300"
+                            />
+                        </PopoverAnchor>
+                        <PopoverContent
+                            className="w-[--radix-popover-trigger-width] p-0"
+                            align="start"
+                            onOpenAutoFocus={(e) => e.preventDefault()}
+                        >
+                            <Command shouldFilter={false} className="bg-white">
+                                <CommandList>
+                                    <CommandEmpty>品目が見つかりません</CommandEmpty>
+                                    <CommandGroup>
+                                        {filteredProducts.map((p) => {
+                                            const alreadyAdded = items.some((item) => item.productItemId === p.id)
+                                            return (
+                                                <CommandItem
+                                                    key={p.id}
+                                                    value={p.id}
+                                                    disabled={alreadyAdded}
+                                                    className="bg-white data-[selected=true]:bg-blue-50 hover:bg-blue-50"
+                                                    onSelect={() => {
+                                                        handleSelectProduct(p)
+                                                        setOpen(false)
+                                                    }}
+                                                >
+                                                    {p.name}
+                                                    {alreadyAdded ? (
+                                                        <span className="ml-1 text-xs text-gray-400">（追加済み）</span>
+                                                    ) : null}
+                                                </CommandItem>
+                                            )
+                                        })}
+                                    </CommandGroup>
+                                </CommandList>
+                            </Command>
+                        </PopoverContent>
+                    </Popover>
+                    {selectedProduct && (
+                        <button
+                            type="button"
+                            onClick={() => {
+                                clearSelectedProduct()
+                                setSearchProductName('')
+                            }}
+                            className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-0.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600"
+                            aria-label="クリア"
+                        >
+                            <X className="h-4 w-4" />
+                        </button>
+                    )}
+                </div>
+            </div>
 
             {selectedProduct && selectedProduct.variants.length > 0 && (
                 <div className="mb-4">
-                    <div className="mb-2 flex items-start gap-3">
-                        <label>種類選択</label>
-                        <ProductImageDialog product={selectedProduct} />
+                    <label className="mb-2 block text-sm font-medium">種類選択</label>
+                    <div className="grid grid-cols-3 gap-3">
+                        {selectedProduct.variants.map((v) => {
+                            const isSelected = selectedVariant?.id === v.id
+                            return (
+                                <button
+                                    key={v.id}
+                                    type="button"
+                                    onClick={() => setSelectedVariant(v)}
+                                    className={`flex flex-col items-center rounded-lg border-2 p-3 text-left transition-colors ${
+                                        isSelected
+                                            ? 'border-blue-500 bg-blue-100'
+                                            : 'border-gray-200 bg-white hover:border-gray-300 hover:bg-gray-50'
+                                    }`}
+                                >
+                                    <div className="mb-2 flex h-24 w-full items-center justify-center overflow-hidden rounded">
+                                        {v.imageUrl ? (
+                                            <div
+                                                role="button"
+                                                tabIndex={-1}
+                                                className="h-full w-full cursor-zoom-in"
+                                                onClick={(e) => {
+                                                    e.stopPropagation()
+                                                    setEnlargedImage(`/images/products/${v.imageUrl}`)
+                                                }}
+                                                aria-label="画像を拡大"
+                                            >
+                                                <Image
+                                                    src={`/images/products/${v.imageUrl}`}
+                                                    alt={v.name}
+                                                    width={96}
+                                                    height={96}
+                                                    className="h-full w-full object-contain"
+                                                />
+                                            </div>
+                                        ) : (
+                                            <ImageOff className="h-10 w-10 text-gray-300" />
+                                        )}
+                                    </div>
+                                    <p className="mb-1 w-full text-center text-sm font-medium leading-snug">{v.name}</p>
+                                    <p className="text-xs text-gray-500">一般: ¥{v.priceGeneral.toLocaleString()}</p>
+                                    <p className="text-xs text-gray-500">会員: ¥{v.priceMember.toLocaleString()}</p>
+                                </button>
+                            )
+                        })}
                     </div>
-                    <Select
-                        value={selectedVariant?.id ?? ''}
-                        onValueChange={(id) => {
-                            const v = selectedProduct.variants.find((v) => v.id === id)
-                            if (v) setSelectedVariant(v)
-                        }}
-                    >
-                        <SelectTrigger className="bg-white">
-                            <SelectValue placeholder="選択してください" />
-                        </SelectTrigger>
-                        <SelectContent className="bg-white">
-                            {selectedProduct.variants.map((v) => (
-                                <SelectItem key={v.id} value={v.id}>
-                                    {v.name}（一般: ¥{v.priceGeneral.toLocaleString()}, 会員: ¥
-                                    {v.priceMember.toLocaleString()}）
-                                </SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
                 </div>
             )}
 

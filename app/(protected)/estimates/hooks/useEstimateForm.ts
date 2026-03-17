@@ -166,9 +166,9 @@ export function useProductSearch(
     const [selectedProduct, setSelectedProduct] = useState<ProductItem | null>(null)
     const [selectedVariant, setSelectedVariant] = useState<ProductVariant | null>(null)
 
-    const handleSearchProducts = async () => {
+    const handleSearchProducts = async (query?: string) => {
         try {
-            const results = await getProducts(searchProductName)
+            const results = await getProducts(query !== undefined ? query : searchProductName)
             setProducts(results)
         } catch (error) {
             console.error('Failed to search products:', error)
@@ -227,6 +227,10 @@ export function useProductSearch(
         setSelectedVariant,
         handleSearchProducts,
         handleSelectProduct,
+        clearSelectedProduct: () => {
+            setSelectedProduct(null)
+            setSelectedVariant(null)
+        },
         handleAddItem,
     }
 }

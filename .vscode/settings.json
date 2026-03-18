@@ -1,8 +1,10 @@
 {
     "editor.defaultFormatter": "esbenp.prettier-vscode",
     "editor.formatOnSave": true,
-    "editor.formatOnSaveMode": "modificationsIfAvailable",
+    "editor.formatOnSaveMode": "file",
     "prettier.resolveGlobalModules": false,
+    "typescript.format.semicolons": "remove",
+    "javascript.format.semicolons": "remove",
     "[typescript]": {
         "editor.defaultFormatter": "esbenp.prettier-vscode"
     },

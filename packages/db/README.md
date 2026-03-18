@@ -8,7 +8,7 @@ Prismaスキーマとマイグレーションを管理するパッケージで�
 
 ルートディレクトリの`.env`ファイルに以下を設定してください：
 
-```
+```env
 DATABASE_URL="postgresql://user:password@localhost:5432/funeral_system?schema=public"
 ```
 
@@ -59,6 +59,7 @@ pnpm prisma migrate dev --name describe_your_changes
 ```
 
 例：
+
 ```bash
 pnpm prisma migrate dev --name add_user_email_index
 ```
@@ -75,7 +76,7 @@ pnpm prisma migrate dev --name add_user_email_index
 pnpm db:studio
 ```
 
-ブラウザで http://localhost:5555 が開きます。
+ブラウザで <http://localhost:5555> が開きます。
 
 ## 注意事項
 

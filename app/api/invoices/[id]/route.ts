@@ -3,8 +3,10 @@ import { prisma } from '@/lib/prisma'
 import { requireAuth } from '@/lib/auth-middleware'
 import { serializeBigInt } from '@/lib/prisma-utils'
 
-function calculateTotals(items: any[], membershipPaidAmount: number) {
-    const subtotal = items.reduce((sum, item) => sum + (item.amount || 0), 0)
+function calculateTotals(items: any[], membershipPaidAmount: number, freeItems: any[] = []) {
+    const itemsSubtotal = items.reduce((sum, item) => sum + (item.amount || 0), 0)
+    const freeSubtotal = freeItems.reduce((sum, item) => sum + (item.unitPriceGeneral || 0) * (item.qty || 1), 0)
+    const subtotal = itemsSubtotal + freeSubtotal
     const tax = Math.round(subtotal * 0.1)
     const total = subtotal + tax
     const grandTotal = total - membershipPaidAmount
@@ -44,6 +46,9 @@ export async function GET(request: NextRequest, props: { params: Promise<{ id: s
                     include: {
                         productItem: true,
                         productVariant: true,
+                        freeItems: {
+                            orderBy: { sortNo: 'asc' },
+                        },
                     },
                     orderBy: { sortNo: 'asc' },
                 },
@@ -61,6 +66,13 @@ export async function GET(request: NextRequest, props: { params: Promise<{ id: s
         )
 
         // レスポンスを返す
+        const allFreeItems = invoice.items.flatMap((item: any) =>
+            (item.freeItems || []).map((fi: any) => ({
+                ...fi,
+                id: fi.id.toString(),
+                invoiceItemId: fi.invoiceItemId.toString(),
+            }))
+        )
         return NextResponse.json(
             serializeBigInt({
                 ...invoice,
@@ -77,12 +89,14 @@ export async function GET(request: NextRequest, props: { params: Promise<{ id: s
                     })),
                 },
                 membershipPaidAmount,
+                freeItems: allFreeItems,
                 items: invoice.items.map((item: any) => ({
                     ...item,
                     id: item.id.toString(),
                     invoiceId: item.invoiceId.toString(),
                     productItemId: item.productItemId?.toString(),
                     productVariantId: item.productVariantId?.toString(),
+                    freeItems: undefined,
                 })),
             })
         )
@@ -125,7 +139,7 @@ export async function PUT(request: NextRequest, props: { params: Promise<{ id: s
             0
         )
 
-        const totals = calculateTotals(data.items || [], membershipPaidAmount)
+        const totals = calculateTotals(data.items || [], membershipPaidAmount, data.freeItems || [])
 
         // enum型の値を検証・変換
         const validCremationProcessTypes = ['FAMILY', 'NEIGHBORHOOD', 'COMPANY'] as const
@@ -140,56 +154,95 @@ export async function PUT(request: NextRequest, props: { params: Promise<{ id: s
                 ? data.altarPlaceType
                 : null
 
-        await prisma.invoiceItem.deleteMany({
-            where: { invoiceId: BigInt(id) },
-        })
+        await prisma.$transaction(async (tx) => {
+            await tx.invoiceItem.deleteMany({
+                where: { invoiceId: BigInt(id) },
+            })
 
-        const updated = await prisma.invoice.update({
-            where: { id: BigInt(id) },
-            data: {
-                docNo: data.docNo || null,
-                status: data.status,
-                subtotal: totals.subtotal,
-                tax: totals.tax,
-                total: totals.total,
-                membershipPaidAmount,
-                grandTotal: totals.grandTotal,
-                cremationProcessType,
-                altarPlaceType,
-                altarPlaceOther: data.altarPlaceOther || null,
-                ceilingHeight: data.ceilingHeight || null,
-                estimateStaff: data.estimateStaff || null,
-                ceremonyStaff: data.ceremonyStaff || null,
-                transportStaff: data.transportStaff || null,
-                decorationStaff: data.decorationStaff || null,
-                returnStaff: data.returnStaff || null,
-                issuedAt: data.issuedAt ? new Date(data.issuedAt) : null,
-                items: {
-                    create: (data.items || []).map((item: any, index: number) => ({
-                        productItemId: item.productItemId ? BigInt(item.productItemId) : null,
-                        productVariantId: item.productVariantId ? BigInt(item.productVariantId) : null,
-                        description: item.description,
+            const savedInvoice = await tx.invoice.update({
+                where: { id: BigInt(id) },
+                data: {
+                    docNo: data.docNo || null,
+                    status: data.status,
+                    isMember: data.isMember === true || data.isMember === 'true',
+                    subtotal: totals.subtotal,
+                    tax: totals.tax,
+                    total: totals.total,
+                    membershipPaidAmount,
+                    grandTotal: totals.grandTotal,
+                    cremationProcessType,
+                    altarPlaceType,
+                    altarPlaceOther: data.altarPlaceOther || null,
+                    ceilingHeight: data.ceilingHeight || null,
+                    estimateStaff: data.estimateStaff || null,
+                    ceremonyStaff: data.ceremonyStaff || null,
+                    transportStaff: data.transportStaff || null,
+                    decorationStaff: data.decorationStaff || null,
+                    returnStaff: data.returnStaff || null,
+                    issuedAt: data.issuedAt ? new Date(data.issuedAt) : null,
+                    items: {
+                        create: (data.items || []).map((item: any, index: number) => ({
+                            productItemId: item.productItemId ? BigInt(item.productItemId) : null,
+                            productVariantId: item.productVariantId ? BigInt(item.productVariantId) : null,
+                            description: item.description,
+                            unitPriceGeneral: item.unitPriceGeneral || 0,
+                            unitPriceMember: item.unitPriceMember || 0,
+                            qty: item.qty || 0,
+                            amount: item.amount || 0,
+                            sortNo: item.sortNo ?? index,
+                        })),
+                    },
+                },
+                include: {
+                    customer: true,
+                    items: true,
+                },
+            })
+
+            const freeItems: any[] = data.freeItems || []
+            if (freeItems.length > 0) {
+                let anchorItemId: bigint
+                if (savedInvoice.items.length > 0) {
+                    anchorItemId = savedInvoice.items[0].id
+                } else {
+                    const dummyItem = await tx.invoiceItem.create({
+                        data: {
+                            invoiceId: BigInt(id),
+                            unitPriceGeneral: 0,
+                            unitPriceMember: 0,
+                            qty: 0,
+                            amount: 0,
+                            sortNo: 9999,
+                        },
+                    })
+                    anchorItemId = dummyItem.id
+                }
+                await tx.invoiceItemFree.createMany({
+                    data: freeItems.map((item: any, index: number) => ({
+                        invoiceItemId: anchorItemId,
+                        productItemName: item.productItemName || '',
+                        description: item.description || '',
                         unitPriceGeneral: item.unitPriceGeneral || 0,
-                        unitPriceMember: item.unitPriceMember || 0,
-                        qty: item.qty || 0,
-                        amount: item.amount || 0,
+                        qty: item.qty || 1,
+                        amount: (item.unitPriceGeneral || 0) * (item.qty || 1),
                         sortNo: item.sortNo ?? index,
                     })),
-                },
-            },
-            include: {
-                customer: true,
-                items: true,
-            },
+                })
+            }
+        })
+
+        const updated = await prisma.invoice.findUnique({
+            where: { id: BigInt(id) },
+            include: { customer: true, items: true },
         })
 
         // レスポンスを返す
         return NextResponse.json(
             serializeBigInt({
                 ...updated,
-                id: updated.id.toString(),
-                customerId: updated.customerId.toString(),
-                fromEstimateId: updated.fromEstimateId?.toString(),
+                id: updated!.id.toString(),
+                customerId: updated!.customerId.toString(),
+                fromEstimateId: updated!.fromEstimateId?.toString(),
             })
         )
     } catch (error: any) {

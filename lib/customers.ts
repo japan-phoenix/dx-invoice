@@ -4,6 +4,7 @@ export interface CustomerListItem {
     id: string
     receptionNo: string
     deceasedName: string
+    chiefMournerName: string
     age: number | null
     address: string
     receptionAt: string | null
@@ -27,6 +28,7 @@ export interface SearchCustomersParams {
     funeralTo?: string
     paid?: boolean
     unpaid?: boolean
+    estimateStatusConfirmed?: boolean
 }
 
 export async function searchCustomers(params: SearchCustomersParams): Promise<CustomerListItem[]> {

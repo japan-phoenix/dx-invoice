@@ -3,8 +3,10 @@ import { prisma } from '@/lib/prisma'
 import { requireAuth } from '@/lib/auth-middleware'
 import { serializeBigInt } from '@/lib/prisma-utils'
 
-function calculateTotals(items: any[], membershipPaidAmount: number) {
-    const subtotal = items.reduce((sum, item) => sum + (item.amount || 0), 0)
+function calculateTotals(items: any[], membershipPaidAmount: number, freeItems: any[] = []) {
+    const itemsSubtotal = items.reduce((sum, item) => sum + (item.amount || 0), 0)
+    const freeSubtotal = freeItems.reduce((sum, item) => sum + (item.unitPriceGeneral || 0) * (item.qty || 1), 0)
+    const subtotal = itemsSubtotal + freeSubtotal
     const tax = Math.round(subtotal * 0.1) // 10% 四捨五入
     const total = subtotal + tax
     const grandTotal = total - membershipPaidAmount
@@ -44,6 +46,9 @@ export async function GET(request: NextRequest, props: { params: Promise<{ id: s
                     include: {
                         productItem: true,
                         productVariant: true,
+                        freeItems: {
+                            orderBy: { sortNo: 'asc' },
+                        },
                     },
                     orderBy: { sortNo: 'asc' },
                 },
@@ -61,6 +66,14 @@ export async function GET(request: NextRequest, props: { params: Promise<{ id: s
         )
 
         // レスポンスを返す
+        // freeItemsをestimate直下にフラットに持たせる
+        const allFreeItems = estimate.items.flatMap((item: any) =>
+            (item.freeItems || []).map((fi: any) => ({
+                ...fi,
+                id: fi.id.toString(),
+                estimateItemId: fi.estimateItemId.toString(),
+            }))
+        )
         return NextResponse.json(
             serializeBigInt({
                 ...estimate,
@@ -76,12 +89,14 @@ export async function GET(request: NextRequest, props: { params: Promise<{ id: s
                     })),
                 },
                 membershipPaidAmount,
+                freeItems: allFreeItems,
                 items: estimate.items.map((item: any) => ({
                     ...item,
                     id: item.id.toString(),
                     estimateId: item.estimateId.toString(),
                     productItemId: item.productItemId?.toString(),
                     productVariantId: item.productVariantId?.toString(),
+                    freeItems: undefined,
                     productItem: item.productItem
                         ? {
                               ...item.productItem,
@@ -139,7 +154,7 @@ export async function PUT(request: NextRequest, props: { params: Promise<{ id: s
         )
 
         // 合計を再計算
-        const totals = calculateTotals(data.items || [], membershipPaidAmount)
+        const totals = calculateTotals(data.items || [], membershipPaidAmount, data.freeItems || [])
 
         // enum型の値を検証・変換
         const validCremationProcessTypes = ['FAMILY', 'NEIGHBORHOOD', 'COMPANY'] as const
@@ -154,54 +169,91 @@ export async function PUT(request: NextRequest, props: { params: Promise<{ id: s
                 ? data.altarPlaceType
                 : null
 
-        // 既存の明細を削除
-        await prisma.estimateItem.deleteMany({
-            where: { estimateId: BigInt(id) },
-        })
-
-        // 見積を更新
-        const updated = await prisma.estimate.update({
-            where: { id: BigInt(id) },
-            data: {
-                docNo: data.docNo || null,
-                status: data.status,
-                subtotal: totals.subtotal,
-                tax: totals.tax,
-                total: totals.total,
-                membershipPaidAmount,
-                grandTotal: totals.grandTotal,
-                cremationProcessType,
-                altarPlaceType,
-                altarPlaceOther: data.altarPlaceOther || null,
-                ceilingHeight: data.ceilingHeight || null,
-                estimateStaff: data.estimateStaff || null,
-                ceremonyStaff: data.ceremonyStaff || null,
-                transportStaff: data.transportStaff || null,
-                decorationStaff: data.decorationStaff || null,
-                returnStaff: data.returnStaff || null,
-                issuedAt: data.issuedAt ? new Date(data.issuedAt) : null,
-                items: {
-                    create: (data.items || []).map((item: any, index: number) => ({
-                        productItemId: item.productItemId ? BigInt(item.productItemId) : null,
-                        productVariantId: item.productVariantId ? BigInt(item.productVariantId) : null,
-                        description: item.description,
-                        unitPriceGeneral: item.unitPriceGeneral || 0,
-                        unitPriceMember: item.unitPriceMember || 0,
-                        qty: item.qty || 0,
-                        amount: item.amount || 0,
-                        sortNo: item.sortNo ?? index,
-                    })),
-                },
-            },
-            include: {
-                customer: true,
-                items: {
-                    include: {
-                        productItem: true,
-                        productVariant: true,
+        // 既存の明細削除 + 見積更新をトランザクションで実行
+        const updated = await prisma.$transaction(async (tx) => {
+            await tx.estimateItem.deleteMany({
+                where: { estimateId: BigInt(id) },
+            })
+            const savedEstimate = await tx.estimate.update({
+                where: { id: BigInt(id) },
+                data: {
+                    docNo: data.docNo || null,
+                    status: data.status,
+                    isMember: data.isMember === true || data.isMember === 'true',
+                    subtotal: totals.subtotal,
+                    tax: totals.tax,
+                    total: totals.total,
+                    membershipPaidAmount,
+                    grandTotal: totals.grandTotal,
+                    cremationProcessType,
+                    altarPlaceType,
+                    altarPlaceOther: data.altarPlaceOther || null,
+                    ceilingHeight: data.ceilingHeight || null,
+                    estimateStaff: data.estimateStaff || null,
+                    ceremonyStaff: data.ceremonyStaff || null,
+                    transportStaff: data.transportStaff || null,
+                    decorationStaff: data.decorationStaff || null,
+                    returnStaff: data.returnStaff || null,
+                    issuedAt: data.issuedAt ? new Date(data.issuedAt) : null,
+                    items: {
+                        create: (data.items || []).map((item: any, index: number) => ({
+                            productItemId: item.productItemId ? BigInt(item.productItemId) : null,
+                            productVariantId: item.productVariantId ? BigInt(item.productVariantId) : null,
+                            description: item.description,
+                            unitPriceGeneral: item.unitPriceGeneral || 0,
+                            unitPriceMember: item.unitPriceMember || 0,
+                            qty: item.qty || 0,
+                            amount: item.amount || 0,
+                            sortNo: item.sortNo ?? index,
+                        })),
                     },
                 },
-            },
+                include: {
+                    customer: true,
+                    items: {
+                        include: {
+                            productItem: true,
+                            productVariant: true,
+                        },
+                    },
+                },
+            })
+
+            // フリー項目を保存（最初のestimate_itemに紐付け、または独立行として）
+            const freeItems: any[] = data.freeItems || []
+            if (freeItems.length > 0) {
+                // フリー項目の親となるestimate_itemを取得（最初のitem、またはフリー専用のdummyを作成）
+                let anchorItemId: bigint
+                if (savedEstimate.items.length > 0) {
+                    anchorItemId = savedEstimate.items[0].id
+                } else {
+                    // 通常明細がない場合はフリー項目専用のダミー行を作成
+                    const dummyItem = await tx.estimateItem.create({
+                        data: {
+                            estimateId: BigInt(id),
+                            unitPriceGeneral: 0,
+                            unitPriceMember: 0,
+                            qty: 0,
+                            amount: 0,
+                            sortNo: 9999,
+                        },
+                    })
+                    anchorItemId = dummyItem.id
+                }
+                await tx.estimateItemFree.createMany({
+                    data: freeItems.map((item: any, index: number) => ({
+                        estimateItemId: anchorItemId,
+                        productItemName: item.productItemName || '',
+                        description: item.description || '',
+                        unitPriceGeneral: item.unitPriceGeneral || 0,
+                        qty: item.qty || 1,
+                        amount: (item.unitPriceGeneral || 0) * (item.qty || 1),
+                        sortNo: item.sortNo ?? index,
+                    })),
+                })
+            }
+
+            return savedEstimate
         })
 
         // レスポンスを返す

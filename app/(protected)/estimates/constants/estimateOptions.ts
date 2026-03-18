@@ -25,6 +25,6 @@ export const DEFAULT_DESCRIPTION_MAP: Record<string, string> = {
 }
 
 export const STATUS_OPTIONS = [
-    { value: 'DRAFT', label: '下書き' },
-    { value: 'CONFIRMED', label: '確定' },
+    { value: 'DRAFT', label: '事前相談見積' },
+    { value: 'CONFIRMED', label: '本見積' },
 ]

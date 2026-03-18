@@ -116,6 +116,8 @@ export default function FlowersListPage() {
             ) : (
                 targets.map((target) => {
                     const total = getTargetTotal(target)
+                    const tax = Math.round(total * 0.1)
+                    const totalWithTax = total + tax
                     return (
                         <div key={target.id} className="mb-8 rounded-lg border border-gray-300 p-6">
                             {/* 請求先ヘッダー */}
@@ -138,7 +140,10 @@ export default function FlowersListPage() {
 
                                 <div className="flex flex-col items-end gap-2">
                                     {target.flowers.length > 0 && (
-                                        <p className="text-xl font-bold">合計: ¥{total.toLocaleString()}</p>
+                                        <p className="text-xl font-bold">
+                                            合計: ¥{totalWithTax.toLocaleString()}
+                                            <span className="text-sm ml-1">(税込)</span>
+                                        </p>
                                     )}
                                     <div className="flex items-center gap-2">
                                         {!target.isPaid && (

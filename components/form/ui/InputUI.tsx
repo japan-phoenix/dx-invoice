@@ -72,7 +72,7 @@ export function InputUI({
                     max={maxValue}
                     placeholder={placeholder}
                     disabled={disabled}
-                    className={`w-full rounded border px-3 py-2 text-base focus:outline-none ${error ? 'border-red-500' : 'border-gray-300'} ${disabled ? 'cursor-not-allowed bg-gray-100 opacity-60' : ''}`}
+                    className={`w-full rounded border px-3 py-2 text-xl focus:outline-none ${error ? 'border-red-500' : 'border-gray-300'} ${disabled ? 'cursor-not-allowed bg-gray-100 opacity-60' : ''}`}
                 />
                 {suffix && <span className="ml-2 flex-shrink-0">{suffix}</span>}
             </div>

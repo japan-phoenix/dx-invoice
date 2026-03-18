@@ -1,4 +1,3 @@
-/* eslint-disable no-irregular-whitespace */
 import { Fragment, RefObject } from 'react'
 import { PdfCompanyAd } from './PdfCompanyAd'
 import { PdfMembershipTable } from './PdfMembershipTable'
@@ -77,14 +76,26 @@ const genderLabel: Record<string, string> = {
     OTHER: '--',
 }
 
+export type PdfFreeItem = {
+    id?: string
+    productItemName: string
+    description?: string | null
+    unitPriceGeneral: number
+    qty: number
+    amount: number
+    sortNo: number
+}
+
 export type PdfDocument = {
     docNo?: string | null
+    isMember?: boolean | null
     subtotal: number
     tax: number
     total: number
     membershipPaidAmount: number
     grandTotal: number
     items: PdfDocumentItem[]
+    freeItems?: PdfFreeItem[]
     customer?: PdfDocumentCustomer | null
 }
 
@@ -107,7 +118,11 @@ type DisplayRow = {
     deductionItem?: PdfDocumentItem | null
 }
 
-function buildDisplayRows(products: PdfProductItem[], items: PdfDocumentItem[]): DisplayRow[] {
+function buildDisplayRows(
+    products: PdfProductItem[],
+    items: PdfDocumentItem[],
+    freeItems?: PdfFreeItem[]
+): DisplayRow[] {
     const itemByProductId = new Map<string, PdfDocumentItem>()
     for (const item of items) {
         const pid = item.productItemId ?? ''
@@ -124,6 +139,22 @@ function buildDisplayRows(products: PdfProductItem[], items: PdfDocumentItem[]):
             label: product.name,
             estimateItem,
             showProductVariantName: product.name.includes('霊柩車') ? true : false,
+        })
+    }
+
+    // フリー項目を末尾に追加
+    for (const fi of freeItems ?? []) {
+        rows.push({
+            label: fi.productItemName,
+            estimateItem: {
+                description: fi.description ?? null,
+                qty: fi.qty,
+                unitPriceGeneral: fi.unitPriceGeneral,
+                unitPriceMember: fi.unitPriceGeneral,
+                amount: fi.amount,
+                sortNo: fi.sortNo,
+            },
+            showProductVariantName: false,
         })
     }
 
@@ -164,8 +195,15 @@ function fmtTime(v?: string | Date | null): string {
 }
 
 export function PdfInvoiceLayout({ contentId, containerRef, title, document: doc, products }: Props) {
-    const { docNo, subtotal, tax, total, membershipPaidAmount, grandTotal, items } = doc
+    const { docNo, membershipPaidAmount, items } = doc
     const docAny = doc as any
+    // DB保存値ではなく実際のitems/freeItemsから合計を再計算
+    const itemsSubtotal = items.reduce((sum, item) => sum + (item.amount || 0), 0)
+    const freeSubtotal = (doc.freeItems ?? []).reduce((sum, fi) => sum + fi.unitPriceGeneral * fi.qty, 0)
+    const subtotal = itemsSubtotal + freeSubtotal
+    const tax = Math.round(subtotal * 0.1)
+    const total = subtotal + tax
+    const grandTotal = Math.max(0, total - membershipPaidAmount)
     const customer: PdfDocumentCustomer | undefined = docAny.customer
         ? {
               ...docAny.customer,
@@ -180,8 +218,9 @@ export function PdfInvoiceLayout({ contentId, containerRef, title, document: doc
               returnStaff: docAny.returnStaff ?? null,
           }
         : undefined
-    const displayRows = buildDisplayRows(products, items)
-    const isMember = Boolean(customer?.memberCardNote)
+    const displayRows = buildDisplayRows(products, items, doc.freeItems)
+    const isMember = doc.isMember === true
+    const notesLong = (customer?.notes?.length ?? 0) >= 20
     return (
         <div
             id={contentId}
@@ -462,7 +501,7 @@ export function PdfInvoiceLayout({ contentId, containerRef, title, document: doc
                                 </tr>
                             </tfoot>
                         </table>
-                        <div className="border border-x-0 border-black px-4 py-1 text-right">
+                        <div className="border border-x-0 border-b-0 border-black px-4 py-1 text-right">
                             <p className="text-lg font-bold">差引合計: ¥{grandTotal.toLocaleString()}</p>
                         </div>
                     </div>
@@ -497,7 +536,7 @@ export function PdfInvoiceLayout({ contentId, containerRef, title, document: doc
                                 ).map(({ label, data, relData }, i) => (
                                     <tr key={i} className="border-b border-black">
                                         <th
-                                            className="w-[5em] border-r border-black px-1 py-1.5 font-normal"
+                                            className="w-[5em] border-r border-black p-1 font-normal"
                                             style={{ minWidth: '5em' }}
                                         >
                                             <div className="flex justify-between">
@@ -506,7 +545,7 @@ export function PdfInvoiceLayout({ contentId, containerRef, title, document: doc
                                                 ))}
                                             </div>
                                         </th>
-                                        <td className="px-1 py-0.5" colSpan={relData != null ? 1 : 2}>
+                                        <td className="px-1 py-1.5" colSpan={relData != null ? 1 : 2}>
                                             {data ?? ''}
                                         </td>
                                         {relData != null && (
@@ -577,31 +616,30 @@ export function PdfInvoiceLayout({ contentId, containerRef, title, document: doc
                                                     ))}
                                                 </div>
                                             </th>
-                                            <td className="border-b border-black px-1 py-0.5">{data ?? ''}</td>
-                                            <td
-                                                className="w-[4em] border-b border-black px-1 py-0.5 text-center"
-                                                style={{ minWidth: '4em' }}
-                                            >
-                                                {place ? `(${place})` : ''}
+                                            <td className="border-b border-black p-1">
+                                                <div>{data ?? '未定'}</div>
+                                                {place !== undefined && (
+                                                    <div className="text-xs">(場所: {place ? `${place}` : '---'})</div>
+                                                )}
                                             </td>
                                         </tr>
                                     ))}
                                 </tbody>
                             </table>
                         </div>
-                        {/* 備考: 可変エリア */}
+                        {/* 調整 */}
                         <div className="min-h-0 flex-1 overflow-hidden border-b border-black px-1 text-[0.75rem]">
                             <div>(備考)</div>
-                            <div className="overflow-hidden">
-                                {(customer?.notes ?? '').split('\n').map((line, i) => (
-                                    <div key={i} className="overflow-hidden text-ellipsis whitespace-nowrap">
-                                        {line || '\u00a0'}
-                                    </div>
-                                ))}
+                            <div className="mx-2">
+                                {notesLong ? (
+                                    <div>別紙記載</div>
+                                ) : customer?.notes ? (
+                                    <div className="whitespace-pre-wrap break-words">{customer.notes}</div>
+                                ) : null}
                             </div>
                         </div>
                         {/* その他情報 */}
-                        <table className="w-full border-collapse border-0 text-xs">
+                        <table className="w-full border-collapse border-t border-black text-xs">
                             <tbody>
                                 <tr className="border-b border-black">
                                     <th className="w-[5em] border-r border-black px-1 text-left font-normal">
@@ -611,14 +649,8 @@ export function PdfInvoiceLayout({ contentId, containerRef, title, document: doc
                                             ))}
                                         </div>
                                     </th>
-                                    <td className="px-1" colSpan={3}>
-                                        {customer?.memberCardNote ?? ''}
-                                    </td>
+                                    <td className="px-1">{customer?.memberCardNote ?? ''}</td>
                                 </tr>
-                            </tbody>
-                        </table>
-                        <table className="w-full border-collapse border-0 text-xs">
-                            <tbody>
                                 <tr className="border-b border-black">
                                     <th className="w-[8em] border-r border-black px-1 text-left font-normal">
                                         <div className="flex justify-between">
@@ -642,7 +674,7 @@ export function PdfInvoiceLayout({ contentId, containerRef, title, document: doc
                                             ))}
                                         </div>
                                     </th>
-                                    <td className="px-1" colSpan={3}>
+                                    <td className="px-1">
                                         {customer?.altarPlaceType === 'OTHER'
                                             ? `その他（${customer.altarPlaceOther ?? ''}）`
                                             : customer?.altarPlaceType
@@ -650,16 +682,6 @@ export function PdfInvoiceLayout({ contentId, containerRef, title, document: doc
                                               : ''}
                                     </td>
                                 </tr>
-                            </tbody>
-                        </table>
-                        <table className="w-full table-fixed border-collapse border-0 text-xs">
-                            <colgroup>
-                                <col className="w-[5em]" />
-                                <col className="w-[calc(50%-5em)]" />
-                                <col className="w-[5em]" />
-                                <col className="w-[calc(50%-5em)]" />
-                            </colgroup>
-                            <tbody>
                                 <tr className="border-b border-black">
                                     <th className="border-r border-black px-1 text-left font-normal">
                                         <div className="flex justify-between">
@@ -668,9 +690,11 @@ export function PdfInvoiceLayout({ contentId, containerRef, title, document: doc
                                             ))}
                                         </div>
                                     </th>
-                                    <td className="px-1 text-center">
+                                    <td className="px-1">
                                         {customer?.ceilingHeight ? `${customer.ceilingHeight}尺` : ''}
                                     </td>
+                                </tr>
+                                <tr className="border-b border-black">
                                     <th className="border-x border-black px-1 text-left font-normal">
                                         <div className="flex justify-between">
                                             {'搬送担当'.split('').map((char, j) => (
@@ -678,7 +702,7 @@ export function PdfInvoiceLayout({ contentId, containerRef, title, document: doc
                                             ))}
                                         </div>
                                     </th>
-                                    <td className="px-1 text-center">{customer?.transportStaff ?? ''}</td>
+                                    <td className="px-1">{customer?.transportStaff ?? ''}</td>
                                 </tr>
                                 <tr className="border-b border-black">
                                     <th className="border-r border-black px-1 text-left font-normal">
@@ -688,7 +712,9 @@ export function PdfInvoiceLayout({ contentId, containerRef, title, document: doc
                                             ))}
                                         </div>
                                     </th>
-                                    <td className="px-1 text-center">{customer?.estimateStaff ?? ''}</td>
+                                    <td className="px-1 ">{customer?.estimateStaff ?? ''}</td>
+                                </tr>
+                                <tr className="border-b border-black">
                                     <th className="border-x border-black px-1 text-left font-normal">
                                         <div className="flex justify-between">
                                             {'飾り担当'.split('').map((char, j) => (
@@ -696,7 +722,7 @@ export function PdfInvoiceLayout({ contentId, containerRef, title, document: doc
                                             ))}
                                         </div>
                                     </th>
-                                    <td className="px-1 text-center">{customer?.decorationStaff ?? ''}</td>
+                                    <td className="px-1">{customer?.decorationStaff ?? ''}</td>
                                 </tr>
                                 <tr className="border-b border-black">
                                     <th className="border-r border-black px-1 text-left font-normal">
@@ -706,7 +732,9 @@ export function PdfInvoiceLayout({ contentId, containerRef, title, document: doc
                                             ))}
                                         </div>
                                     </th>
-                                    <td className="px-1 text-center">{customer?.ceremonyStaff ?? ''}</td>
+                                    <td className="px-1">{customer?.ceremonyStaff ?? ''}</td>
+                                </tr>
+                                <tr className="border-b border-black">
                                     <th className="border-x border-black px-1 text-left font-normal">
                                         <div className="flex justify-between">
                                             {'引上担当'.split('').map((char, j) => (
@@ -714,7 +742,7 @@ export function PdfInvoiceLayout({ contentId, containerRef, title, document: doc
                                             ))}
                                         </div>
                                     </th>
-                                    <td className="px-1 text-center">{customer?.returnStaff ?? ''}</td>
+                                    <td className="px-1">{customer?.returnStaff ?? ''}</td>
                                 </tr>
                             </tbody>
                         </table>
@@ -724,8 +752,24 @@ export function PdfInvoiceLayout({ contentId, containerRef, title, document: doc
                 </div>
             </div>
 
+            {/* ２ページ目 */}
             {/* 会員情報ブロック */}
-            <PdfMembershipTable memberships={customer?.memberships} />
+            <div style={notesLong ? { breakBefore: 'page' } : {}}>
+                <PdfMembershipTable memberships={customer?.memberships} />
+                {/* 備考 */}
+                {notesLong && (
+                    <div className="mt-2 p-1 border-2 border-black text-[0.75rem]">
+                        <div>(備考)</div>
+                        <div className="my-1 mx-2">
+                            {(customer?.notes ?? '').split('\n').map((line, i) => (
+                                <div key={i} className="whitespace-pre-wrap break-words">
+                                    {line || '\u00a0'}
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                )}
+            </div>
         </div>
     )
 }

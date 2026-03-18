@@ -107,7 +107,7 @@ export function DatePickerUI({
             <Popover open={open} onOpenChange={setOpen}>
                 <PopoverAnchor asChild>
                     <div
-                        className={`flex w-full items-center rounded border px-3 py-2 text-base ${
+                        className={`flex w-full items-center rounded border px-3 py-2 text-xl ${
                             error ? 'border-red-500' : 'border-gray-300'
                         } ${disabled ? 'cursor-not-allowed bg-gray-100 opacity-60' : 'cursor-pointer bg-white'}`}
                         onClick={() => !disabled && setOpen(true)}
@@ -124,7 +124,7 @@ export function DatePickerUI({
                         {mode === 'year' && (
                             <div>
                                 <div className="mb-4 flex items-center justify-between">
-                                    <h3 className="text-sm font-semibold">年を選択</h3>
+                                    <h3 className="text-base font-semibold">年を選択</h3>
                                 </div>
                                 <div className="grid grid-cols-4 gap-2">
                                     {Array.from({ length: 12 }, (_, i) => displayYear - 6 + i).map((year) => (
@@ -132,7 +132,7 @@ export function DatePickerUI({
                                             key={year}
                                             onClick={() => handleYearSelect(year)}
                                             className={cn(
-                                                'rounded px-2 py-2 text-sm font-medium transition-colors',
+                                                'rounded px-2 py-2 text-3xl font-medium transition-colors',
                                                 selectedYear === year
                                                     ? 'bg-blue-600 text-white'
                                                     : 'border border-gray-300 bg-white hover:bg-gray-100'
@@ -145,36 +145,41 @@ export function DatePickerUI({
                                 <div className="mt-4 flex justify-between">
                                     <Button
                                         variant="outline"
-                                        size="sm"
+                                        size="default"
                                         onClick={() => setDisplayYear((prev) => prev - 12)}
                                     >
                                         <ChevronLeft className="h-4 w-4" />
                                     </Button>
                                     <Button
                                         variant="outline"
-                                        size="sm"
+                                        size="default"
                                         onClick={() => setDisplayYear((prev) => prev + 12)}
                                     >
                                         <ChevronRight className="h-4 w-4" />
                                     </Button>
                                 </div>
                                 <div className="mt-4 flex gap-2">
-                                    <Button variant="outline" size="sm" onClick={handleCancel} className="flex-1">
+                                    <Button
+                                        variant="outline"
+                                        size="default"
+                                        onClick={handleCancel}
+                                        className="flex-1 text-xl"
+                                    >
                                         キャンセル
                                     </Button>
                                     <Button
-                                        size="sm"
+                                        size="default"
                                         onClick={handleConfirmYearOnly}
                                         disabled={!selectedYear}
-                                        className="flex-1"
+                                        className="flex-1 text-xl"
                                     >
                                         確定
                                     </Button>
                                     <Button
-                                        size="sm"
+                                        size="default"
                                         onClick={handleProceedToMonth}
                                         disabled={!selectedYear}
-                                        className="flex-1"
+                                        className="flex-1 text-xl"
                                     >
                                         次へ
                                     </Button>
@@ -191,7 +196,7 @@ export function DatePickerUI({
                                             setMode('year')
                                             setSelectedMonth(null)
                                         }}
-                                        className="text-sm font-semibold text-blue-600 hover:underline"
+                                        className="text-base font-semibold text-blue-600 hover:underline"
                                     >
                                         {selectedYear}年
                                     </button>
@@ -202,7 +207,7 @@ export function DatePickerUI({
                                             key={month}
                                             onClick={() => handleMonthSelect(month)}
                                             className={cn(
-                                                'rounded px-2 py-2 text-sm font-medium transition-colors',
+                                                'rounded px-2 py-2 text-3xl font-medium transition-colors',
                                                 selectedMonth === month
                                                     ? 'bg-blue-600 text-white'
                                                     : 'border border-gray-300 bg-white hover:bg-gray-100'
@@ -213,32 +218,37 @@ export function DatePickerUI({
                                     ))}
                                 </div>
                                 <div className="mt-4 flex gap-2">
-                                    <Button variant="outline" size="sm" onClick={handleCancel} className="flex-1">
+                                    <Button
+                                        variant="outline"
+                                        size="default"
+                                        onClick={handleCancel}
+                                        className="flex-1 text-xl"
+                                    >
                                         キャンセル
                                     </Button>
                                     <Button
-                                        size="sm"
+                                        size="default"
                                         onClick={() => {
                                             setMode('year')
                                             setSelectedMonth(null)
                                         }}
-                                        className="flex-1"
+                                        className="flex-1 text-xl"
                                     >
                                         戻る
                                     </Button>
                                     <Button
-                                        size="sm"
+                                        size="default"
                                         onClick={handleConfirmMonthOnly}
                                         disabled={!selectedMonth}
-                                        className="flex-1"
+                                        className="flex-1 text-xl"
                                     >
                                         確定
                                     </Button>
                                     <Button
-                                        size="sm"
+                                        size="default"
                                         onClick={handleProceedToDay}
                                         disabled={!selectedMonth}
-                                        className="flex-1"
+                                        className="flex-1 text-xl"
                                     >
                                         次へ
                                     </Button>
@@ -255,7 +265,7 @@ export function DatePickerUI({
                                             setMode('month')
                                             setSelectedMonth(null)
                                         }}
-                                        className="text-sm font-semibold text-blue-600 hover:underline"
+                                        className="text-base font-semibold text-blue-600 hover:underline"
                                     >
                                         {selectedYear}年 {selectedMonth}月
                                     </button>
@@ -274,16 +284,21 @@ export function DatePickerUI({
                                     }
                                 />
                                 <div className="mt-4 flex gap-2">
-                                    <Button variant="outline" size="sm" onClick={handleCancel} className="flex-1">
+                                    <Button
+                                        variant="outline"
+                                        size="default"
+                                        onClick={handleCancel}
+                                        className="flex-1 text-xl"
+                                    >
                                         キャンセル
                                     </Button>
                                     <Button
-                                        size="sm"
+                                        size="default"
                                         onClick={() => {
                                             setMode('month')
                                             setSelectedMonth(null)
                                         }}
-                                        className="flex-1"
+                                        className="flex-1 text-xl"
                                     >
                                         戻る
                                     </Button>
@@ -325,7 +340,7 @@ function SimpleCalendar({
     return (
         <div className="space-y-2">
             {/* 曜日ヘッダー */}
-            <div className="grid grid-cols-7 gap-1 text-center text-sm font-semibold text-gray-600">
+            <div className="grid grid-cols-7 gap-1 text-center text-3xl font-semibold text-gray-600">
                 {['日', '月', '火', '水', '木', '金', '土'].map((dayName) => (
                     <div key={dayName}>{dayName}</div>
                 ))}
@@ -337,7 +352,7 @@ function SimpleCalendar({
                     <button
                         key={i}
                         className={cn(
-                            'aspect-square rounded py-1 text-center text-sm transition-colors',
+                            'aspect-square rounded py-1 text-center text-3xl transition-colors',
                             day === null
                                 ? 'cursor-default text-gray-300'
                                 : isCurrentMonth && day > today.getDate()

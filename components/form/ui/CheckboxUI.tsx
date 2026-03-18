@@ -31,7 +31,7 @@ export function CheckboxUI({ checked = false, onChange, onBlur, label, error, re
                 </span>
             </label>
             {error && (
-                <div style={{ color: '#dc3545', fontSize: '0.875rem', marginTop: '0.25rem', marginLeft: '1.5rem' }}>
+                <div style={{ color: '#dc3545', fontSize: '1.25rem', marginTop: '0.25rem', marginLeft: '1.5rem' }}>
                     {error}
                 </div>
             )}

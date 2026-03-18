@@ -1,20 +1,24 @@
 'use client'
 
-import { useState, useCallback, useEffect } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import { useForm, FormProvider, SubmitHandler } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { caseFormSchema, CaseFormData } from '../schemas/CaseFormSchema'
-import { useCaseFormData, useCaseFormLoader } from '../hooks/useCaseForm'
+import { useCaseFormData } from '../hooks/useCaseForm'
 import { getFormDefaultValues, transformSubmitData } from '../hooks/useCaseFormConfig'
 import { apiToForm } from '@/lib/dataTransformUtils'
 import { logFormErrors } from '@/lib/formDebugUtils'
 import { CaseFormTabs } from '../components/CaseFormTabs'
-import { DeceasedTab } from '../components/DeceasedTab'
-import { FuneralTab } from '../components/FuneralTab'
-import { MembershipTab } from '../components/MembershipTab'
+import { DeceasedInfoTab } from '../components/DeceasedInfoTab'
+import { ChiefMournerTab } from '../components/ChiefMournerTab'
+import { PayerTab } from '../components/PayerTab'
+import { WakeTab } from '../components/WakeTab'
+import { FuneralInfoTab } from '../components/FuneralInfoTab'
+import { Membership1Tab } from '../components/Membership1Tab'
+import { Membership2Tab } from '../components/Membership2Tab'
+import { Membership3Tab } from '../components/Membership3Tab'
 import { useGetCustomerQuery, useUpdateCustomerMutation } from '@/hooks/useCustomer'
-import { useCitiesQuery, useTownsQuery } from '@/hooks/useAddress'
 import { toast } from '@/hooks/use-toast'
 
 export default function EditCustomerPage() {
@@ -22,24 +26,27 @@ export default function EditCustomerPage() {
     const params = useParams()
     const customerId = params.id as string
 
-    const [activeTab, setActiveTab] = useState<'deceased' | 'funeral' | 'membership'>('deceased')
+    const [activeTab, setActiveTab] = useState<
+        | 'deceasedInfo'
+        | 'chiefMourner'
+        | 'payer'
+        | 'wake'
+        | 'funeralInfo'
+        | 'membership1'
+        | 'membership2'
+        | 'membership3'
+    >('deceasedInfo')
 
     const methods = useForm<CaseFormData>({
         resolver: zodResolver(caseFormSchema),
         defaultValues: getFormDefaultValues(),
     })
 
-    // フォーム内での市区町村選択を監視
-    const formCityId = methods.watch('chiefMournerCityId')
-
     // React Query フック
     const { data: customer, isLoading, error } = useGetCustomerQuery(customerId)
-    const { data: cities = [] } = useCitiesQuery()
-    const { data: towns = [] } = useTownsQuery(formCityId || null)
     const updateMutation = useUpdateCustomerMutation()
 
     const { formatDateForISO, formatDateForInput } = useCaseFormData()
-    const { handleCityChange } = useCaseFormLoader(methods.setValue)
 
     // 顧客データが取得されたら form の値を更新
     useEffect(() => {
@@ -77,13 +84,6 @@ export default function EditCustomerPage() {
             methods.reset(mergedData)
         }
     }, [customer, isLoading, methods])
-
-    const handleCityChangeWrapper = useCallback(
-        async (cityId: string) => {
-            await handleCityChange(cityId)
-        },
-        [handleCityChange]
-    )
 
     const hasEstimate = customer?.estimates && customer.estimates.length > 0
     const hasInvoice = customer?.invoices && customer.invoices.length > 0
@@ -225,16 +225,14 @@ export default function EditCustomerPage() {
                     {/* タブ */}
                     <CaseFormTabs activeTab={activeTab} onTabChange={setActiveTab} />
                     <div className="mt-4 flex-1 overflow-y-auto pb-4 pr-2">
-                        {/* 故人情報タブ */}
-                        {activeTab === 'deceased' && (
-                            <DeceasedTab cities={cities} towns={towns} onCityChange={handleCityChangeWrapper} />
-                        )}
-
-                        {/* 葬儀情報タブ */}
-                        {activeTab === 'funeral' && <FuneralTab />}
-
-                        {/* 会員情報タブ */}
-                        {activeTab === 'membership' && <MembershipTab />}
+                        {activeTab === 'deceasedInfo' && <DeceasedInfoTab />}
+                        {activeTab === 'chiefMourner' && <ChiefMournerTab />}
+                        {activeTab === 'payer' && <PayerTab />}
+                        {activeTab === 'wake' && <WakeTab />}
+                        {activeTab === 'funeralInfo' && <FuneralInfoTab />}
+                        {activeTab === 'membership1' && <Membership1Tab />}
+                        {activeTab === 'membership2' && <Membership2Tab />}
+                        {activeTab === 'membership3' && <Membership3Tab />}
                     </div>
 
                     {/* 操作ボタン */}

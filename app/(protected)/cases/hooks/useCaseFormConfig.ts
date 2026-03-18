@@ -1,5 +1,3 @@
-import { useCallback } from 'react'
-import { UseFormSetValue } from 'react-hook-form'
 import { CaseFormData } from '../schemas/CaseFormSchema'
 import { formToApi } from '@/lib/dataTransformUtils'
 
@@ -131,7 +129,7 @@ export function transformSubmitData(data: CaseFormData, formatDateForISO: (val: 
         })),
     }
     // 郵便番号フィールドを除外（APIには送信しない）
-    const { chiefMournerPostalCode, payerPostalCode, ...dataWithoutPostalCodes } = base
+    const { ...dataWithoutPostalCodes } = base
 
     // API送信用に変換: undefined→削除, ""→null
     return formToApi(dataWithoutPostalCodes)

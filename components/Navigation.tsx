@@ -71,11 +71,11 @@ export default function Navigation() {
                 onClick={async () => {
                     await logout()
                 }}
+                title="ログアウト"
                 style={{
                     backgroundColor: 'transparent',
-                    border: '1px solid #fff',
                     color: '#fff',
-                    padding: '0.5rem 1rem',
+                    padding: '0.25rem 0.5rem',
                     borderRadius: '4px',
                     cursor: 'pointer',
                     transition: 'background-color 0.2s',
@@ -87,7 +87,9 @@ export default function Navigation() {
                     e.currentTarget.style.backgroundColor = 'transparent'
                 }}
             >
-                ログアウト
+                <span className="material-symbols-outlined" style={{ fontSize: '2rem' }}>
+                    logout
+                </span>
             </button>
         </nav>
     )

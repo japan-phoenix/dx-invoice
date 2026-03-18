@@ -22,6 +22,7 @@ export async function GET(request: NextRequest) {
         const funeralTo = searchParams.get('funeralTo') || undefined
         const paid = searchParams.get('paid') === 'true'
         const unpaid = searchParams.get('unpaid') === 'true'
+        const estimateStatusConfirmed = searchParams.get('estimateStatusConfirmed') === 'true'
 
         // 検索条件を構築
         const where: any = {}
@@ -125,7 +126,7 @@ export async function GET(request: NextRequest) {
                 chiefMournerCity: true,
                 chiefMournerTown: true,
                 estimates: {
-                    select: { id: true },
+                    select: { id: true, status: true },
                 },
                 invoices: {
                     include: {
@@ -161,6 +162,12 @@ export async function GET(request: NextRequest) {
         // 入金状態でフィルタリング
         let filteredCustomers = customers
 
+        if (estimateStatusConfirmed) {
+            filteredCustomers = filteredCustomers.filter((customer: any) =>
+                customer.estimates.some((e: any) => e.status === 'DRAFT')
+            )
+        }
+
         if (paid || unpaid) {
             filteredCustomers = customers.filter((customer: any) => {
                 const invoice = customer.invoices[0]
@@ -191,6 +198,7 @@ export async function GET(request: NextRequest) {
                 id: customer.id.toString(),
                 receptionNo: customer.receptionNo,
                 deceasedName: customer.deceasedName,
+                chiefMournerName: customer.chiefMournerName || '',
                 age: customer.age,
                 address: customer.chiefMournerAddress || '',
                 receptionAt: customer.receptionAt ? customer.receptionAt.toISOString() : null,

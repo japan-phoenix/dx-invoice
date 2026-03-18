@@ -22,6 +22,7 @@ export interface ActionColumn<T> {
 export interface DataTableProps<T> {
     columns: ColumnDef<T>[]
     actionColumn?: ActionColumn<T>
+    subRow?: (item: T, index: number) => React.ReactNode
     data: T[]
     itemsPerPage?: number
     onRowClick?: (item: T) => void
@@ -36,6 +37,7 @@ export interface DataTableProps<T> {
 export function DataTable<T>({
     columns,
     actionColumn,
+    subRow,
     data,
     itemsPerPage = 10,
     onRowClick,
@@ -88,7 +90,7 @@ export function DataTable<T>({
                                 {columns.map((col) => (
                                     <th
                                         key={col.key}
-                                        className={`border-b border-gray-200 px-3 py-3 text-left ${
+                                        className={`text-xl border-b border-gray-200 px-3 py-3 text-left ${
                                             col.sortable ? 'cursor-pointer select-none hover:bg-gray-200' : ''
                                         }`}
                                         style={{
@@ -100,7 +102,7 @@ export function DataTable<T>({
                                         <span className="inline-flex items-center gap-1">
                                             {col.label}
                                             {col.sortable && (
-                                                <span className="text-xs text-gray-400">
+                                                <span className="text-xl text-gray-400">
                                                     {sortKey === col.key ? (sortDir === 'asc' ? '▲' : '▼') : '⇅'}
                                                 </span>
                                             )}
@@ -125,38 +127,53 @@ export function DataTable<T>({
                                 <tr>
                                     <td
                                         colSpan={columns.length + (actionColumn ? 1 : 0)}
-                                        className="border-0 px-8 py-8 text-center text-gray-500"
+                                        className="border-0 px-8 py-8 text-center text-gray-500 text-2xl"
                                     >
                                         {emptyMessage}
                                     </td>
                                 </tr>
                             ) : (
                                 paginatedItems.map((item, index) => (
-                                    <tr
-                                        key={rowKey(item, index)}
-                                        onClick={() => onRowClick?.(item)}
-                                        className={`transition-colors duration-200 ${onRowClick ? 'cursor-pointer hover:bg-blue-50' : ''}`}
-                                    >
-                                        {columns.map((col) => (
-                                            <td
-                                                key={`${rowKey(item, index)}-${col.key}`}
-                                                className="border-b border-gray-200 px-3 py-3"
-                                                style={{
-                                                    width: col.width,
-                                                }}
+                                    <React.Fragment key={rowKey(item, index)}>
+                                        <tr
+                                            onClick={() => onRowClick?.(item)}
+                                            className={`transition-colors duration-200 ${onRowClick ? 'cursor-pointer hover:bg-blue-50' : ''}`}
+                                        >
+                                            {columns.map((col) => (
+                                                <td
+                                                    key={`${rowKey(item, index)}-${col.key}`}
+                                                    className="border-b border-gray-200 px-3 py-3 text-2xl"
+                                                    style={{
+                                                        width: col.width,
+                                                    }}
+                                                >
+                                                    {col.render ? col.render(item) : (item as any)[col.key]}
+                                                </td>
+                                            ))}
+                                            {actionColumn && (
+                                                <td
+                                                    className="sticky right-0 z-10 border-b border-l border-gray-200 bg-white px-3 py-3 text-center"
+                                                    onClick={(e) => e.stopPropagation()}
+                                                >
+                                                    {actionColumn.render(item, index)}
+                                                </td>
+                                            )}
+                                        </tr>
+                                        {subRow && (
+                                            <tr
+                                                className={onRowClick ? 'cursor-pointer hover:bg-blue-50' : ''}
+                                                onClick={() => onRowClick?.(item)}
                                             >
-                                                {col.render ? col.render(item) : (item as any)[col.key]}
-                                            </td>
-                                        ))}
-                                        {actionColumn && (
-                                            <td
-                                                className="sticky right-0 z-10 border-b border-l border-gray-200 bg-white px-3 py-3 text-center"
-                                                onClick={(e) => e.stopPropagation()}
-                                            >
-                                                {actionColumn.render(item, index)}
-                                            </td>
+                                                <td
+                                                    colSpan={columns.length + (actionColumn ? 1 : 0)}
+                                                    className="border-b border-gray-200 px-3 py-3 bg-gray-50"
+                                                    onClick={(e) => e.stopPropagation()}
+                                                >
+                                                    {subRow(item, index)}
+                                                </td>
+                                            </tr>
                                         )}
-                                    </tr>
+                                    </React.Fragment>
                                 ))
                             )}
                         </tbody>

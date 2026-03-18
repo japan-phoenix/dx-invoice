@@ -1,5 +1,7 @@
 'use client'
 
+import { useState } from 'react'
+import { ChevronDown, ChevronUp } from 'lucide-react'
 import { SearchButton } from '@/components/button/SearchButton'
 import { ResetButton } from '@/components/button/ResetButton'
 import { SearchCustomersParams } from '@/lib/customers'
@@ -23,6 +25,7 @@ interface FormParams extends SearchCustomersParams {
 }
 
 export function CaseSearchForm({ formParams, setFormParams, onSearch, onReset, isLoading }: CaseSearchFormProps) {
+    const [open, setOpen] = useState(false)
     const { data: cities = [] } = useCitiesQuery()
     const { data: towns = [] } = useTownsQuery(formParams.cityId || null)
 
@@ -59,107 +62,134 @@ export function CaseSearchForm({ formParams, setFormParams, onSearch, onReset, i
     }
 
     return (
-        <div className="mb-8 rounded-lg bg-gray-100 p-6">
-            <div className="mb-4 grid grid-cols-3 gap-4">
-                <div>
-                    <SelectUI
-                        value={formParams.cityId || ''}
-                        onChange={handleCityChange}
-                        label="市区町村"
-                        options={cities.map((city) => ({ value: city.id, label: city.name }))}
-                        placeholder="選択してください"
-                    />
-                </div>
+        <div className="mb-8 rounded-lg bg-gray-100">
+            <button
+                type="button"
+                onClick={() => setOpen((prev) => !prev)}
+                className="flex w-full items-center justify-between px-6 py-4 font-medium hover:bg-gray-200 rounded-lg"
+            >
+                <span>検索条件</span>
+                {open ? <ChevronUp className="h-5 w-5" /> : <ChevronDown className="h-5 w-5" />}
+            </button>
+            {open && (
+                <div className="px-6 pt-2 pb-6">
+                    <div className="mb-4 grid grid-cols-2 gap-4">
+                        <div>
+                            <SelectUI
+                                value={formParams.cityId || ''}
+                                onChange={handleCityChange}
+                                label="市区町村"
+                                options={cities.map((city) => ({ value: city.id, label: city.name }))}
+                                placeholder="選択してください"
+                            />
+                        </div>
 
-                <div>
-                    <SelectUI
-                        value={formParams.townId || ''}
-                        onChange={(townId) => setFormParams({ ...formParams, townId })}
-                        label="町字"
-                        options={towns.map((town) => ({ value: town.id, label: town.name }))}
-                        placeholder="選択してください"
-                        disabled={!formParams.cityId}
-                    />
-                </div>
+                        <div>
+                            <SelectUI
+                                value={formParams.townId || ''}
+                                onChange={(townId) => setFormParams({ ...formParams, townId })}
+                                label="町字"
+                                options={towns.map((town) => ({ value: town.id, label: town.name }))}
+                                placeholder="選択してください"
+                                disabled={!formParams.cityId}
+                            />
+                        </div>
 
-                <div>
-                    <InputUI
-                        value={formParams.deceasedName || ''}
-                        onChange={(deceasedName) => setFormParams({ ...formParams, deceasedName })}
-                        label="故人名"
-                        placeholder="入力してください"
-                    />
-                </div>
+                        <div className="col-span-2">
+                            <InputUI
+                                value={formParams.deceasedName || ''}
+                                onChange={(deceasedName) => setFormParams({ ...formParams, deceasedName })}
+                                label="故人名"
+                                placeholder="入力してください"
+                            />
+                        </div>
 
-                <div>
-                    <DatePickerUI
-                        value={formParams.receptionFromInput || ''}
-                        onChange={(receptionFromInput) => setFormParams({ ...formParams, receptionFromInput })}
-                        label="受付日（From）"
-                        placeholder="日付を選択"
-                    />
-                </div>
+                        <div>
+                            <DatePickerUI
+                                value={formParams.receptionFromInput || ''}
+                                onChange={(receptionFromInput) => setFormParams({ ...formParams, receptionFromInput })}
+                                label="受付日（From）"
+                                placeholder="日付を選択"
+                            />
+                        </div>
 
-                <div>
-                    <DatePickerUI
-                        value={formParams.receptionToInput || ''}
-                        onChange={(receptionToInput) => setFormParams({ ...formParams, receptionToInput })}
-                        label="受付日（To）"
-                        placeholder="日付を選択"
-                    />
-                </div>
+                        <div>
+                            <DatePickerUI
+                                value={formParams.receptionToInput || ''}
+                                onChange={(receptionToInput) => setFormParams({ ...formParams, receptionToInput })}
+                                label="受付日（To）"
+                                placeholder="日付を選択"
+                            />
+                        </div>
 
-                <div>
-                    <DatePickerUI
-                        value={formParams.funeralFromInput || ''}
-                        onChange={(funeralFromInput) => setFormParams({ ...formParams, funeralFromInput })}
-                        label="葬儀日（From）"
-                        placeholder="日付を選択"
-                    />
-                </div>
+                        <div>
+                            <DatePickerUI
+                                value={formParams.funeralFromInput || ''}
+                                onChange={(funeralFromInput) => setFormParams({ ...formParams, funeralFromInput })}
+                                label="葬儀日（From）"
+                                placeholder="日付を選択"
+                            />
+                        </div>
 
-                <div>
-                    <DatePickerUI
-                        value={formParams.funeralToInput || ''}
-                        onChange={(funeralToInput) => setFormParams({ ...formParams, funeralToInput })}
-                        label="葬儀日（To）"
-                        placeholder="日付を選択"
-                    />
-                </div>
+                        <div>
+                            <DatePickerUI
+                                value={formParams.funeralToInput || ''}
+                                onChange={(funeralToInput) => setFormParams({ ...formParams, funeralToInput })}
+                                label="葬儀日（To）"
+                                placeholder="日付を選択"
+                            />
+                        </div>
 
-                <div>
-                    <label className="mb-2 block text-sm">入金状態</label>
+                        <div>
+                            <label className="mb-2 block">入金状態</label>
+                            <div className="flex gap-4">
+                                <CheckboxUI
+                                    checked={formParams.paid === true}
+                                    onChange={(paid) =>
+                                        setFormParams({
+                                            ...formParams,
+                                            paid: paid ? true : undefined,
+                                            unpaid: paid ? undefined : formParams.unpaid,
+                                        })
+                                    }
+                                    label="入金済"
+                                />
+                                <CheckboxUI
+                                    checked={formParams.unpaid === true}
+                                    onChange={(unpaid) =>
+                                        setFormParams({
+                                            ...formParams,
+                                            unpaid: unpaid ? true : undefined,
+                                            paid: unpaid ? undefined : formParams.paid,
+                                        })
+                                    }
+                                    label="未入金"
+                                />
+                            </div>
+                        </div>
+                        <div>
+                            <label className="mb-2 block">見積区分</label>
+                            <div className="flex gap-4">
+                                <CheckboxUI
+                                    checked={formParams.estimateStatusConfirmed === true}
+                                    onChange={(checked) =>
+                                        setFormParams({
+                                            ...formParams,
+                                            estimateStatusConfirmed: checked ? true : undefined,
+                                        })
+                                    }
+                                    label="事前相談見積のみ"
+                                />
+                            </div>
+                        </div>
+                    </div>
+
                     <div className="flex gap-4">
-                        <CheckboxUI
-                            checked={formParams.paid === true}
-                            onChange={(paid) =>
-                                setFormParams({
-                                    ...formParams,
-                                    paid: paid ? true : undefined,
-                                    unpaid: paid ? undefined : formParams.unpaid,
-                                })
-                            }
-                            label="入金済"
-                        />
-                        <CheckboxUI
-                            checked={formParams.unpaid === true}
-                            onChange={(unpaid) =>
-                                setFormParams({
-                                    ...formParams,
-                                    unpaid: unpaid ? true : undefined,
-                                    paid: unpaid ? undefined : formParams.paid,
-                                })
-                            }
-                            label="未入金"
-                        />
+                        <SearchButton onClick={handleSearch} isLoading={isLoading} />
+                        <ResetButton onClick={handleReset} />
                     </div>
                 </div>
-            </div>
-
-            <div className="flex gap-4">
-                <SearchButton onClick={handleSearch} isLoading={isLoading} />
-                <ResetButton onClick={handleReset} />
-            </div>
+            )}
         </div>
     )
 }

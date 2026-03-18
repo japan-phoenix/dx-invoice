@@ -1,5 +1,16 @@
 import apiClient from './api'
 
+export interface EstimateFreeItem {
+    id?: string
+    estimateItemId?: string
+    productItemName: string
+    description?: string
+    unitPriceGeneral: number
+    qty: number
+    amount: number
+    sortNo: number
+}
+
 export interface EstimateItem {
     id?: string
     productItemId?: string

@@ -41,7 +41,7 @@ export function AutocompleteUI({
     return (
         <div>
             {label && (
-                <label className="mb-2 block font-medium">
+                <label className="mb-2 block font-large">
                     {label}
                     {required && <span className="text-red-600">*</span>}
                 </label>
@@ -65,7 +65,7 @@ export function AutocompleteUI({
                         onFocus={() => setOpen(filteredOptions.length > 0)}
                         onClick={() => setOpen(filteredOptions.length > 0)}
                         className={cn(
-                            'h-auto w-full rounded border px-3 py-2 text-left text-base shadow-none focus-visible:outline-none focus-visible:ring-0 focus-visible:ring-offset-0 md:text-base',
+                            'h-auto w-full rounded border px-3 py-2 text-left !text-xl shadow-none focus-visible:outline-none focus-visible:ring-0 focus-visible:ring-offset-0',
                             error ? 'border-red-500' : 'border-gray-300',
                             disabled ? 'cursor-not-allowed bg-gray-100 opacity-60' : ''
                         )}
@@ -85,7 +85,7 @@ export function AutocompleteUI({
                                         <CommandItem
                                             key={option}
                                             value={option}
-                                            className="justify-start text-left md:text-base"
+                                            className="justify-start text-left text-xl"
                                             onSelect={(selectedValue) => {
                                                 setInputValue(selectedValue)
                                                 onChange(selectedValue)
@@ -101,7 +101,7 @@ export function AutocompleteUI({
                     </PopoverContent>
                 )}
             </Popover>
-            {error && <div className="mt-1 text-sm text-red-600">{error}</div>}
+            {error && <div className="mt-1 text-xl text-red-600">{error}</div>}
         </div>
     )
 }

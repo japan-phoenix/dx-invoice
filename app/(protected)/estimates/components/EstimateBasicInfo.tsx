@@ -13,7 +13,6 @@ type Props = {
 export function EstimateBasicInfo({ control }: Props) {
     return (
         <div className="mb-8">
-            <h3 className="mb-4">基本情報</h3>
             <div className="grid grid-cols-2 gap-4">
                 <FormInput name="docNo" control={control} label="見積番号" placeholder="例: EST-0001" />
                 <FormSelect

@@ -12,7 +12,6 @@ type Props = {
 export function InvoiceBasicInfo({ control }: Props) {
     return (
         <div className="mb-8">
-            <h3 className="mb-4">基本情報</h3>
             <div className="grid grid-cols-2 gap-4">
                 <FormInput name="docNo" control={control} label="請求番号" placeholder="例: INV-0001" />
                 <FormSelect

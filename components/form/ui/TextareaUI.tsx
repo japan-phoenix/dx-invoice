@@ -56,7 +56,7 @@ export function TextareaUI({
                     padding: '0.5rem',
                     border: error ? '2px solid #dc3545' : '1px solid #ddd',
                     borderRadius: '4px',
-                    fontSize: '1rem',
+                    fontSize: '1.25rem',
                     fontFamily: 'inherit',
                     backgroundColor: disabled ? '#f5f5f5' : 'white',
                     cursor: disabled ? 'not-allowed' : 'text',

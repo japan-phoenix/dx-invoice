@@ -53,9 +53,9 @@ export function UserFormDialog({ open, user, onClose, onSubmit }: UserFormDialog
 
     return (
         <Dialog open={open} onOpenChange={(isOpen) => !isOpen && onClose()}>
-            <DialogContent className="max-w-md">
+            <DialogContent className="max-w-lg">
                 <DialogHeader>
-                    <DialogTitle>{isEditing ? '社員編集' : '社員新規登録'}</DialogTitle>
+                    <DialogTitle className="text-xl">{isEditing ? '社員編集' : '社員新規登録'}</DialogTitle>
                 </DialogHeader>
                 <FormProvider {...methods}>
                     <form onSubmit={handleSubmit(onSubmit)} noValidate>

@@ -45,7 +45,7 @@ export function SwitchUI({ checked = false, onChange, onBlur, label, error, requ
                 </span>
             </label>
             {error && (
-                <div style={{ color: '#dc3545', fontSize: '0.875rem', marginTop: '0.25rem', marginLeft: '3.5rem' }}>
+                <div style={{ color: '#dc3545', fontSize: '1.25rem', marginTop: '0.25rem', marginLeft: '3.5rem' }}>
                     {error}
                 </div>
             )}

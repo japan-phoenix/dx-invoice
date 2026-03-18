@@ -61,7 +61,7 @@ export function RadioUI({
                     </label>
                 ))}
             </div>
-            {error && <div style={{ color: '#dc3545', fontSize: '0.875rem', marginTop: '0.25rem' }}>{error}</div>}
+            {error && <div style={{ color: '#dc3545', fontSize: '1.25rem', marginTop: '0.25rem' }}>{error}</div>}
         </div>
     )
 }

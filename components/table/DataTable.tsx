@@ -90,7 +90,7 @@ export function DataTable<T>({
                                 {columns.map((col) => (
                                     <th
                                         key={col.key}
-                                        className={`border-b border-gray-200 px-3 py-3 text-left ${
+                                        className={`text-xl border-b border-gray-200 px-3 py-3 text-left ${
                                             col.sortable ? 'cursor-pointer select-none hover:bg-gray-200' : ''
                                         }`}
                                         style={{
@@ -102,7 +102,7 @@ export function DataTable<T>({
                                         <span className="inline-flex items-center gap-1">
                                             {col.label}
                                             {col.sortable && (
-                                                <span className="text-xs text-gray-400">
+                                                <span className="text-xl text-gray-400">
                                                     {sortKey === col.key ? (sortDir === 'asc' ? '▲' : '▼') : '⇅'}
                                                 </span>
                                             )}
@@ -127,7 +127,7 @@ export function DataTable<T>({
                                 <tr>
                                     <td
                                         colSpan={columns.length + (actionColumn ? 1 : 0)}
-                                        className="border-0 px-8 py-8 text-center text-gray-500"
+                                        className="border-0 px-8 py-8 text-center text-gray-500 text-2xl"
                                     >
                                         {emptyMessage}
                                     </td>
@@ -142,7 +142,7 @@ export function DataTable<T>({
                                             {columns.map((col) => (
                                                 <td
                                                     key={`${rowKey(item, index)}-${col.key}`}
-                                                    className="border-b border-gray-200 px-3 py-3 text-[24px]"
+                                                    className="border-b border-gray-200 px-3 py-3 text-2xl"
                                                     style={{
                                                         width: col.width,
                                                     }}

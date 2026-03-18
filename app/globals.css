@@ -20,6 +20,7 @@ body {
         'Droid Sans', 'Helvetica Neue', sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    font-size: 1.25rem; /* text-xl */
 }
 
 a {
@@ -32,6 +33,7 @@ button {
     border: none;
     background: none;
     font-family: inherit;
+    font-size: 1.25rem; /* text-xl */
 }
 
 input,

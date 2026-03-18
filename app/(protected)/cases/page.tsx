@@ -120,7 +120,7 @@ export default function CasesPage() {
             />
 
             {/* 検索結果一覧 */}
-            <div className="flex h-96 flex-col">
+            <div className="flex flex-col">
                 <DataTable<CustomerListItem>
                     columns={[
                         {
@@ -158,7 +158,7 @@ export default function CasesPage() {
                                         router.push(`/estimates/new?customerId=${item.id}`)
                                     }
                                 }}
-                                className={`rounded px-4 py-2 text-sm font-medium text-white ${
+                                className={`rounded px-4 py-2 font-medium text-white ${
                                     item.hasEstimate ? 'bg-cyan-600 hover:bg-cyan-700' : 'bg-gray-500 hover:bg-gray-600'
                                 }`}
                             >
@@ -173,7 +173,7 @@ export default function CasesPage() {
                                         router.push(`/invoices/new?customerId=${item.id}`)
                                     }
                                 }}
-                                className={`rounded px-4 py-2 text-sm font-medium ${
+                                className={`rounded px-4 py-2 font-medium ${
                                     item.hasInvoice
                                         ? 'bg-yellow-400 text-black hover:bg-yellow-500'
                                         : 'bg-gray-500 text-white hover:bg-gray-600'
@@ -186,7 +186,7 @@ export default function CasesPage() {
                                     e.stopPropagation()
                                     router.push(`/flowers/customer/${item.id}`)
                                 }}
-                                className="rounded bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700"
+                                className="rounded bg-green-600 px-4 py-2 font-medium text-white hover:bg-green-700"
                             >
                                 供花登録
                             </button>
@@ -196,7 +196,7 @@ export default function CasesPage() {
                                         e.stopPropagation()
                                         handlePaymentClick(item)
                                     }}
-                                    className={`rounded px-4 py-2 text-sm font-medium text-white ${
+                                    className={`rounded px-4 py-2 font-medium text-white ${
                                         item.isPaid ? 'bg-blue-600 hover:bg-blue-700' : 'bg-red-600 hover:bg-red-700'
                                     }`}
                                 >
@@ -209,7 +209,7 @@ export default function CasesPage() {
                                         e.stopPropagation()
                                         router.push(`/pdf/receipt/${item.invoiceId}`)
                                     }}
-                                    className="rounded bg-purple-600 px-4 py-2 text-sm font-medium text-white hover:bg-purple-700"
+                                    className="rounded bg-purple-600 px-4 py-2 font-medium text-white hover:bg-purple-700"
                                 >
                                     領収書発行
                                 </button>
@@ -234,7 +234,7 @@ export default function CasesPage() {
                         <h2 className="mb-6 text-lg font-bold">{paymentDialog.isPaid ? '入金取消' : '入金登録'}</h2>
 
                         <div className="mb-4">
-                            <label className="mb-2 block text-sm font-medium">入金日</label>
+                            <label className="mb-2 block text-xl font-medium">入金日</label>
                             <input
                                 type="date"
                                 value={paymentData.paidAt}
@@ -244,7 +244,7 @@ export default function CasesPage() {
                         </div>
 
                         <div className="mb-6">
-                            <label className="mb-2 block text-sm font-medium">備考</label>
+                            <label className="mb-2 block text-xl font-medium">備考</label>
                             <textarea
                                 value={paymentData.memo}
                                 onChange={(e) => setPaymentData({ ...paymentData, memo: e.target.value })}

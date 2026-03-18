@@ -7,7 +7,7 @@ export function ResetButton({ children = 'リセット', ...props }: ResetButton
         <Button
             type="button"
             {...props}
-            className={`rounded border-none bg-gray-600 text-white hover:bg-gray-700 ${props.className || ''}`}
+            className={`rounded border-none text-xl py-6 bg-gray-600 text-white hover:bg-gray-700 ${props.className || ''}`}
         >
             {children}
         </Button>

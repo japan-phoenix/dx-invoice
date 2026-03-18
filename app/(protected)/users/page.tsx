@@ -91,14 +91,14 @@ export default function UsersPage() {
             <section className="mb-6 rounded-lg border bg-gray-50 p-6">
                 <div className="grid grid-cols-[1fr_auto] items-end gap-4">
                     <div>
-                        <label className="mb-1 block text-sm font-semibold">名前で検索</label>
+                        <label className="mb-1 block text-xl font-semibold">名前</label>
                         <input
                             type="text"
                             value={searchName}
                             onChange={(e) => setSearchName(e.target.value)}
                             onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-                            placeholder="名前を入力"
-                            className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            placeholder="名前で検索"
+                            className="w-full rounded-md border border-gray-300 px-3 py-2 text-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
                         />
                     </div>
                     <div className="flex gap-2">

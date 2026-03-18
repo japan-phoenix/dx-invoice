@@ -198,6 +198,7 @@ export async function GET(request: NextRequest) {
                 id: customer.id.toString(),
                 receptionNo: customer.receptionNo,
                 deceasedName: customer.deceasedName,
+                chiefMournerName: customer.chiefMournerName || '',
                 age: customer.age,
                 address: customer.chiefMournerAddress || '',
                 receptionAt: customer.receptionAt ? customer.receptionAt.toISOString() : null,

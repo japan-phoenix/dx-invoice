@@ -4,6 +4,7 @@ export interface CustomerListItem {
     id: string
     receptionNo: string
     deceasedName: string
+    chiefMournerName: string
     age: number | null
     address: string
     receptionAt: string | null

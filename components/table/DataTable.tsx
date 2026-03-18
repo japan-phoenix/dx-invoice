@@ -142,7 +142,7 @@ export function DataTable<T>({
                                             {columns.map((col) => (
                                                 <td
                                                     key={`${rowKey(item, index)}-${col.key}`}
-                                                    className="border-b border-gray-200 px-3 py-3"
+                                                    className="border-b border-gray-200 px-3 py-3 text-[24px]"
                                                     style={{
                                                         width: col.width,
                                                     }}

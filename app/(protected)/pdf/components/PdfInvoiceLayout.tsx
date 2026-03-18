@@ -535,7 +535,7 @@ export function PdfInvoiceLayout({ contentId, containerRef, title, document: doc
                                 ).map(({ label, data, relData }, i) => (
                                     <tr key={i} className="border-b border-black">
                                         <th
-                                            className="w-[5em] border-r border-black px-1 py-1.5 font-normal"
+                                            className="w-[5em] border-r border-black p-1 font-normal"
                                             style={{ minWidth: '5em' }}
                                         >
                                             <div className="flex justify-between">
@@ -544,7 +544,7 @@ export function PdfInvoiceLayout({ contentId, containerRef, title, document: doc
                                                 ))}
                                             </div>
                                         </th>
-                                        <td className="px-1 py-0.5" colSpan={relData != null ? 1 : 2}>
+                                        <td className="px-1 py-1.5" colSpan={relData != null ? 1 : 2}>
                                             {data ?? ''}
                                         </td>
                                         {relData != null && (
@@ -615,31 +615,24 @@ export function PdfInvoiceLayout({ contentId, containerRef, title, document: doc
                                                     ))}
                                                 </div>
                                             </th>
-                                            <td className="border-b border-black px-1 py-0.5">{data ?? ''}</td>
-                                            <td
-                                                className="w-[4em] border-b border-black px-1 py-0.5 text-center"
-                                                style={{ minWidth: '4em' }}
-                                            >
-                                                {place ? `(${place})` : ''}
+                                            <td className="border-b border-black p-1">
+                                                <div>{data ?? '未定'}</div>
+                                                {place !== undefined && (
+                                                    <div className="text-xs">(場所: {place ? `${place}` : '---'})</div>
+                                                )}
                                             </td>
                                         </tr>
                                     ))}
                                 </tbody>
                             </table>
                         </div>
-                        {/* 備考 */}
+                        {/* 調整 */}
                         <div className="min-h-0 flex-1 overflow-hidden border-b border-black px-1 text-[0.75rem]">
                             <div>(備考)</div>
-                            <div>
-                                {(customer?.notes ?? '').split('\n').map((line, i) => (
-                                    <div key={i} className="whitespace-pre-wrap break-words">
-                                        {line || '\u00a0'}
-                                    </div>
-                                ))}
-                            </div>
+                            <div className="mx-2">{customer?.notes ? <div>別紙記載</div> : null}</div>
                         </div>
                         {/* その他情報 */}
-                        <table className="w-full border-collapse border-0 text-xs">
+                        <table className="w-full border-collapse border-t border-black text-xs">
                             <tbody>
                                 <tr className="border-b border-black">
                                     <th className="w-[5em] border-r border-black px-1 text-left font-normal">
@@ -649,14 +642,8 @@ export function PdfInvoiceLayout({ contentId, containerRef, title, document: doc
                                             ))}
                                         </div>
                                     </th>
-                                    <td className="px-1" colSpan={3}>
-                                        {customer?.memberCardNote ?? ''}
-                                    </td>
+                                    <td className="px-1">{customer?.memberCardNote ?? ''}</td>
                                 </tr>
-                            </tbody>
-                        </table>
-                        <table className="w-full border-collapse border-0 text-xs">
-                            <tbody>
                                 <tr className="border-b border-black">
                                     <th className="w-[8em] border-r border-black px-1 text-left font-normal">
                                         <div className="flex justify-between">
@@ -680,7 +667,7 @@ export function PdfInvoiceLayout({ contentId, containerRef, title, document: doc
                                             ))}
                                         </div>
                                     </th>
-                                    <td className="px-1" colSpan={3}>
+                                    <td className="px-1">
                                         {customer?.altarPlaceType === 'OTHER'
                                             ? `その他（${customer.altarPlaceOther ?? ''}）`
                                             : customer?.altarPlaceType
@@ -688,16 +675,6 @@ export function PdfInvoiceLayout({ contentId, containerRef, title, document: doc
                                               : ''}
                                     </td>
                                 </tr>
-                            </tbody>
-                        </table>
-                        <table className="w-full table-fixed border-collapse border-0 text-xs">
-                            <colgroup>
-                                <col className="w-[5em]" />
-                                <col className="w-[calc(50%-5em)]" />
-                                <col className="w-[5em]" />
-                                <col className="w-[calc(50%-5em)]" />
-                            </colgroup>
-                            <tbody>
                                 <tr className="border-b border-black">
                                     <th className="border-r border-black px-1 text-left font-normal">
                                         <div className="flex justify-between">
@@ -706,9 +683,11 @@ export function PdfInvoiceLayout({ contentId, containerRef, title, document: doc
                                             ))}
                                         </div>
                                     </th>
-                                    <td className="px-1 text-center">
+                                    <td className="px-1">
                                         {customer?.ceilingHeight ? `${customer.ceilingHeight}尺` : ''}
                                     </td>
+                                </tr>
+                                <tr className="border-b border-black">
                                     <th className="border-x border-black px-1 text-left font-normal">
                                         <div className="flex justify-between">
                                             {'搬送担当'.split('').map((char, j) => (
@@ -716,7 +695,7 @@ export function PdfInvoiceLayout({ contentId, containerRef, title, document: doc
                                             ))}
                                         </div>
                                     </th>
-                                    <td className="px-1 text-center">{customer?.transportStaff ?? ''}</td>
+                                    <td className="px-1">{customer?.transportStaff ?? ''}</td>
                                 </tr>
                                 <tr className="border-b border-black">
                                     <th className="border-r border-black px-1 text-left font-normal">
@@ -726,7 +705,9 @@ export function PdfInvoiceLayout({ contentId, containerRef, title, document: doc
                                             ))}
                                         </div>
                                     </th>
-                                    <td className="px-1 text-center">{customer?.estimateStaff ?? ''}</td>
+                                    <td className="px-1 ">{customer?.estimateStaff ?? ''}</td>
+                                </tr>
+                                <tr className="border-b border-black">
                                     <th className="border-x border-black px-1 text-left font-normal">
                                         <div className="flex justify-between">
                                             {'飾り担当'.split('').map((char, j) => (
@@ -734,7 +715,7 @@ export function PdfInvoiceLayout({ contentId, containerRef, title, document: doc
                                             ))}
                                         </div>
                                     </th>
-                                    <td className="px-1 text-center">{customer?.decorationStaff ?? ''}</td>
+                                    <td className="px-1">{customer?.decorationStaff ?? ''}</td>
                                 </tr>
                                 <tr className="border-b border-black">
                                     <th className="border-r border-black px-1 text-left font-normal">
@@ -744,7 +725,9 @@ export function PdfInvoiceLayout({ contentId, containerRef, title, document: doc
                                             ))}
                                         </div>
                                     </th>
-                                    <td className="px-1 text-center">{customer?.ceremonyStaff ?? ''}</td>
+                                    <td className="px-1">{customer?.ceremonyStaff ?? ''}</td>
+                                </tr>
+                                <tr className="border-b border-black">
                                     <th className="border-x border-black px-1 text-left font-normal">
                                         <div className="flex justify-between">
                                             {'引上担当'.split('').map((char, j) => (
@@ -752,7 +735,7 @@ export function PdfInvoiceLayout({ contentId, containerRef, title, document: doc
                                             ))}
                                         </div>
                                     </th>
-                                    <td className="px-1 text-center">{customer?.returnStaff ?? ''}</td>
+                                    <td className="px-1">{customer?.returnStaff ?? ''}</td>
                                 </tr>
                             </tbody>
                         </table>
@@ -762,8 +745,24 @@ export function PdfInvoiceLayout({ contentId, containerRef, title, document: doc
                 </div>
             </div>
 
+            {/* ２ページ目 */}
             {/* 会員情報ブロック */}
-            <PdfMembershipTable memberships={customer?.memberships} />
+            <div style={{ breakBefore: 'page' }}>
+                <PdfMembershipTable memberships={customer?.memberships} />
+                {/* 備考 */}
+                <div className="mt-2 border-2 border-black">
+                    <div className="min-h-0 flex-1 overflow-hidden border-b border-black px-1 text-[0.75rem]">
+                        <div>(備考)</div>
+                        <div className="my-1 mx-2">
+                            {(customer?.notes ?? '').split('\n').map((line, i) => (
+                                <div key={i} className="whitespace-pre-wrap break-words">
+                                    {line || '\u00a0'}
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     )
 }

@@ -131,18 +131,12 @@ export default function CasesPage() {
                         {
                             key: 'deceasedName',
                             label: '故人名',
-                            width: '150px',
+                            width: '120px',
                         },
                         {
-                            key: 'age',
-                            label: '行年',
-                            width: '80px',
-                            render: (item) => (item.age ? `${item.age}歳` : '-'),
-                        },
-                        {
-                            key: 'address',
-                            label: '住所',
-                            width: '200px',
+                            key: 'chiefMournerName',
+                            label: '喪主名',
+                            width: '120px',
                         },
                         {
                             key: 'receptionAt',
@@ -151,12 +145,6 @@ export default function CasesPage() {
                             sortable: true,
                             sortValue: (item) => (item.receptionAt ? new Date(item.receptionAt).getTime() : null),
                             render: (item) => formatDate(item.receptionAt),
-                        },
-                        {
-                            key: 'funeralFrom',
-                            label: '葬儀日',
-                            width: '110px',
-                            render: (item) => formatDate(item.funeralFrom),
                         },
                     ]}
                     subRow={(item) => (

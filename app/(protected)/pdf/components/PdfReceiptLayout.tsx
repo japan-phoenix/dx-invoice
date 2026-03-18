@@ -349,11 +349,11 @@ export function PdfReceiptLayout({ contentId, containerRef, document: doc, produ
                                 </tr>
                             </tbody>
                         </table>
-                        {/* 備考: 可変エリア */}
+                        {/* 備考 */}
                         <div className="min-h-0 flex-1 overflow-hidden border border-t-0 border-black px-1 text-sm">
                             <div>備考</div>
-                            <div className="overflow-hidden">
-                                <div className="overflow-hidden text-ellipsis whitespace-nowrap">&nbsp;</div>
+                            <div className="h-full overflow-y-auto whitespace-pre-wrap break-words">
+                                {customer?.notes || ''}
                             </div>
                         </div>
                     </div>

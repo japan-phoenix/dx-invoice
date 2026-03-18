@@ -220,6 +220,7 @@ export function PdfInvoiceLayout({ contentId, containerRef, title, document: doc
         : undefined
     const displayRows = buildDisplayRows(products, items, doc.freeItems)
     const isMember = doc.isMember === true
+    const notesLong = (customer?.notes?.length ?? 0) >= 20
     return (
         <div
             id={contentId}
@@ -629,7 +630,13 @@ export function PdfInvoiceLayout({ contentId, containerRef, title, document: doc
                         {/* 調整 */}
                         <div className="min-h-0 flex-1 overflow-hidden border-b border-black px-1 text-[0.75rem]">
                             <div>(備考)</div>
-                            <div className="mx-2">{customer?.notes ? <div>別紙記載</div> : null}</div>
+                            <div className="mx-2">
+                                {notesLong ? (
+                                    <div>別紙記載</div>
+                                ) : customer?.notes ? (
+                                    <div className="whitespace-pre-wrap break-words">{customer.notes}</div>
+                                ) : null}
+                            </div>
                         </div>
                         {/* その他情報 */}
                         <table className="w-full border-collapse border-t border-black text-xs">
@@ -747,11 +754,11 @@ export function PdfInvoiceLayout({ contentId, containerRef, title, document: doc
 
             {/* ２ページ目 */}
             {/* 会員情報ブロック */}
-            <div style={{ breakBefore: 'page' }}>
+            <div style={notesLong ? { breakBefore: 'page' } : {}}>
                 <PdfMembershipTable memberships={customer?.memberships} />
                 {/* 備考 */}
-                <div className="mt-2 border-2 border-black">
-                    <div className="min-h-0 flex-1 overflow-hidden border-b border-black px-1 text-[0.75rem]">
+                {notesLong && (
+                    <div className="mt-2 p-1 border-2 border-black text-[0.75rem]">
                         <div>(備考)</div>
                         <div className="my-1 mx-2">
                             {(customer?.notes ?? '').split('\n').map((line, i) => (
@@ -761,7 +768,7 @@ export function PdfInvoiceLayout({ contentId, containerRef, title, document: doc
                             ))}
                         </div>
                     </div>
-                </div>
+                )}
             </div>
         </div>
     )

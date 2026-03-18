@@ -89,6 +89,7 @@ export function PdfReceiptLayout({ contentId, containerRef, document: doc, produ
             .then(setCompany)
             .catch(() => {})
     }, [])
+    const notesLong = (customer?.notes?.length ?? 0) >= 100
 
     return (
         <div
@@ -100,7 +101,7 @@ export function PdfReceiptLayout({ contentId, containerRef, document: doc, produ
             <div className="border border-[#999] p-4 rounded-lg">
                 <div className="grid grid-cols-[1fr_auto_1fr] items-start">
                     {/* 収入印紙欄 */}
-                    <div className="px-8 py-4 text-center border border-dashed border-black [writing-mode:vertical-rl] justify-self-start">
+                    <div className="px-8 py-2.5 text-center border border-dashed border-black [writing-mode:vertical-rl] justify-self-start">
                         収入印紙
                     </div>
                     {/* タイトル（常に中央） */}
@@ -352,9 +353,28 @@ export function PdfReceiptLayout({ contentId, containerRef, document: doc, produ
                         {/* 備考 */}
                         <div className="min-h-0 flex-1 overflow-hidden border border-t-0 border-black px-1 text-sm">
                             <div>備考</div>
-                            <div className="h-full overflow-y-auto whitespace-pre-wrap break-words">
-                                {customer?.notes || ''}
+                            <div className="mx-2">
+                                {notesLong ? (
+                                    <div>別紙記載</div>
+                                ) : customer?.notes ? (
+                                    <div className="whitespace-pre-wrap break-words">{customer.notes}</div>
+                                ) : null}
                             </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div style={notesLong ? { breakBefore: 'page' } : {}}>
+                <div className="mt-4 border border-[#999] p-4 rounded-lg">
+                    {/* 備考（長すぎる場合） */}
+                    <div className="min-h-0 flex-1 overflow-hidden border p-1 border-black px-1 text-sm">
+                        <div>(備考)</div>
+                        <div className="my-1 mx-2">
+                            {(customer?.notes ?? '').split('\n').map((line, i) => (
+                                <div key={i} className="whitespace-pre-wrap break-words">
+                                    {line || '\u00a0'}
+                                </div>
+                            ))}
                         </div>
                     </div>
                 </div>

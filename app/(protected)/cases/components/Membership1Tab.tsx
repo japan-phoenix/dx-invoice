@@ -15,14 +15,6 @@ export function Membership1Tab() {
 
     return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-            {/* 会員証 */}
-            <FormInput<CaseFormData>
-                name="memberCardNote"
-                control={control}
-                label="会員証"
-                error={errors.memberCardNote}
-            />
-
             {/* 会員情報1 */}
             <div style={{ border: '1px solid #ddd', borderRadius: '8px', padding: '1.5rem' }}>
                 <h4 style={{ marginBottom: '1rem' }}>会員1</h4>
@@ -64,16 +56,6 @@ export function Membership1Tab() {
                         type="number"
                         suffix="万口"
                         error={errors.memberships?.[INDEX]?.courseUnits}
-                    />
-
-                    {/* 満期額 */}
-                    <FormCurrencyInput<CaseFormData>
-                        name={`memberships.${INDEX}.maturityAmount`}
-                        control={control}
-                        label="満期額"
-                        prefix="¥"
-                        suffix="万"
-                        error={errors.memberships?.[INDEX]?.maturityAmount}
                     />
 
                     {/* 入金回数 */}

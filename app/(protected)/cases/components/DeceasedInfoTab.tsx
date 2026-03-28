@@ -2,6 +2,7 @@ import { useFormContext } from 'react-hook-form'
 import { CaseFormData } from '../schemas/CaseFormSchema'
 import { FormInput } from '@/components/form/FormInput'
 import { FormSelect } from '@/components/form/FormSelect'
+import { FormAutocomplete } from '@/components/form/FormAutocomplete'
 import { GENDER_OPTIONS, RELIGION_OPTIONS } from '../constants/casesOptions'
 
 export function DeceasedInfoTab() {
@@ -73,13 +74,12 @@ export function DeceasedInfoTab() {
             />
 
             {/* 御宗旨 */}
-            <FormSelect<CaseFormData>
+            <FormAutocomplete<CaseFormData>
                 name="religion"
                 control={control}
                 label="御宗旨"
-                options={RELIGION_OPTIONS.map((v) => ({ value: v, label: v }))}
+                options={[...RELIGION_OPTIONS]}
                 error={errors.religion}
-                placeholder="選択してください"
             />
         </div>
     )

@@ -650,16 +650,6 @@ export function PdfInvoiceLayout({ contentId, containerRef, title, document: doc
                         <table className="w-full border-collapse border-t border-black text-xs">
                             <tbody>
                                 <tr className="border-b border-black">
-                                    <th className="w-[5em] border-r border-black px-1 text-left font-normal">
-                                        <div className="flex justify-between">
-                                            {'会員証'.split('').map((char, j) => (
-                                                <span key={j}>{char}</span>
-                                            ))}
-                                        </div>
-                                    </th>
-                                    <td className="px-1">{customer?.memberCardNote ?? ''}</td>
-                                </tr>
-                                <tr className="border-b border-black">
                                     <th className="w-[8em] border-r border-black px-1 text-left font-normal">
                                         <div className="flex justify-between">
                                             {'火葬許可証手続'.split('').map((char, j) => (

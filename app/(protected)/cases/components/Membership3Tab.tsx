@@ -56,16 +56,6 @@ export function Membership3Tab() {
                     error={errors.memberships?.[INDEX]?.courseUnits}
                 />
 
-                {/* 満期額 */}
-                <FormCurrencyInput<CaseFormData>
-                    name={`memberships.${INDEX}.maturityAmount`}
-                    control={control}
-                    label="満期額"
-                    prefix="¥"
-                    suffix="万"
-                    error={errors.memberships?.[INDEX]?.maturityAmount}
-                />
-
                 {/* 入金回数 */}
                 <FormInput<CaseFormData>
                     name={`memberships.${INDEX}.paymentTimes`}

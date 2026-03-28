@@ -1,4 +1,7 @@
-'use client'
+{
+    /* 旧品目検索: 指摘修正のため現状は使用してない */
+}
+;('use client')
 
 import { DocumentProductSearch } from '@/components/document/DocumentProductSearch'
 import { EstimateItem } from '@/lib/estimates'

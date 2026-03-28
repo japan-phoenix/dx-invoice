@@ -1,7 +1,7 @@
 import { z } from 'zod'
 
 export const invoiceItemFieldSchema = z.object({
-    qty: z.coerce.number().min(1, '必須です').max(99, '数量オーバー'),
+    qty: z.coerce.number().min(0).max(99, '数量オーバー'),
     description: z.string(),
 })
 
@@ -23,7 +23,7 @@ export const invoiceFormSchema = z.object({
     transportStaff: z.string(),
     decorationStaff: z.string(),
     returnStaff: z.string(),
-    items: z.array(invoiceItemFieldSchema).min(1, '明細を選択してください'),
+    items: z.array(invoiceItemFieldSchema),
     freeItems: z.array(invoiceFreeItemFieldSchema),
 })
 

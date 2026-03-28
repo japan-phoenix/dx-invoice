@@ -6,20 +6,14 @@ import { useForm, FormProvider, useFieldArray, useWatch } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Suspense } from 'react'
 import { invoiceFormSchema, InvoiceFormData, DEFAULT_INVOICE_FORM_VALUES } from '../schemas/InvoiceFormSchema'
-import {
-    useInvoiceCreate,
-    useInvoiceProductSearch,
-    useInvoiceItems,
-    useInvoiceFreeItems,
-    calculateInvoiceTotals,
-} from '../hooks/useInvoiceForm'
-import { InvoiceProductSearch } from '../components/InvoiceProductSearch'
+import { useInvoiceCreate, useInvoiceFreeItems, calculateInvoiceTotals } from '../hooks/useInvoiceForm'
 import { InvoiceItemTable } from '../components/InvoiceItemTable'
 import { InvoiceTotals } from '../components/InvoiceTotals'
 import { InvoiceOtherFields } from '../components/InvoiceOtherFields'
 import { InvoiceCustomerSummary } from '../components/InvoiceCustomerSummary'
 import { InvoiceBasicInfo } from '../components/InvoiceBasicInfo'
 import { InvoiceFreeItemInput } from '../components/InvoiceFreeItemInput'
+import { ProductVariant } from '@/lib/products'
 import { toast } from '@/hooks/use-toast'
 
 function InvoiceNewPageInner() {
@@ -35,15 +29,11 @@ function InvoiceNewPageInner() {
         control,
         handleSubmit,
         reset,
+        setValue,
         formState: { isSubmitting, errors },
     } = methods
 
-    const {
-        fields: itemFields,
-        append: appendItemField,
-        remove: removeItemField,
-        move: moveItemField,
-    } = useFieldArray({ control, name: 'items' })
+    const { fields: itemFields } = useFieldArray({ control, name: 'items' })
 
     const {
         fields: freeItemFields,
@@ -63,8 +53,6 @@ function InvoiceNewPageInner() {
         handleCopyFromEstimate,
         copyingFrom,
     } = useInvoiceCreate(customerId, reset)
-    const productSearchProps = useInvoiceProductSearch(items, setItems, appendItemField, moveItemField)
-    const { handleRemoveItem } = useInvoiceItems(items, setItems, removeItemField)
     const { handleAddFreeItem, handleRemoveFreeItem } = useInvoiceFreeItems(
         freeItems,
         setFreeItems,
@@ -75,6 +63,22 @@ function InvoiceNewPageInner() {
     const watchedItems = useWatch({ control, name: 'items' })
     const watchedFreeItems = useWatch({ control, name: 'freeItems' })
     const watchedIsMember = useWatch({ control, name: 'isMember' })
+
+    const handleVariantChange = (index: number, variant: ProductVariant) => {
+        setItems((prev) =>
+            prev.map((item, i) =>
+                i !== index
+                    ? item
+                    : {
+                          ...item,
+                          productVariantId: variant.id,
+                          productVariant: variant,
+                          unitPriceGeneral: variant.priceGeneral,
+                          unitPriceMember: variant.priceMember,
+                      }
+            )
+        )
+    }
 
     if (loading) {
         return <div className="p-8">読み込み中...</div>
@@ -145,7 +149,7 @@ function InvoiceNewPageInner() {
                         <InvoiceBasicInfo control={control} isNew />
 
                         {/* 見積からコピー */}
-                        {estimates.length > 0 && items.length === 0 && (
+                        {estimates.length > 0 && (
                             <div className="mb-8 rounded-lg bg-amber-50 p-6">
                                 <h3 className="mb-4">見積からコピー</h3>
                                 <div className="flex flex-wrap gap-3">
@@ -154,7 +158,7 @@ function InvoiceNewPageInner() {
                                             key={estimate.id}
                                             type="button"
                                             disabled={copyingFrom}
-                                            onClick={() => handleCopyFromEstimate(estimate.id, appendItemField)}
+                                            onClick={() => handleCopyFromEstimate(estimate.id)}
                                             className="cursor-pointer rounded border-0 bg-cyan-600 px-4 py-2 text-white disabled:cursor-not-allowed disabled:bg-gray-300"
                                         >
                                             {copyingFrom
@@ -169,22 +173,17 @@ function InvoiceNewPageInner() {
                             </div>
                         )}
 
-                        <InvoiceProductSearch {...productSearchProps} items={items} />
-                        {(errors.items?.root?.message ?? (errors.items as any)?.message) && (
-                            <p className="-mt-4 mb-4 text-sm text-red-600">
-                                {errors.items?.root?.message ?? (errors.items as any)?.message}
-                            </p>
-                        )}
                         <InvoiceFreeItemInput onAdd={handleAddFreeItem} count={freeItems.length} />
                         <InvoiceItemTable
                             items={items}
                             fields={itemFields}
                             control={control}
-                            handleRemoveItem={handleRemoveItem}
                             isMember={watchedIsMember === 'true'}
                             freeItems={freeItems}
                             freeFields={freeItemFields}
                             handleRemoveFreeItem={handleRemoveFreeItem}
+                            onVariantChange={handleVariantChange}
+                            setValue={setValue}
                         />
                         <InvoiceTotals totals={totals} />
                     </>

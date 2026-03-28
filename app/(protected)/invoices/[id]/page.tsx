@@ -5,20 +5,14 @@ import { useRouter, useParams } from 'next/navigation'
 import { useForm, FormProvider, useFieldArray, useWatch } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { invoiceFormSchema, InvoiceFormData, DEFAULT_INVOICE_FORM_VALUES } from '../schemas/InvoiceFormSchema'
-import {
-    useInvoiceEdit,
-    useInvoiceProductSearch,
-    useInvoiceItems,
-    useInvoiceFreeItems,
-    calculateInvoiceTotals,
-} from '../hooks/useInvoiceForm'
-import { InvoiceProductSearch } from '../components/InvoiceProductSearch'
+import { useInvoiceEdit, useInvoiceFreeItems, calculateInvoiceTotals } from '../hooks/useInvoiceForm'
 import { InvoiceItemTable } from '../components/InvoiceItemTable'
 import { InvoiceTotals } from '../components/InvoiceTotals'
 import { InvoiceOtherFields } from '../components/InvoiceOtherFields'
 import { InvoiceCustomerSummary } from '../components/InvoiceCustomerSummary'
 import { InvoiceBasicInfo } from '../components/InvoiceBasicInfo'
 import { InvoiceFreeItemInput } from '../components/InvoiceFreeItemInput'
+import { ProductVariant } from '@/lib/products'
 import { toast } from '@/hooks/use-toast'
 
 export default function InvoiceEditPage() {
@@ -34,15 +28,11 @@ export default function InvoiceEditPage() {
         control,
         handleSubmit,
         reset,
+        setValue,
         formState: { isSubmitting, isDirty, errors },
     } = methods
 
-    const {
-        fields: itemFields,
-        append: appendItemField,
-        remove: removeItemField,
-        move: moveItemField,
-    } = useFieldArray({ control, name: 'items' })
+    const { fields: itemFields } = useFieldArray({ control, name: 'items' })
 
     const {
         fields: freeItemFields,
@@ -54,8 +44,6 @@ export default function InvoiceEditPage() {
         invoiceId,
         reset
     )
-    const productSearchProps = useInvoiceProductSearch(items, setItems, appendItemField, moveItemField)
-    const { handleRemoveItem } = useInvoiceItems(items, setItems, removeItemField)
     const { handleAddFreeItem, handleRemoveFreeItem } = useInvoiceFreeItems(
         freeItems,
         setFreeItems,
@@ -66,6 +54,22 @@ export default function InvoiceEditPage() {
     const watchedItems = useWatch({ control, name: 'items' })
     const watchedFreeItems = useWatch({ control, name: 'freeItems' })
     const watchedIsMember = useWatch({ control, name: 'isMember' })
+
+    const handleVariantChange = (index: number, variant: ProductVariant) => {
+        setItems((prev) =>
+            prev.map((item, i) =>
+                i !== index
+                    ? item
+                    : {
+                          ...item,
+                          productVariantId: variant.id,
+                          productVariant: variant,
+                          unitPriceGeneral: variant.priceGeneral,
+                          unitPriceMember: variant.priceMember,
+                      }
+            )
+        )
+    }
 
     if (loading) {
         return <div className="p-8">読み込み中...</div>
@@ -134,7 +138,6 @@ export default function InvoiceEditPage() {
                 {activeTab === 'items' && (
                     <>
                         <InvoiceBasicInfo control={control} />
-                        <InvoiceProductSearch {...productSearchProps} items={items} />
                         {(errors.items?.root?.message ?? (errors.items as any)?.message) && (
                             <p className="-mt-4 mb-4 text-sm text-red-600">
                                 {errors.items?.root?.message ?? (errors.items as any)?.message}
@@ -145,11 +148,12 @@ export default function InvoiceEditPage() {
                             items={items}
                             fields={itemFields}
                             control={control}
-                            handleRemoveItem={handleRemoveItem}
                             isMember={watchedIsMember === 'true'}
                             freeItems={freeItems}
                             freeFields={freeItemFields}
                             handleRemoveFreeItem={handleRemoveFreeItem}
+                            onVariantChange={handleVariantChange}
+                            setValue={setValue}
                         />
                         <InvoiceTotals totals={totals} />
                     </>

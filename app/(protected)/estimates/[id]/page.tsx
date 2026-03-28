@@ -5,20 +5,14 @@ import { useRouter, useParams } from 'next/navigation'
 import { useForm, FormProvider, useFieldArray, useWatch } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { estimateFormSchema, EstimateFormData, DEFAULT_FORM_VALUES } from '../schemas/EstimateFormSchema'
-import {
-    useEstimateEdit,
-    useProductSearch,
-    useEstimateItems,
-    useEstimateFreeItems,
-    calculateTotals,
-} from '../hooks/useEstimateForm'
-import { EstimateProductSearch } from '../components/EstimateProductSearch'
+import { useEstimateEdit, useEstimateFreeItems, calculateTotals } from '../hooks/useEstimateForm'
 import { EstimateItemTable } from '../components/EstimateItemTable'
 import { EstimateTotals } from '../components/EstimateTotals'
 import { EstimateOtherFields } from '../components/EstimateOtherFields'
 import { EstimateCustomerSummary } from '../components/EstimateCustomerSummary'
 import { EstimateBasicInfo } from '../components/EstimateBasicInfo'
 import { EstimateFreeItemInput } from '../components/EstimateFreeItemInput'
+import { ProductVariant } from '@/lib/products'
 import { toast } from '@/hooks/use-toast'
 
 export default function EstimateEditPage() {
@@ -34,15 +28,11 @@ export default function EstimateEditPage() {
         control,
         handleSubmit,
         reset,
+        setValue,
         formState: { isSubmitting, isDirty, errors },
     } = methods
 
-    const {
-        fields: itemFields,
-        append: appendItemField,
-        remove: removeItemField,
-        move: moveItemField,
-    } = useFieldArray({ control, name: 'items' })
+    const { fields: itemFields } = useFieldArray({ control, name: 'items' })
 
     const {
         fields: freeItemFields,
@@ -54,8 +44,6 @@ export default function EstimateEditPage() {
         estimateId,
         reset
     )
-    const productSearchProps = useProductSearch(items, setItems, appendItemField, moveItemField)
-    const { handleRemoveItem } = useEstimateItems(items, setItems, removeItemField)
     const { handleAddFreeItem, handleRemoveFreeItem } = useEstimateFreeItems(
         freeItems,
         setFreeItems,
@@ -67,6 +55,22 @@ export default function EstimateEditPage() {
     const watchedFreeItems = useWatch({ control, name: 'freeItems' })
     const watchedIsMember = useWatch({ control, name: 'isMember' })
     const watchedStatus = useWatch({ control, name: 'status' })
+
+    const handleVariantChange = (index: number, variant: ProductVariant) => {
+        setItems((prev) =>
+            prev.map((item, i) =>
+                i !== index
+                    ? item
+                    : {
+                          ...item,
+                          productVariantId: variant.id,
+                          productVariant: variant,
+                          unitPriceGeneral: variant.priceGeneral,
+                          unitPriceMember: variant.priceMember,
+                      }
+            )
+        )
+    }
 
     if (loading) {
         return <div className="p-8">読み込み中...</div>
@@ -138,7 +142,6 @@ export default function EstimateEditPage() {
                     {activeTab === 'items' && (
                         <>
                             <EstimateBasicInfo control={control} disabled={isConfirmed} />
-                            <EstimateProductSearch {...productSearchProps} items={items} />
                             {(errors.items?.root?.message ?? (errors.items as any)?.message) && (
                                 <p className="-mt-4 mb-4 text-sm text-red-600">
                                     {errors.items?.root?.message ?? (errors.items as any)?.message}
@@ -149,11 +152,12 @@ export default function EstimateEditPage() {
                                 items={items}
                                 fields={itemFields}
                                 control={control}
-                                handleRemoveItem={handleRemoveItem}
                                 isMember={watchedIsMember === 'true'}
                                 freeItems={freeItems}
                                 freeFields={freeItemFields}
                                 handleRemoveFreeItem={handleRemoveFreeItem}
+                                onVariantChange={handleVariantChange}
+                                setValue={setValue}
                                 readOnly={isConfirmed}
                             />
                             <EstimateTotals totals={totals} />

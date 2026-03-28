@@ -8,7 +8,12 @@ import { getEstimates } from '@/lib/estimates'
 import { getProducts, ProductItem, ProductVariant } from '@/lib/products'
 import { InvoiceItem, InvoiceFreeItem } from '@/lib/invoices'
 import { toast } from '@/hooks/use-toast'
-import { InvoiceFormData, InvoiceItemField, InvoiceFreeItemField } from '../schemas/InvoiceFormSchema'
+import {
+    InvoiceFormData,
+    InvoiceItemField,
+    InvoiceFreeItemField,
+    DEFAULT_INVOICE_FORM_VALUES,
+} from '../schemas/InvoiceFormSchema'
 import { DEFAULT_DESCRIPTION_MAP } from '@/app/(protected)/estimates/constants/estimateOptions'
 
 const sortByProductItemId = (arr: InvoiceItem[]): InvoiceItem[] =>
@@ -33,16 +38,45 @@ export function useInvoiceCreate(customerId: string, reset: UseFormReset<Invoice
 
     const loadData = useCallback(async () => {
         try {
-            const [customerData, estimatesData] = await Promise.all([getCustomer(customerId), getEstimates(customerId)])
+            const [customerData, estimatesData, allProducts] = await Promise.all([
+                getCustomer(customerId),
+                getEstimates(customerId),
+                getProducts(),
+            ])
             setCustomer(customerData)
             setEstimates(estimatesData)
+
+            const initialItems: InvoiceItem[] = allProducts.map((product) => {
+                const firstVariant = product.variants[0] ?? null
+                return {
+                    productItemId: product.id,
+                    productVariantId: firstVariant?.id ?? undefined,
+                    description: DEFAULT_DESCRIPTION_MAP[product.name] ?? '',
+                    unitPriceGeneral: firstVariant?.priceGeneral || 0,
+                    unitPriceMember: firstVariant?.priceMember || 0,
+                    qty: 0,
+                    amount: 0,
+                    sortNo: 0,
+                    productItem: { ...product },
+                    productVariant: firstVariant,
+                }
+            })
+            setItems(initialItems)
+
+            reset({
+                ...DEFAULT_INVOICE_FORM_VALUES,
+                items: initialItems.map((item) => ({
+                    qty: item.qty,
+                    description: item.description || '',
+                })),
+            })
         } catch (error) {
             console.error('Failed to load data:', error)
             toast({ title: 'データの読み込みに失敗しました', variant: 'destructive', duration: 3000 })
         } finally {
             setLoading(false)
         }
-    }, [customerId])
+    }, [customerId, reset])
 
     useEffect(() => {
         loadData()
@@ -55,7 +89,7 @@ export function useInvoiceCreate(customerId: string, reset: UseFormReset<Invoice
         }
     }, [loading, customer, router])
 
-    const handleCopyFromEstimate = async (estimateId: string, appendItemField: (v: InvoiceItemField) => void) => {
+    const handleCopyFromEstimate = async (estimateId: string) => {
         setCopyingFrom(true)
         try {
             const newInvoice = await createInvoiceFromEstimate(customerId, estimateId)
@@ -73,13 +107,22 @@ export function useInvoiceCreate(customerId: string, reset: UseFormReset<Invoice
     const onSubmit = async (formValues: InvoiceFormData) => {
         try {
             const isMember = formValues.isMember === 'true'
-            const mergedItems = items.map((item, i) => {
+            const allMergedItems = items.map((item, i) => {
                 const qty = formValues.items[i]?.qty ?? item.qty
                 const description = formValues.items[i]?.description ?? item.description ?? ''
                 const unitPrice = isMember ? item.unitPriceMember : item.unitPriceGeneral
                 const amount = unitPrice * qty
-                return { ...item, qty, description, amount, sortNo: i }
+                return { ...item, qty, description, amount }
             })
+            const activeItems = allMergedItems.filter((item) => item.qty > 0).map((item, i) => ({ ...item, sortNo: i }))
+            if (activeItems.length === 0) {
+                toast({
+                    title: '数量が1以上の品目を少なくとも1つ入力してください',
+                    variant: 'destructive',
+                    duration: 3000,
+                })
+                return
+            }
             const mergedFreeItems = freeItems.map((item, i) => {
                 const qty = formValues.freeItems[i]?.qty ?? item.qty
                 const description = formValues.freeItems[i]?.description ?? item.description ?? ''
@@ -94,7 +137,7 @@ export function useInvoiceCreate(customerId: string, reset: UseFormReset<Invoice
                 freeItems,
                 formValues.freeItems
             )
-            const data = { ...formValues, ...totals, items: mergedItems, freeItems: mergedFreeItems }
+            const data = { ...formValues, ...totals, items: activeItems, freeItems: mergedFreeItems }
             const created = await createInvoice(customerId, data)
             toast({ title: '登録しました', variant: 'success', duration: 2000 })
             queryClient.invalidateQueries({ queryKey: ['customers'] })
@@ -132,12 +175,33 @@ export function useInvoiceEdit(invoiceId: string, reset: UseFormReset<InvoiceFor
 
     const loadData = useCallback(async () => {
         try {
-            const invoiceData = await getInvoice(invoiceId)
+            const [invoiceData, allProducts] = await Promise.all([getInvoice(invoiceId), getProducts()])
             setInvoice(invoiceData)
-            const sortedItems = sortByProductItemId(invoiceData.items || [])
-            setItems(sortedItems)
+            const existingItems: InvoiceItem[] = invoiceData.items || []
+
+            // 全アクティブ品目と既存請求明細をマージ
+            const mergedItems: InvoiceItem[] = allProducts.map((product) => {
+                const existing = existingItems.find((item) => item.productItemId === product.id)
+                if (existing) {
+                    return { ...existing, productItem: { ...product } }
+                }
+                const firstVariant = product.variants[0] ?? null
+                return {
+                    productItemId: product.id,
+                    productVariantId: firstVariant?.id ?? undefined,
+                    description: DEFAULT_DESCRIPTION_MAP[product.name] ?? '',
+                    unitPriceGeneral: firstVariant?.priceGeneral || 0,
+                    unitPriceMember: firstVariant?.priceMember || 0,
+                    qty: 0,
+                    amount: 0,
+                    sortNo: 0,
+                    productItem: { ...product },
+                    productVariant: firstVariant,
+                }
+            })
 
             const loadedFreeItems: InvoiceFreeItem[] = (invoiceData as any).freeItems || []
+            setItems(mergedItems)
             setFreeItems(loadedFreeItems)
 
             const customerData = await getCustomer(invoiceData.customerId)
@@ -156,7 +220,7 @@ export function useInvoiceEdit(invoiceId: string, reset: UseFormReset<InvoiceFor
                 transportStaff: (invoiceData as any).transportStaff || '',
                 decorationStaff: (invoiceData as any).decorationStaff || '',
                 returnStaff: (invoiceData as any).returnStaff || '',
-                items: sortedItems.map((item: InvoiceItem) => ({
+                items: mergedItems.map((item) => ({
                     qty: item.qty,
                     description: item.description || '',
                 })),
@@ -187,13 +251,22 @@ export function useInvoiceEdit(invoiceId: string, reset: UseFormReset<InvoiceFor
     const onSubmit = async (formValues: InvoiceFormData) => {
         try {
             const isMember = formValues.isMember === 'true'
-            const mergedItems = items.map((item, i) => {
+            const allMergedItems = items.map((item, i) => {
                 const qty = formValues.items[i]?.qty ?? item.qty
                 const description = formValues.items[i]?.description ?? item.description ?? ''
                 const unitPrice = isMember ? item.unitPriceMember : item.unitPriceGeneral
                 const amount = unitPrice * qty
-                return { ...item, qty, description, amount, sortNo: i }
+                return { ...item, qty, description, amount }
             })
+            const activeItems = allMergedItems.filter((item) => item.qty > 0).map((item, i) => ({ ...item, sortNo: i }))
+            if (activeItems.length === 0) {
+                toast({
+                    title: '数量が1以上の品目を少なくとも1つ入力してください',
+                    variant: 'destructive',
+                    duration: 3000,
+                })
+                return
+            }
             const mergedFreeItems = freeItems.map((item, i) => {
                 const qty = formValues.freeItems[i]?.qty ?? item.qty
                 const description = formValues.freeItems[i]?.description ?? item.description ?? ''
@@ -208,7 +281,7 @@ export function useInvoiceEdit(invoiceId: string, reset: UseFormReset<InvoiceFor
                 freeItems,
                 formValues.freeItems
             )
-            const data = { ...formValues, ...totals, items: mergedItems, freeItems: mergedFreeItems }
+            const data = { ...formValues, ...totals, items: activeItems, freeItems: mergedFreeItems }
             await updateInvoice(invoiceId, data)
             toast({ title: '更新しました', variant: 'success', duration: 2000 })
             await loadData()

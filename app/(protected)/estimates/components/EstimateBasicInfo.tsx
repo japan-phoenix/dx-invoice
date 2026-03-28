@@ -9,9 +9,10 @@ import { STATUS_OPTIONS } from '../constants/estimateOptions'
 type Props = {
     control: Control<EstimateFormData>
     isNew?: boolean
+    disabled?: boolean
 }
 
-export function EstimateBasicInfo({ control, isNew }: Props) {
+export function EstimateBasicInfo({ control, isNew, disabled }: Props) {
     return (
         <div className="mb-8">
             <div className="grid grid-cols-2 gap-4">
@@ -24,8 +25,9 @@ export function EstimateBasicInfo({ control, isNew }: Props) {
                         { value: 'false', label: '一般' },
                         { value: 'true', label: '会員' },
                     ]}
+                    disabled={disabled}
                 />
-                <FormSelect name="status" control={control} label="見積区分" options={STATUS_OPTIONS} />
+                <FormSelect name="status" control={control} label="見積区分" options={STATUS_OPTIONS} disabled={disabled} />
             </div>
         </div>
     )

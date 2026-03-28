@@ -205,6 +205,7 @@ export async function GET(request: NextRequest) {
                 funeralFrom: customer.funeralFrom ? customer.funeralFrom.toISOString() : null,
                 hasEstimate: customer.estimates.length > 0,
                 estimateId: customer.estimates[0]?.id.toString(),
+                estimateStatus: customer.estimates[0]?.status ?? null,
                 hasInvoice: customer.invoices.length > 0,
                 invoiceId: invoice?.id.toString(),
                 isPaid: isPaid,

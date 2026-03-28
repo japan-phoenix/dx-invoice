@@ -66,6 +66,7 @@ export default function EstimateEditPage() {
     const watchedItems = useWatch({ control, name: 'items' })
     const watchedFreeItems = useWatch({ control, name: 'freeItems' })
     const watchedIsMember = useWatch({ control, name: 'isMember' })
+    const watchedStatus = useWatch({ control, name: 'status' })
 
     if (loading) {
         return <div className="p-8">読み込み中...</div>
@@ -74,6 +75,8 @@ export default function EstimateEditPage() {
     if (!customer || !estimate) {
         return null
     }
+
+    const isConfirmed = estimate.status === 'CONFIRMED'
 
     const totals = calculateTotals(
         items,
@@ -104,7 +107,7 @@ export default function EstimateEditPage() {
                 {/* 顧客情報サマリー */}
                 <EstimateCustomerSummary customer={customer} />
 
-                {/* タブ */}
+{/* タブ */}
                 <div className="mb-4 flex border-b-2 border-gray-300">
                     <button
                         type="button"
@@ -130,10 +133,11 @@ export default function EstimateEditPage() {
                     </button>
                 </div>
 
+                <fieldset disabled={isConfirmed} className="contents">
                 {/* 明細タブ */}
                 {activeTab === 'items' && (
                     <>
-                        <EstimateBasicInfo control={control} />
+                        <EstimateBasicInfo control={control} disabled={isConfirmed} />
                         <EstimateProductSearch {...productSearchProps} items={items} />
                         {(errors.items?.root?.message ?? (errors.items as any)?.message) && (
                             <p className="-mt-4 mb-4 text-sm text-red-600">
@@ -150,13 +154,15 @@ export default function EstimateEditPage() {
                             freeItems={freeItems}
                             freeFields={freeItemFields}
                             handleRemoveFreeItem={handleRemoveFreeItem}
+                            readOnly={isConfirmed}
                         />
                         <EstimateTotals totals={totals} />
                     </>
                 )}
 
                 {/* その他タブ */}
-                {activeTab === 'other' && <EstimateOtherFields control={control} />}
+                {activeTab === 'other' && <EstimateOtherFields control={control} disabled={isConfirmed} />}
+                </fieldset>
 
                 {/* 操作ボタン（画面右下固定） */}
                 <div className="fixed bottom-0 right-0 p-2">
@@ -182,15 +188,17 @@ export default function EstimateEditPage() {
                         >
                             PDFプレビュー
                         </button>
-                        <button
-                            type="submit"
-                            disabled={isSubmitting}
-                            className={`rounded border-0 px-6 py-3 text-white ${
-                                isSubmitting ? 'cursor-not-allowed bg-gray-300' : 'cursor-pointer bg-green-600'
-                            }`}
-                        >
-                            {isSubmitting ? '保存中...' : '更新'}
-                        </button>
+                        {!isConfirmed && (
+                            <button
+                                type="submit"
+                                disabled={isSubmitting}
+                                className={`rounded border-0 px-6 py-3 text-white ${
+                                    isSubmitting ? 'cursor-not-allowed bg-gray-300' : 'cursor-pointer bg-green-600'
+                                }`}
+                            >
+                                {isSubmitting ? '保存中...' : watchedStatus === 'CONFIRMED' ? '確定' : '更新'}
+                            </button>
+                        )}
                     </div>
                 </div>
             </form>

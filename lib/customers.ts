@@ -11,6 +11,7 @@ export interface CustomerListItem {
     funeralFrom: string | null
     hasEstimate: boolean
     estimateId?: string
+    estimateStatus?: string | null
     hasInvoice: boolean
     invoiceId?: string
     isPaid: boolean

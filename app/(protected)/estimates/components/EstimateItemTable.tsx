@@ -15,6 +15,7 @@ type Props = {
     freeItems?: EstimateFreeItem[]
     freeFields?: FieldArrayWithId<EstimateFormData, 'freeItems', 'id'>[]
     handleRemoveFreeItem?: (index: number) => void
+    readOnly?: boolean
 }
 
 export function EstimateItemTable({ control, fields, freeFields, ...rest }: Props) {

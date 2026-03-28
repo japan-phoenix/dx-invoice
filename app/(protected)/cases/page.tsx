@@ -158,11 +158,19 @@ export default function CasesPage() {
                                         router.push(`/estimates/new?customerId=${item.id}`)
                                     }
                                 }}
-                                className={`rounded px-4 py-2 font-medium text-white ${
-                                    item.hasEstimate ? 'bg-cyan-600 hover:bg-cyan-700' : 'bg-gray-500 hover:bg-gray-600'
+                                className={`rounded px-4 py-2 font-medium  ${
+                                    item.hasEstimate
+                                        ? item.estimateStatus === 'CONFIRMED'
+                                            ? 'bg-yellow-400 text-black hover:bg-yellow-500'
+                                            : 'bg-cyan-600 text-white hover:bg-cyan-700'
+                                        : 'bg-gray-500 text-white hover:bg-gray-600'
                                 }`}
                             >
-                                {item.hasEstimate ? '見積書編集' : '見積書作成'}
+                                {!item.hasEstimate
+                                    ? '見積書作成'
+                                    : item.estimateStatus === 'CONFIRMED'
+                                      ? '見積書確認'
+                                      : '見積書編集'}
                             </button>
                             <button
                                 onClick={(e) => {
@@ -175,7 +183,7 @@ export default function CasesPage() {
                                 }}
                                 className={`rounded px-4 py-2 font-medium ${
                                     item.hasInvoice
-                                        ? 'bg-yellow-400 text-black hover:bg-yellow-500'
+                                        ? 'bg-cyan-600 text-white hover:bg-cyan-700'
                                         : 'bg-gray-500 text-white hover:bg-gray-600'
                                 }`}
                             >

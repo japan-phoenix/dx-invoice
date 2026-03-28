@@ -49,6 +49,7 @@ type Props = {
     freeItems?: DocumentFreeItem[]
     freeFields?: FieldArrayWithId<DocumentFormData, 'freeItems', 'id'>[]
     handleRemoveFreeItem?: (index: number) => void
+    readOnly?: boolean
 }
 
 export function DocumentItemTable({
@@ -60,6 +61,7 @@ export function DocumentItemTable({
     freeItems = [],
     freeFields = [],
     handleRemoveFreeItem,
+    readOnly = false,
 }: Props) {
     const watchedItems = useWatch({ control, name: 'items' })
     const watchedFreeItems = useWatch({ control, name: 'freeItems' })
@@ -113,19 +115,21 @@ export function DocumentItemTable({
                                             ¥{amount.toLocaleString()}
                                         </td>
                                         <td className="border border-gray-300 p-3 text-center">
-                                            <button
-                                                type="button"
-                                                onClick={() => handleRemoveItem(index)}
-                                                className="cursor-pointer rounded border-0 bg-transparent p-1 text-red-600"
-                                                title="削除"
-                                            >
-                                                <span
-                                                    className="material-symbols-outlined"
-                                                    style={{ fontSize: '2rem' }}
+                                            {!readOnly && (
+                                                <button
+                                                    type="button"
+                                                    onClick={() => handleRemoveItem(index)}
+                                                    className="cursor-pointer rounded border-0 bg-transparent p-1 text-red-600"
+                                                    title="削除"
                                                 >
-                                                    delete_forever
-                                                </span>
-                                            </button>
+                                                    <span
+                                                        className="material-symbols-outlined"
+                                                        style={{ fontSize: '2rem' }}
+                                                    >
+                                                        delete_forever
+                                                    </span>
+                                                </button>
+                                            )}
                                         </td>
                                     </tr>
                                 )
@@ -159,19 +163,21 @@ export function DocumentItemTable({
                                             ¥{amount.toLocaleString()}
                                         </td>
                                         <td className="border border-gray-300 p-3 text-center">
-                                            <button
-                                                type="button"
-                                                onClick={() => handleRemoveFreeItem?.(index)}
-                                                className="cursor-pointer rounded border-0 bg-transparent p-1 text-red-600"
-                                                title="削除"
-                                            >
-                                                <span
-                                                    className="material-symbols-outlined"
-                                                    style={{ fontSize: '2rem' }}
+                                            {!readOnly && (
+                                                <button
+                                                    type="button"
+                                                    onClick={() => handleRemoveFreeItem?.(index)}
+                                                    className="cursor-pointer rounded border-0 bg-transparent p-1 text-red-600"
+                                                    title="削除"
                                                 >
-                                                    delete_forever
-                                                </span>
-                                            </button>
+                                                    <span
+                                                        className="material-symbols-outlined"
+                                                        style={{ fontSize: '2rem' }}
+                                                    >
+                                                        delete_forever
+                                                    </span>
+                                                </button>
+                                            )}
                                         </td>
                                     </tr>
                                 )

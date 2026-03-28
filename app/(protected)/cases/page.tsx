@@ -22,6 +22,7 @@ export default function CasesPage() {
     const [formParams, setFormParams] = useState<FormParams>({})
     // 実際に検索に使用するパラメータ
     const [searchParams, setSearchParams] = useState<SearchCustomersParams>({})
+    const [activeQuickFilter, setActiveQuickFilter] = useState<'DRAFT' | 'CONFIRMED' | null>(null)
     const [paymentDialog, setPaymentDialog] = useState<{
         open: boolean
         invoiceId: string | null
@@ -40,6 +41,7 @@ export default function CasesPage() {
     const handleSearch = (params: SearchCustomersParams) => {
         // searchParams を更新して検索を実行
         setSearchParams(params)
+        setActiveQuickFilter(null)
         // formParams は既に更新されているので、ここでは何もしない
     }
 
@@ -47,6 +49,17 @@ export default function CasesPage() {
         // フォーム入力値と検索パラメータをリセット
         setFormParams({})
         setSearchParams({})
+        setActiveQuickFilter(null)
+    }
+
+    const handleQuickFilter = (status: 'DRAFT' | 'CONFIRMED') => {
+        if (activeQuickFilter === status) {
+            setActiveQuickFilter(null)
+            setSearchParams({})
+        } else {
+            setActiveQuickFilter(status)
+            setSearchParams({ estimateStatus: status })
+        }
     }
 
     const formatDate = (dateString: string | null) => {
@@ -107,7 +120,9 @@ export default function CasesPage() {
         <div className="p-8">
             <div className="flex items-start justify-between">
                 <h1 className="mb-8 text-2xl font-bold">葬儀案件検索一覧</h1>
-                <CreateButton onClick={() => router.push('/cases/new')}>新規登録</CreateButton>
+                <div className="flex items-center gap-3">
+                    <CreateButton onClick={() => router.push('/cases/new')}>新規登録</CreateButton>
+                </div>
             </div>
 
             {/* 検索条件エリア */}
@@ -119,6 +134,38 @@ export default function CasesPage() {
                 isLoading={loading}
             />
 
+            {/* クイックフィルター */}
+            <div className="mb-4 flex justify-end gap-3">
+                {activeQuickFilter && (
+                    <button
+                        onClick={() => handleQuickFilter(activeQuickFilter)}
+                        className="rounded border border-gray-400 bg-gray-500 px-4 py-2 font-medium text-gray-100 hover:bg-gray-200"
+                    >
+                        <span className="material-symbols-outlined text-white align-middle">filter_alt_off</span>
+                    </button>
+                )}
+                <button
+                    onClick={() => handleQuickFilter('DRAFT')}
+                    className={`rounded px-4 py-2 font-medium text-white ${
+                        activeQuickFilter === 'DRAFT'
+                            ? 'bg-cyan-700 ring-2 ring-cyan-400'
+                            : 'bg-cyan-600 hover:bg-cyan-700'
+                    }`}
+                >
+                    事前相談見積
+                </button>
+                <button
+                    onClick={() => handleQuickFilter('CONFIRMED')}
+                    className={`rounded px-4 py-2 font-medium ${
+                        activeQuickFilter === 'CONFIRMED'
+                            ? 'bg-yellow-500 text-black ring-2 ring-yellow-300'
+                            : 'bg-yellow-400 text-black hover:bg-yellow-500'
+                    }`}
+                >
+                    本見積
+                </button>
+            </div>
+
             {/* 検索結果一覧 */}
             <div className="flex flex-col">
                 <DataTable<CustomerListItem>
@@ -129,6 +176,14 @@ export default function CasesPage() {
                             width: '50px',
                         },
                         {
+                            key: 'receptionAt',
+                            label: '受付日',
+                            width: '80px',
+                            sortable: true,
+                            sortValue: (item) => (item.receptionAt ? new Date(item.receptionAt).getTime() : null),
+                            render: (item) => formatDate(item.receptionAt),
+                        },
+                        {
                             key: 'deceasedName',
                             label: '故人名',
                             width: '120px',
@@ -137,14 +192,6 @@ export default function CasesPage() {
                             key: 'chiefMournerName',
                             label: '喪主名',
                             width: '120px',
-                        },
-                        {
-                            key: 'receptionAt',
-                            label: '受付日',
-                            width: '110px',
-                            sortable: true,
-                            sortValue: (item) => (item.receptionAt ? new Date(item.receptionAt).getTime() : null),
-                            render: (item) => formatDate(item.receptionAt),
                         },
                     ]}
                     subRow={(item) => (

@@ -32,6 +32,7 @@ export interface SearchCustomersParams {
     estimateStatusConfirmed?: boolean
     salesStaffName?: string
     funeralPlace?: string
+    estimateStatus?: string
 }
 
 export async function searchCustomers(params: SearchCustomersParams): Promise<CustomerListItem[]> {

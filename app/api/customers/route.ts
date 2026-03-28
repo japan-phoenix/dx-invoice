@@ -23,6 +23,7 @@ export async function GET(request: NextRequest) {
         const paid = searchParams.get('paid') === 'true'
         const unpaid = searchParams.get('unpaid') === 'true'
         const estimateStatusConfirmed = searchParams.get('estimateStatusConfirmed') === 'true'
+        const estimateStatus = searchParams.get('estimateStatus') || undefined
         const salesStaffName = searchParams.get('salesStaffName') || undefined
         const funeralPlace = searchParams.get('funeralPlace') || undefined
 
@@ -183,6 +184,12 @@ export async function GET(request: NextRequest) {
         if (estimateStatusConfirmed) {
             filteredCustomers = filteredCustomers.filter((customer: any) =>
                 customer.estimates.some((e: any) => e.status === 'DRAFT')
+            )
+        }
+
+        if (estimateStatus) {
+            filteredCustomers = filteredCustomers.filter((customer: any) =>
+                customer.estimates.some((e: any) => e.status === estimateStatus)
             )
         }
 

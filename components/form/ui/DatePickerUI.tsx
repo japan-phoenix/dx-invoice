@@ -130,21 +130,25 @@ export function DatePickerUI({
                                 </div>
                                 <div className="grid grid-cols-4 gap-2">
                                     {Array.from({ length: 12 }, (_, i) => displayYear - 6 + i)
-                                        .filter((year) => (minYear === undefined || year >= minYear) && year <= new Date().getFullYear())
+                                        .filter(
+                                            (year) =>
+                                                (minYear === undefined || year >= minYear) &&
+                                                year <= new Date().getFullYear()
+                                        )
                                         .map((year) => (
-                                        <button
-                                            key={year}
-                                            onClick={() => handleYearSelect(year)}
-                                            className={cn(
-                                                'rounded px-2 py-2 text-3xl font-medium transition-colors',
-                                                selectedYear === year
-                                                    ? 'bg-blue-600 text-white'
-                                                    : 'border border-gray-300 bg-white hover:bg-gray-100'
-                                            )}
-                                        >
-                                            {year}
-                                        </button>
-                                    ))}
+                                            <button
+                                                key={year}
+                                                onClick={() => handleYearSelect(year)}
+                                                className={cn(
+                                                    'rounded px-2 py-2 text-3xl font-medium transition-colors',
+                                                    selectedYear === year
+                                                        ? 'bg-blue-600 text-white'
+                                                        : 'border border-gray-300 bg-white hover:bg-gray-100'
+                                                )}
+                                            >
+                                                {year}
+                                            </button>
+                                        ))}
                                 </div>
                                 <div className="mt-4 flex justify-between">
                                     <Button

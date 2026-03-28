@@ -600,13 +600,6 @@ export function PdfInvoiceLayout({ contentId, containerRef, title, document: doc
                                                     : '未定',
                                                 place: customer?.funeralPlace,
                                             },
-                                            {
-                                                label: '引上日',
-                                                data: customer?.returnAt
-                                                    ? `${fmtDate(customer.returnAt)} ${String(new Date(customer.returnAt).getHours()).padStart(2, '0')}時`
-                                                    : '未定',
-                                                place: customer?.returnPlace,
-                                            },
                                         ] as {
                                             label: string
                                             data?: string | null

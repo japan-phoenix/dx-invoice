@@ -197,7 +197,10 @@ function InvoiceNewPageInner() {
                 <div className="fixed bottom-0 right-0 flex gap-4 p-2">
                     <button
                         type="button"
-                        onClick={() => router.back()}
+                        onClick={() => {
+                            router.push('/cases')
+                            router.refresh()
+                        }}
                         className="cursor-pointer rounded border-0 bg-gray-500 px-6 py-3 text-white"
                     >
                         閉じる

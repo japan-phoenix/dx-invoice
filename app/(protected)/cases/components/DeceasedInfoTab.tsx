@@ -21,6 +21,7 @@ export function DeceasedInfoTab() {
                 type="datetime-local"
                 minYear={1950}
                 maxYear={new Date().getFullYear()}
+                required
                 error={errors.receptionAt}
             />
 
@@ -29,6 +30,7 @@ export function DeceasedInfoTab() {
                 name="deceasedName"
                 control={control}
                 label="故人名"
+                required
                 error={errors.deceasedName}
                 prefix="故"
                 suffix="様"
@@ -66,6 +68,7 @@ export function DeceasedInfoTab() {
                 control={control}
                 label="行年"
                 type="number"
+                required
                 prefix="満"
                 suffix="歳"
                 min={0}

@@ -150,18 +150,17 @@ export async function POST(request: NextRequest) {
                 ? data.altarPlaceType
                 : null
 
-        // docNo の自動採番: yyyymm + 当月の通し番号(3桁)
-        const now = new Date()
-        const yyyy = now.getFullYear()
-        const mm = String(now.getMonth() + 1).padStart(2, '0')
-        const startOfMonth = new Date(yyyy, now.getMonth(), 1)
-        const endOfMonth = new Date(yyyy, now.getMonth() + 1, 1)
-        const countThisMonth = await prisma.estimate.count({
-            where: {
-                createdAt: { gte: startOfMonth, lt: endOfMonth },
-            },
+        // docNo の自動採番: customers.reception_atの年月(yyyymm) + 同プレフィックスの最大連番+1(3桁)
+        const receptionDate = customer.receptionAt ? new Date(customer.receptionAt) : new Date()
+        const yyyy = receptionDate.getFullYear()
+        const mm = String(receptionDate.getMonth() + 1).padStart(2, '0')
+        const prefix = `${yyyy}${mm}`
+        const latestDoc = await prisma.estimate.findFirst({
+            where: { docNo: { startsWith: prefix } },
+            orderBy: { docNo: 'desc' },
         })
-        const docNo = data.docNo || `${yyyy}${mm}${String(countThisMonth + 1).padStart(3, '0')}`
+        const nextSeq = latestDoc?.docNo ? parseInt(latestDoc.docNo.slice(6)) + 1 : 1
+        const docNo = data.docNo || `${prefix}${String(nextSeq).padStart(3, '0')}`
 
         // 見積を作成
         const estimate = await prisma.estimate.create({

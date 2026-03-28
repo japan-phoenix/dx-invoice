@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { UseFormReset } from 'react-hook-form'
 import { useRouter } from 'next/navigation'
+import { useQueryClient } from '@tanstack/react-query'
 import { getInvoice, createInvoice, updateInvoice, createInvoiceFromEstimate } from '@/lib/invoices'
 import { getCustomer } from '@/lib/customers'
 import { getEstimates } from '@/lib/estimates'
@@ -22,6 +23,7 @@ const sortByProductItemId = (arr: InvoiceItem[]): InvoiceItem[] =>
 // -------------------------------------------------------
 export function useInvoiceCreate(customerId: string, reset: UseFormReset<InvoiceFormData>) {
     const router = useRouter()
+    const queryClient = useQueryClient()
     const [loading, setLoading] = useState(true)
     const [customer, setCustomer] = useState<any>(null)
     const [estimates, setEstimates] = useState<any[]>([])
@@ -58,6 +60,7 @@ export function useInvoiceCreate(customerId: string, reset: UseFormReset<Invoice
         try {
             const newInvoice = await createInvoiceFromEstimate(customerId, estimateId)
             toast({ title: '見積からコピーしました', variant: 'success', duration: 2000 })
+            queryClient.invalidateQueries({ queryKey: ['customers'] })
             router.push(`/invoices/${newInvoice.id}`)
         } catch (error) {
             console.error('Failed to copy from estimate:', error)
@@ -94,6 +97,7 @@ export function useInvoiceCreate(customerId: string, reset: UseFormReset<Invoice
             const data = { ...formValues, ...totals, items: mergedItems, freeItems: mergedFreeItems }
             const created = await createInvoice(customerId, data)
             toast({ title: '登録しました', variant: 'success', duration: 2000 })
+            queryClient.invalidateQueries({ queryKey: ['customers'] })
             router.push(`/invoices/${created.id}`)
         } catch (error) {
             console.error('Failed to create:', error)

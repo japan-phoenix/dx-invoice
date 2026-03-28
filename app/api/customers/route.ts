@@ -144,10 +144,10 @@ export async function GET(request: NextRequest) {
             },
             orderBy: [
                 {
-                    receptionAt: 'desc',
+                    id: 'desc',
                 },
                 {
-                    createdAt: 'desc',
+                    receptionAt: 'asc',
                 },
             ],
         })

@@ -11,8 +11,11 @@ const normalizePhoneNumber = (value: unknown): string | undefined => {
  * フォーム内部では undefined を使用（null は持ち込まない）
  */
 export function getFormDefaultValues(): CaseFormData {
+    const now = new Date()
+    const pad = (n: number) => String(n).padStart(2, '0')
+    const defaultReceptionAt = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}T${pad(now.getHours())}:${pad(now.getMinutes())}`
     return {
-        receptionAt: '',
+        receptionAt: defaultReceptionAt,
         deceasedName: '',
         deceasedLastName: undefined,
         deceasedFirstName: undefined,

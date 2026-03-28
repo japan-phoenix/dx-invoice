@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { UseFormReset } from 'react-hook-form'
 import { useRouter } from 'next/navigation'
+import { useQueryClient } from '@tanstack/react-query'
 import { getEstimate, createEstimate, updateEstimate, Estimate, EstimateItem, EstimateFreeItem } from '@/lib/estimates'
 import { getCustomer } from '@/lib/customers'
 import { getProducts, ProductItem, ProductVariant } from '@/lib/products'
@@ -20,6 +21,7 @@ const sortByProductItemId = (arr: EstimateItem[]): EstimateItem[] =>
 // -------------------------------------------------------
 export function useEstimateCreate(customerId: string, reset: UseFormReset<EstimateFormData>) {
     const router = useRouter()
+    const queryClient = useQueryClient()
     const [loading, setLoading] = useState(true)
     const [customer, setCustomer] = useState<any>(null)
     const [items, setItems] = useState<EstimateItem[]>([])
@@ -68,6 +70,7 @@ export function useEstimateCreate(customerId: string, reset: UseFormReset<Estima
             const data = { ...formValues, ...totals, items: mergedItems, freeItems: mergedFreeItems }
             const created = await createEstimate(customerId, data)
             toast({ title: '登録しました', variant: 'success', duration: 2000 })
+            queryClient.invalidateQueries({ queryKey: ['customers'] })
             router.push(`/estimates/${created.id}`)
         } catch (error) {
             console.error('Failed to create:', error)

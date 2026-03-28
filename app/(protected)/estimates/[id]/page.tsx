@@ -164,7 +164,10 @@ export default function EstimateEditPage() {
                     <div className="flex gap-4 bg-white">
                         <button
                             type="button"
-                            onClick={() => router.back()}
+                            onClick={() => {
+                                router.push('/cases')
+                                router.refresh()
+                            }}
                             className="cursor-pointer rounded border-0 bg-gray-500 px-6 py-3 text-white"
                         >
                             閉じる

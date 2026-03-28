@@ -65,18 +65,17 @@ export async function POST(
 
         const totals = calculateTotals(estimate.items, membershipPaidAmount)
 
-        // docNo の自動採番: yyyymm + 当月の通し番号(3桁)
-        const now = new Date()
-        const yyyy = now.getFullYear()
-        const mm = String(now.getMonth() + 1).padStart(2, '0')
-        const startOfMonth = new Date(yyyy, now.getMonth(), 1)
-        const endOfMonth = new Date(yyyy, now.getMonth() + 1, 1)
-        const countThisMonth = await prisma.invoice.count({
-            where: {
-                createdAt: { gte: startOfMonth, lt: endOfMonth },
-            },
+        // docNo の自動採番: customers.reception_atの年月(yyyymm) + 同プレフィックスの最大連番+1(3桁)
+        const receptionDate = estimate.customer.receptionAt ? new Date(estimate.customer.receptionAt) : new Date()
+        const yyyy = receptionDate.getFullYear()
+        const mm = String(receptionDate.getMonth() + 1).padStart(2, '0')
+        const prefix = `${yyyy}${mm}`
+        const latestDoc = await prisma.invoice.findFirst({
+            where: { docNo: { startsWith: prefix } },
+            orderBy: { docNo: 'desc' },
         })
-        const autoDocNo = `${yyyy}${mm}${String(countThisMonth + 1).padStart(3, '0')}`
+        const nextSeq = latestDoc?.docNo ? parseInt(latestDoc.docNo.slice(6)) + 1 : 1
+        const autoDocNo = `${prefix}${String(nextSeq).padStart(3, '0')}`
 
         const invoice = await prisma.invoice.create({
             data: {
@@ -99,7 +98,7 @@ export async function POST(
                 decorationStaff: estimate.decorationStaff,
                 returnStaff: estimate.returnStaff,
                 items: {
-                    create: estimate.items.map((item: any, index: number) => ({
+                    create: estimate.items.map((item: any) => ({
                         productItemId: item.productItemId,
                         productVariantId: item.productVariantId,
                         description: item.description,

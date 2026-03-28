@@ -73,7 +73,7 @@ export async function POST(request: NextRequest, props: { params: Promise<{ cust
             where: { docNo: { startsWith: prefix } },
             orderBy: { docNo: 'desc' },
         })
-        const nextSeq = latestDoc ? parseInt(latestDoc.docNo.slice(6)) + 1 : 1
+        const nextSeq = latestDoc?.docNo ? parseInt(latestDoc.docNo.slice(6)) + 1 : 1
         const docNo = data.docNo || `${prefix}${String(nextSeq).padStart(3, '0')}`
 
         const invoice = await prisma.invoice.create({

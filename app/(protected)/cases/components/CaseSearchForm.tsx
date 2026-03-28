@@ -205,8 +205,8 @@ export function CaseSearchForm({ formParams, setFormParams, onSearch, onReset, i
                     </div>
 
                     <div className="flex gap-4">
-                        <SearchButton onClick={handleSearch} isLoading={isLoading} />
                         <ResetButton onClick={handleReset} />
+                        <SearchButton onClick={handleSearch} isLoading={isLoading} />
                     </div>
                 </div>
             )}

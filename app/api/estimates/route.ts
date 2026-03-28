@@ -150,12 +150,18 @@ export async function POST(request: NextRequest) {
                 ? data.altarPlaceType
                 : null
 
-        // docNo の自動採番
+        // docNo の自動採番: yyyymm + 当月の通し番号(3桁)
         const now = new Date()
-        const pad = (n: number) => String(n).padStart(2, '0')
-        const docNo =
-            data.docNo ||
-            `EST-${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}${pad(now.getHours())}${pad(now.getMinutes())}`
+        const yyyy = now.getFullYear()
+        const mm = String(now.getMonth() + 1).padStart(2, '0')
+        const startOfMonth = new Date(yyyy, now.getMonth(), 1)
+        const endOfMonth = new Date(yyyy, now.getMonth() + 1, 1)
+        const countThisMonth = await prisma.estimate.count({
+            where: {
+                createdAt: { gte: startOfMonth, lt: endOfMonth },
+            },
+        })
+        const docNo = data.docNo || `${yyyy}${mm}${String(countThisMonth + 1).padStart(3, '0')}`
 
         // 見積を作成
         const estimate = await prisma.estimate.create({

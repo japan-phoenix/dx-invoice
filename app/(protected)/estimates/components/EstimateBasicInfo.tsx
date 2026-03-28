@@ -8,13 +8,14 @@ import { STATUS_OPTIONS } from '../constants/estimateOptions'
 
 type Props = {
     control: Control<EstimateFormData>
+    isNew?: boolean
 }
 
-export function EstimateBasicInfo({ control }: Props) {
+export function EstimateBasicInfo({ control, isNew }: Props) {
     return (
         <div className="mb-8">
             <div className="grid grid-cols-2 gap-4">
-                <FormInput name="docNo" control={control} label="見積番号" placeholder="例: EST-0001" />
+                {!isNew && <FormInput name="docNo" control={control} label="見積番号" placeholder="例: EST-0001" />}
                 <FormSelect
                     name="isMember"
                     control={control}

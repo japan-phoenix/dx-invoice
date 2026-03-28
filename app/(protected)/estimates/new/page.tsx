@@ -104,7 +104,7 @@ function EstimateNewPageInner() {
                 {/* 明細タブ */}
                 {activeTab === 'items' && (
                     <>
-                        <EstimateBasicInfo control={control} />
+                        <EstimateBasicInfo control={control} isNew />
                         <EstimateProductSearch {...productSearchProps} items={items} />
                         {(errors.items?.root?.message ?? (errors.items as any)?.message) && (
                             <p className="-mt-4 mb-4 text-sm text-red-600">

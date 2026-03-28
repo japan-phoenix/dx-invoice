@@ -142,7 +142,7 @@ function InvoiceNewPageInner() {
                 {/* 明細タブ */}
                 {activeTab === 'items' && (
                     <>
-                        <InvoiceBasicInfo control={control} />
+                        <InvoiceBasicInfo control={control} isNew />
 
                         {/* 見積からコピー */}
                         {estimates.length > 0 && items.length === 0 && (

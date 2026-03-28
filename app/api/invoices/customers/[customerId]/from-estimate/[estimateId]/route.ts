@@ -65,10 +65,23 @@ export async function POST(
 
         const totals = calculateTotals(estimate.items, membershipPaidAmount)
 
+        // docNo の自動採番: yyyymm + 当月の通し番号(3桁)
+        const now = new Date()
+        const yyyy = now.getFullYear()
+        const mm = String(now.getMonth() + 1).padStart(2, '0')
+        const startOfMonth = new Date(yyyy, now.getMonth(), 1)
+        const endOfMonth = new Date(yyyy, now.getMonth() + 1, 1)
+        const countThisMonth = await prisma.invoice.count({
+            where: {
+                createdAt: { gte: startOfMonth, lt: endOfMonth },
+            },
+        })
+        const autoDocNo = `${yyyy}${mm}${String(countThisMonth + 1).padStart(3, '0')}`
+
         const invoice = await prisma.invoice.create({
             data: {
                 customerId: estimate.customerId,
-                docNo: null, // 請求番号は後で設定
+                docNo: autoDocNo,
                 status: 'DRAFT',
                 subtotal: totals.subtotal,
                 tax: totals.tax,

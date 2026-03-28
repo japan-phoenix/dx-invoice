@@ -1,13 +1,17 @@
 'use client'
 
 import { useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
+import { getUsers } from '@/lib/users'
 import { ChevronDown, ChevronUp } from 'lucide-react'
 import { SearchButton } from '@/components/button/SearchButton'
 import { ResetButton } from '@/components/button/ResetButton'
 import { SearchCustomersParams } from '@/lib/customers'
 import { useCitiesQuery, useTownsQuery } from '@/hooks/useAddress'
 import { InputUI, SelectUI, CheckboxUI, DatePickerUI } from '@/components/form/ui'
+import { AutocompleteUI } from '@/components/form/ui/AutocompleteUI'
 import { calculateDateRange } from '@/lib/dateUtils'
+import { FUNERAL_PLACE_OPTIONS } from '../constants/casesOptions'
 
 interface CaseSearchFormProps {
     formParams: FormParams
@@ -22,12 +26,17 @@ interface FormParams extends SearchCustomersParams {
     receptionToInput?: string
     funeralFromInput?: string
     funeralToInput?: string
+    salesStaffName?: string
+    funeralPlace?: string
 }
 
 export function CaseSearchForm({ formParams, setFormParams, onSearch, onReset, isLoading }: CaseSearchFormProps) {
-    const [open, setOpen] = useState(false)
+    const hasParams = Object.values(formParams).some((v) => v !== undefined && v !== '' && v !== null)
+    const [open, setOpen] = useState(hasParams)
     const { data: cities = [] } = useCitiesQuery()
     const { data: towns = [] } = useTownsQuery(formParams.cityId || null)
+    const { data: users = [] } = useQuery({ queryKey: ['users'], queryFn: () => getUsers() })
+    const userNameOptions = users.map((u) => u.name)
 
     const handleCityChange = (cityId: string) => {
         setFormParams({ ...formParams, cityId, townId: undefined })
@@ -54,11 +63,13 @@ export function CaseSearchForm({ formParams, setFormParams, onSearch, onReset, i
 
         // ※ formParams は親コンポーネントで管理され、検索後も保持されます
         onSearch(searchParams)
+        setOpen(true)
     }
 
     const handleReset = () => {
         setFormParams({})
         onReset()
+        setOpen(false)
     }
 
     return (
@@ -110,6 +121,7 @@ export function CaseSearchForm({ formParams, setFormParams, onSearch, onReset, i
                                 onChange={(receptionFromInput) => setFormParams({ ...formParams, receptionFromInput })}
                                 label="受付日（From）"
                                 placeholder="日付を選択"
+                                minYear={2025}
                             />
                         </div>
 
@@ -119,6 +131,7 @@ export function CaseSearchForm({ formParams, setFormParams, onSearch, onReset, i
                                 onChange={(receptionToInput) => setFormParams({ ...formParams, receptionToInput })}
                                 label="受付日（To）"
                                 placeholder="日付を選択"
+                                minYear={2025}
                             />
                         </div>
 
@@ -128,6 +141,7 @@ export function CaseSearchForm({ formParams, setFormParams, onSearch, onReset, i
                                 onChange={(funeralFromInput) => setFormParams({ ...formParams, funeralFromInput })}
                                 label="葬儀日（From）"
                                 placeholder="日付を選択"
+                                minYear={2025}
                             />
                         </div>
 
@@ -137,6 +151,27 @@ export function CaseSearchForm({ formParams, setFormParams, onSearch, onReset, i
                                 onChange={(funeralToInput) => setFormParams({ ...formParams, funeralToInput })}
                                 label="葬儀日（To）"
                                 placeholder="日付を選択"
+                                minYear={2025}
+                            />
+                        </div>
+
+                        <div>
+                            <AutocompleteUI
+                                value={formParams.salesStaffName || ''}
+                                onChange={(salesStaffName) => setFormParams({ ...formParams, salesStaffName })}
+                                label="担当者"
+                                placeholder="入力または選択してください"
+                                options={userNameOptions}
+                            />
+                        </div>
+
+                        <div>
+                            <AutocompleteUI
+                                value={formParams.funeralPlace || ''}
+                                onChange={(funeralPlace) => setFormParams({ ...formParams, funeralPlace })}
+                                label="式場"
+                                placeholder="入力または選択してください"
+                                options={[...FUNERAL_PLACE_OPTIONS]}
                             />
                         </div>
 

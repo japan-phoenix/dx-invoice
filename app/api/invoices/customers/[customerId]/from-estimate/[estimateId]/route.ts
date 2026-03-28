@@ -3,8 +3,10 @@ import { prisma } from '@/lib/prisma'
 import { requireAuth } from '@/lib/auth-middleware'
 import { serializeBigInt } from '@/lib/prisma-utils'
 
-function calculateTotals(items: any[], membershipPaidAmount: number) {
-    const subtotal = items.reduce((sum, item) => sum + (item.amount || 0), 0)
+function calculateTotals(items: any[], membershipPaidAmount: number, freeItems: any[] = []) {
+    const itemsSubtotal = items.reduce((sum, item) => sum + (item.amount || 0), 0)
+    const freeSubtotal = freeItems.reduce((sum, item) => sum + (item.unitPriceGeneral || 0) * (item.qty || 1), 0)
+    const subtotal = itemsSubtotal + freeSubtotal
     const tax = Math.round(subtotal * 0.1)
     const total = subtotal + tax
     const grandTotal = total - membershipPaidAmount
@@ -45,6 +47,9 @@ export async function POST(
                     include: {
                         productItem: true,
                         productVariant: true,
+                        freeItems: {
+                            orderBy: { sortNo: 'asc' },
+                        },
                     },
                 },
             },
@@ -63,7 +68,8 @@ export async function POST(
             0
         )
 
-        const totals = calculateTotals(estimate.items, membershipPaidAmount)
+        const allEstimateFreeItems = estimate.items.flatMap((item: any) => item.freeItems || [])
+        const totals = calculateTotals(estimate.items, membershipPaidAmount, allEstimateFreeItems)
 
         // docNo の自動採番: customers.reception_atの年月(yyyymm) + 同プレフィックスの最大連番+1(3桁)
         const receptionDate = estimate.customer.receptionAt ? new Date(estimate.customer.receptionAt) : new Date()
@@ -115,6 +121,37 @@ export async function POST(
                 items: true,
             },
         })
+
+        // フリー項目をコピー
+        if (allEstimateFreeItems.length > 0) {
+            let anchorItemId: bigint
+            if (invoice.items.length > 0) {
+                anchorItemId = invoice.items[0].id
+            } else {
+                const dummyItem = await prisma.invoiceItem.create({
+                    data: {
+                        invoiceId: invoice.id,
+                        unitPriceGeneral: 0,
+                        unitPriceMember: 0,
+                        qty: 0,
+                        amount: 0,
+                        sortNo: 9999,
+                    },
+                })
+                anchorItemId = dummyItem.id
+            }
+            await prisma.invoiceItemFree.createMany({
+                data: allEstimateFreeItems.map((item: any, index: number) => ({
+                    invoiceItemId: anchorItemId,
+                    productItemName: item.productItemName || '',
+                    description: item.description || '',
+                    unitPriceGeneral: item.unitPriceGeneral || 0,
+                    qty: item.qty || 1,
+                    amount: (item.unitPriceGeneral || 0) * (item.qty || 1),
+                    sortNo: item.sortNo ?? index,
+                })),
+            })
+        }
 
         // レスポンスを返す
         return NextResponse.json(

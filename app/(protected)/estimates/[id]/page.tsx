@@ -107,7 +107,7 @@ export default function EstimateEditPage() {
                 {/* 顧客情報サマリー */}
                 <EstimateCustomerSummary customer={customer} />
 
-{/* タブ */}
+                {/* タブ */}
                 <div className="mb-4 flex border-b-2 border-gray-300">
                     <button
                         type="button"
@@ -134,34 +134,34 @@ export default function EstimateEditPage() {
                 </div>
 
                 <fieldset disabled={isConfirmed} className="contents">
-                {/* 明細タブ */}
-                {activeTab === 'items' && (
-                    <>
-                        <EstimateBasicInfo control={control} disabled={isConfirmed} />
-                        <EstimateProductSearch {...productSearchProps} items={items} />
-                        {(errors.items?.root?.message ?? (errors.items as any)?.message) && (
-                            <p className="-mt-4 mb-4 text-sm text-red-600">
-                                {errors.items?.root?.message ?? (errors.items as any)?.message}
-                            </p>
-                        )}
-                        <EstimateFreeItemInput onAdd={handleAddFreeItem} count={freeItems.length} />
-                        <EstimateItemTable
-                            items={items}
-                            fields={itemFields}
-                            control={control}
-                            handleRemoveItem={handleRemoveItem}
-                            isMember={watchedIsMember === 'true'}
-                            freeItems={freeItems}
-                            freeFields={freeItemFields}
-                            handleRemoveFreeItem={handleRemoveFreeItem}
-                            readOnly={isConfirmed}
-                        />
-                        <EstimateTotals totals={totals} />
-                    </>
-                )}
+                    {/* 明細タブ */}
+                    {activeTab === 'items' && (
+                        <>
+                            <EstimateBasicInfo control={control} disabled={isConfirmed} />
+                            <EstimateProductSearch {...productSearchProps} items={items} />
+                            {(errors.items?.root?.message ?? (errors.items as any)?.message) && (
+                                <p className="-mt-4 mb-4 text-sm text-red-600">
+                                    {errors.items?.root?.message ?? (errors.items as any)?.message}
+                                </p>
+                            )}
+                            <EstimateFreeItemInput onAdd={handleAddFreeItem} count={freeItems.length} />
+                            <EstimateItemTable
+                                items={items}
+                                fields={itemFields}
+                                control={control}
+                                handleRemoveItem={handleRemoveItem}
+                                isMember={watchedIsMember === 'true'}
+                                freeItems={freeItems}
+                                freeFields={freeItemFields}
+                                handleRemoveFreeItem={handleRemoveFreeItem}
+                                readOnly={isConfirmed}
+                            />
+                            <EstimateTotals totals={totals} />
+                        </>
+                    )}
 
-                {/* その他タブ */}
-                {activeTab === 'other' && <EstimateOtherFields control={control} disabled={isConfirmed} />}
+                    {/* その他タブ */}
+                    {activeTab === 'other' && <EstimateOtherFields control={control} disabled={isConfirmed} />}
                 </fieldset>
 
                 {/* 操作ボタン（画面右下固定） */}

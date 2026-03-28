@@ -1,4 +1,6 @@
 import { useFormContext } from 'react-hook-form'
+import { useQuery } from '@tanstack/react-query'
+import { getUsers } from '@/lib/users'
 import { CaseFormData } from '../schemas/CaseFormSchema'
 import { FormInput } from '@/components/form/FormInput'
 import { FormCurrencyInput } from '@/components/form/FormCurrencyInput'
@@ -12,6 +14,8 @@ export function Membership1Tab() {
         control,
         formState: { errors },
     } = useFormContext<CaseFormData>()
+    const { data: users = [] } = useQuery({ queryKey: ['users'], queryFn: () => getUsers() })
+    const userNameOptions = users.map((u) => u.name)
 
     return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
@@ -79,10 +83,11 @@ export function Membership1Tab() {
 
                     {/* 営業担当者名 */}
                     <div style={{ gridColumn: '1 / -1' }}>
-                        <FormInput<CaseFormData>
+                        <FormAutocomplete<CaseFormData>
                             name={`memberships.${INDEX}.salesStaffName`}
                             control={control}
                             label="営業担当者名"
+                            options={userNameOptions}
                             error={errors.memberships?.[INDEX]?.salesStaffName}
                         />
                     </div>

@@ -27,7 +27,13 @@ export function EstimateBasicInfo({ control, isNew, disabled }: Props) {
                     ]}
                     disabled={disabled}
                 />
-                <FormSelect name="status" control={control} label="見積区分" options={STATUS_OPTIONS} disabled={disabled} />
+                <FormSelect
+                    name="status"
+                    control={control}
+                    label="見積区分"
+                    options={STATUS_OPTIONS}
+                    disabled={disabled}
+                />
             </div>
         </div>
     )

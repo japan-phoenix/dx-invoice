@@ -164,7 +164,10 @@ export default function InvoiceEditPage() {
                     <div className="flex gap-4 bg-white">
                         <button
                             type="button"
-                            onClick={() => { router.push('/cases'); router.refresh() }}
+                            onClick={() => {
+                                router.push('/cases')
+                                router.refresh()
+                            }}
                             className="cursor-pointer rounded border-0 bg-gray-500 px-6 py-3 text-white"
                         >
                             閉じる
@@ -173,12 +176,6 @@ export default function InvoiceEditPage() {
                             type="button"
                             disabled={isDirty}
                             onClick={() => router.push(`/pdf/invoice/${invoice.id}`)}
-                            className={`rounded border-0 px-6 py-3 text-white ${
-                                isDirty ? 'cursor-not-allowed bg-gray-300' : 'cursor-pointer bg-cyan-600'
-                            }`}
-                        >
-                            PDFプレビュー
-                        </button>
                             className={`rounded border-0 px-6 py-3 text-white ${
                                 isDirty ? 'cursor-not-allowed bg-gray-300' : 'cursor-pointer bg-cyan-600'
                             }`}

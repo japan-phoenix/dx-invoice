@@ -23,6 +23,8 @@ export async function GET(request: NextRequest) {
         const paid = searchParams.get('paid') === 'true'
         const unpaid = searchParams.get('unpaid') === 'true'
         const estimateStatusConfirmed = searchParams.get('estimateStatusConfirmed') === 'true'
+        const salesStaffName = searchParams.get('salesStaffName') || undefined
+        const funeralPlace = searchParams.get('funeralPlace') || undefined
 
         // 検索条件を構築
         const where: any = {}
@@ -117,6 +119,22 @@ export async function GET(request: NextRequest) {
             if (funeralTo) {
                 where.funeralFrom.lte = new Date(funeralTo)
             }
+        }
+
+        if (funeralPlace) {
+            where.AND = where.AND || []
+            where.AND.push({ funeralPlace: { contains: funeralPlace } })
+        }
+
+        if (salesStaffName) {
+            where.AND = where.AND || []
+            where.AND.push({
+                memberships: {
+                    some: {
+                        salesStaffName: { contains: salesStaffName },
+                    },
+                },
+            })
         }
 
         // 顧客を取得

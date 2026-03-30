@@ -20,10 +20,6 @@ export const customerMembershipSchema = z.object({
     joinedAt: z.string().optional(),
     memberName: z.string().optional(),
     courseUnits: z.coerce.number().optional(),
-    maturityAmount: z.preprocess(
-        (value) => (typeof value === 'string' ? value.replace(/,/g, '') : value),
-        z.coerce.number().optional()
-    ),
     paymentTimes: z.coerce.number().optional(),
     paymentAmount: z.preprocess(
         (value) => (typeof value === 'string' ? value.replace(/,/g, '') : value),
@@ -77,12 +73,8 @@ export const caseFormSchema = z.object({
     funeralFrom: z.string().optional(),
     funeralTo: z.string().optional(),
     funeralPlace: z.string().optional(),
-    returnAt: z.string().optional(),
-    returnPlace: z.string().optional(),
-
     // その他
     notes: z.string().optional(),
-    memberCardNote: z.string().optional(),
 
     // 会員情報
     memberships: z.array(customerMembershipSchema),

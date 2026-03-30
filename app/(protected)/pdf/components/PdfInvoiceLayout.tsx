@@ -197,13 +197,22 @@ function fmtTime(v?: string | Date | null): string {
 export function PdfInvoiceLayout({ contentId, containerRef, title, document: doc, products }: Props) {
     const { docNo, membershipPaidAmount, items } = doc
     const docAny = doc as any
+    const isMember = doc.isMember === true
     // DB保存値ではなく実際のitems/freeItemsから合計を再計算
-    const itemsSubtotal = items.reduce((sum, item) => sum + (item.amount || 0), 0)
+    // フリー項目の小計
     const freeSubtotal = (doc.freeItems ?? []).reduce((sum, fi) => sum + fi.unitPriceGeneral * fi.qty, 0)
-    const subtotal = itemsSubtotal + freeSubtotal
-    const tax = Math.round(subtotal * 0.1)
-    const total = subtotal + tax
-    const grandTotal = Math.max(0, total - membershipPaidAmount)
+    // 会員価格
+    const itemsMemberSubtotal = items.reduce((sum, item) => sum + (item.unitPriceMember * item.qty || 0), 0)
+    const memberSubtotal = itemsMemberSubtotal + freeSubtotal
+    const memberTax = Math.floor(memberSubtotal * 0.1) // 消費税は10%で固定、端数は切り捨て
+    const memberTotal = memberSubtotal + memberTax
+    // 一般価格
+    const itemsGeneralSubtotal = items.reduce((sum, item) => sum + (item.unitPriceGeneral * item.qty || 0), 0)
+    const generalSubtotal = itemsGeneralSubtotal + freeSubtotal
+    const generalTax = Math.floor(generalSubtotal * 0.1)
+    const generalTotal = generalSubtotal + generalTax
+    // 会員・一般どちらの価格からも、会費入金額を差し引いた金額を表示
+    const grandTotal = Math.max(0, (isMember ? memberTotal : generalTotal) - membershipPaidAmount)
     const customer: PdfDocumentCustomer | undefined = docAny.customer
         ? {
               ...docAny.customer,
@@ -219,7 +228,6 @@ export function PdfInvoiceLayout({ contentId, containerRef, title, document: doc
           }
         : undefined
     const displayRows = buildDisplayRows(products, items, doc.freeItems)
-    const isMember = doc.isMember === true
     const notesLong = (customer?.notes?.length ?? 0) >= 20
     return (
         <div
@@ -348,28 +356,22 @@ export function PdfInvoiceLayout({ contentId, containerRef, title, document: doc
                                         </div>
                                     </th>
                                     <th className="border border-l-0 border-t-0 border-black px-1 text-center">
-                                        <div className="mx-auto flex w-[2rem] justify-between">
-                                            {'数量'.split('').map((char, i) => (
-                                                <span key={i} className="text-center">
-                                                    {char}
-                                                </span>
-                                            ))}
-                                        </div>
-                                    </th>
-                                    <th className="border border-l-0 border-t-0 border-black px-1 text-center">
                                         <div className="mx-auto flex w-[4rem] justify-between">
-                                            {(isMember ? '会員価格' : '一般価格').split('').map((char, i) => (
+                                            {'一般価格'.split('').map((char, i) => (
                                                 <span key={i} className="text-center">
                                                     {char}
                                                 </span>
                                             ))}
                                         </div>
                                     </th>
-                                    <th className="border border-r-0 border-t-0 border-black text-[0.5rem] [writing-mode:vertical-rl]">
-                                        経理
-                                    </th>
-                                    <th className="border border-r-0 border-t-0 border-black text-[0.5rem] [writing-mode:vertical-rl]">
-                                        照合
+                                    <th className="border border-x-0 border-t-0 border-black px-1 text-center">
+                                        <div className="mx-auto flex w-[4rem] justify-between">
+                                            {'会員価格'.split('').map((char, i) => (
+                                                <span key={i} className="text-center">
+                                                    {char}
+                                                </span>
+                                            ))}
+                                        </div>
                                     </th>
                                 </tr>
                             </thead>
@@ -405,27 +407,27 @@ export function PdfInvoiceLayout({ contentId, containerRef, title, document: doc
                                                 <div className="whitespace-pre-wrap break-words">
                                                     {row.estimateItem?.description ?? ''}
                                                 </div>
+                                                <div>
+                                                    {/* 数量が1より大きい場合のみ表示 */}
+                                                    {row.estimateItem && row.estimateItem.qty > 1
+                                                        ? `数量: ${row.estimateItem.qty.toLocaleString()}`
+                                                        : ''}
+                                                </div>
                                             </td>
                                             <td className="border border-black px-1 text-right">
-                                                {row.estimateItem ? `${row.estimateItem.qty.toLocaleString()}` : ''}
+                                                {row.estimateItem
+                                                    ? (
+                                                          row.estimateItem.unitPriceGeneral * row.estimateItem.qty
+                                                      ).toLocaleString()
+                                                    : ''}
                                             </td>
                                             <td className="border border-r-0 border-black px-1 text-right">
-                                                {row.estimateItem ? (
-                                                    <>
-                                                        {isMember
-                                                            ? Math.abs(
-                                                                  row.estimateItem.unitPriceMember
-                                                              ).toLocaleString()
-                                                            : Math.abs(
-                                                                  row.estimateItem.unitPriceGeneral
-                                                              ).toLocaleString()}
-                                                    </>
-                                                ) : (
-                                                    ''
-                                                )}
+                                                {row.estimateItem
+                                                    ? (
+                                                          row.estimateItem.unitPriceMember * row.estimateItem.qty
+                                                      ).toLocaleString()
+                                                    : ''}
                                             </td>
-                                            <td className="border border-r-0 border-black text-center"></td>
-                                            <td className="border border-r-0 border-black text-center"></td>
                                         </tr>
                                     </Fragment>
                                 ))}
@@ -443,10 +445,12 @@ export function PdfInvoiceLayout({ contentId, containerRef, title, document: doc
                                         </div>
                                     </th>
                                     <td className="border border-black px-1 text-center">&nbsp;</td>
-                                    <td className="border border-black px-1 text-right">&nbsp;</td>
-                                    <td className="border border-black px-1 text-right">{subtotal.toLocaleString()}</td>
-                                    <td className="border border-r-0 border-black px-1 text-center"></td>
-                                    <td className="border border-r-0 border-black px-1 text-center"></td>
+                                    <td className="border border-black px-1 text-right">
+                                        {generalSubtotal.toLocaleString()}
+                                    </td>
+                                    <td className="border border-black border-r-0 px-1 text-right">
+                                        {memberSubtotal.toLocaleString()}
+                                    </td>
                                 </tr>
                                 <tr>
                                     <th className="border border-l-0 border-black text-center">
@@ -459,10 +463,12 @@ export function PdfInvoiceLayout({ contentId, containerRef, title, document: doc
                                         </div>
                                     </th>
                                     <td className="border border-black text-center">&nbsp;</td>
-                                    <td className="border border-black px-1 text-right">&nbsp;</td>
-                                    <td className="border border-black px-1 text-right">{tax.toLocaleString()}</td>
-                                    <td className="border border-r-0 border-black px-1 text-center">&nbsp;</td>
-                                    <td className="border border-r-0 border-black px-1 text-center">&nbsp;</td>
+                                    <td className="border border-black px-1 text-right">
+                                        {generalTax.toLocaleString()}
+                                    </td>
+                                    <td className="border border-black border-r-0 px-1 text-right">
+                                        {memberTax.toLocaleString()}
+                                    </td>
                                 </tr>
                                 <tr>
                                     <th className="border border-l-0 border-black text-center">
@@ -475,10 +481,12 @@ export function PdfInvoiceLayout({ contentId, containerRef, title, document: doc
                                         </div>
                                     </th>
                                     <td className="border border-black text-center">&nbsp;</td>
-                                    <td className="border border-black px-1 text-right">&nbsp;</td>
-                                    <td className="border border-black px-1 text-right">{total.toLocaleString()}</td>
-                                    <td className="border border-r-0 border-black px-1 text-center">&nbsp;</td>
-                                    <td className="border border-r-0 border-black px-1 text-center">&nbsp;</td>
+                                    <td className="border border-black px-1 text-right">
+                                        {generalTotal.toLocaleString()}
+                                    </td>
+                                    <td className="border border-black border-r-0 px-1 text-right">
+                                        {memberTotal.toLocaleString()}
+                                    </td>
                                 </tr>
                                 <tr>
                                     <th className="border border-l-0 border-black text-center">
@@ -492,17 +500,17 @@ export function PdfInvoiceLayout({ contentId, containerRef, title, document: doc
                                     </th>
                                     <td className="border border-black text-center">&nbsp;</td>
                                     <td className="border border-black px-1 text-left">&nbsp;</td>
-                                    <td className="border border-black px-1 text-right">
+                                    <td className="border border-black px-1  border-r-0 text-right">
                                         <span className="mr-1">△</span>
                                         {membershipPaidAmount.toLocaleString()}
                                     </td>
-                                    <td className="border border-r-0 border-black px-1 text-center">&nbsp;</td>
-                                    <td className="border border-r-0 border-black px-1 text-center">&nbsp;</td>
                                 </tr>
                             </tfoot>
                         </table>
-                        <div className="border border-x-0 border-b-0 border-black px-4 py-1 text-right">
-                            <p className="text-lg font-bold">差引合計: ¥{grandTotal.toLocaleString()}</p>
+                        <div className="border border-x-0 border-b-0 border-black p-1 text-right">
+                            <p className="text-lg font-bold">
+                                差引合計({isMember ? '会員価格' : '一般価格'}): ¥{grandTotal.toLocaleString()}
+                            </p>
                         </div>
                     </div>
 
@@ -592,13 +600,6 @@ export function PdfInvoiceLayout({ contentId, containerRef, title, document: doc
                                                     : '未定',
                                                 place: customer?.funeralPlace,
                                             },
-                                            {
-                                                label: '引上日',
-                                                data: customer?.returnAt
-                                                    ? `${fmtDate(customer.returnAt)} ${String(new Date(customer.returnAt).getHours()).padStart(2, '0')}時`
-                                                    : '未定',
-                                                place: customer?.returnPlace,
-                                            },
                                         ] as {
                                             label: string
                                             data?: string | null
@@ -641,16 +642,6 @@ export function PdfInvoiceLayout({ contentId, containerRef, title, document: doc
                         {/* その他情報 */}
                         <table className="w-full border-collapse border-t border-black text-xs">
                             <tbody>
-                                <tr className="border-b border-black">
-                                    <th className="w-[5em] border-r border-black px-1 text-left font-normal">
-                                        <div className="flex justify-between">
-                                            {'会員証'.split('').map((char, j) => (
-                                                <span key={j}>{char}</span>
-                                            ))}
-                                        </div>
-                                    </th>
-                                    <td className="px-1">{customer?.memberCardNote ?? ''}</td>
-                                </tr>
                                 <tr className="border-b border-black">
                                     <th className="w-[8em] border-r border-black px-1 text-left font-normal">
                                         <div className="flex justify-between">

@@ -23,6 +23,9 @@ export async function GET(request: NextRequest) {
         const paid = searchParams.get('paid') === 'true'
         const unpaid = searchParams.get('unpaid') === 'true'
         const estimateStatusConfirmed = searchParams.get('estimateStatusConfirmed') === 'true'
+        const estimateStatus = searchParams.get('estimateStatus') || undefined
+        const salesStaffName = searchParams.get('salesStaffName') || undefined
+        const funeralPlace = searchParams.get('funeralPlace') || undefined
 
         // 検索条件を構築
         const where: any = {}
@@ -99,24 +102,58 @@ export async function GET(request: NextRequest) {
             ]
         }
 
-        if (receptionFrom || receptionTo) {
-            where.receptionAt = {}
-            if (receptionFrom) {
-                where.receptionAt.gte = new Date(receptionFrom)
-            }
-            if (receptionTo) {
-                where.receptionAt.lte = new Date(receptionTo)
-            }
+        const today = new Date()
+        today.setHours(0, 0, 0, 0)
+
+        const addThreeMonths = (date: Date) => {
+            const d = new Date(date)
+            d.setMonth(d.getMonth() + 3)
+            return d
         }
 
-        if (funeralFrom || funeralTo) {
-            where.funeralFrom = {}
-            if (funeralFrom) {
-                where.funeralFrom.gte = new Date(funeralFrom)
-            }
-            if (funeralTo) {
-                where.funeralFrom.lte = new Date(funeralTo)
-            }
+        if (receptionFrom && receptionTo) {
+            // 両方あり: 範囲検索
+            where.receptionAt = { gte: new Date(receptionFrom), lte: new Date(receptionTo) }
+        } else if (receptionFrom) {
+            // Fromのみ: Fromから3ヶ月以内
+            where.receptionAt = { gte: new Date(receptionFrom), lte: addThreeMonths(new Date(receptionFrom)) }
+        } else if (receptionTo) {
+            // Toのみ: 当日からToまで
+            where.receptionAt = { gte: today, lte: new Date(receptionTo) }
+        }
+
+        if (funeralFrom && funeralTo) {
+            // 両方あり: 範囲検索
+            where.funeralFrom = { gte: new Date(funeralFrom), lte: new Date(funeralTo) }
+        } else if (funeralFrom) {
+            // Fromのみ: Fromから3ヶ月以内
+            where.funeralFrom = { gte: new Date(funeralFrom), lte: addThreeMonths(new Date(funeralFrom)) }
+        } else if (funeralTo) {
+            // Toのみ: 当日からToまで
+            where.funeralFrom = { gte: today, lte: new Date(funeralTo) }
+        }
+
+        // デフォルト: 日付条件なしの場合、当日から直近3ヶ月の受付日を表示
+        if (!receptionFrom && !receptionTo && !funeralFrom && !funeralTo) {
+            const threeMonthsAgo = new Date(today)
+            threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3)
+            where.receptionAt = { gte: threeMonthsAgo }
+        }
+
+        if (funeralPlace) {
+            where.AND = where.AND || []
+            where.AND.push({ funeralPlace: { contains: funeralPlace } })
+        }
+
+        if (salesStaffName) {
+            where.AND = where.AND || []
+            where.AND.push({
+                memberships: {
+                    some: {
+                        salesStaffName: { contains: salesStaffName },
+                    },
+                },
+            })
         }
 
         // 顧客を取得
@@ -144,10 +181,10 @@ export async function GET(request: NextRequest) {
             },
             orderBy: [
                 {
-                    receptionAt: 'desc',
+                    id: 'desc',
                 },
                 {
-                    createdAt: 'desc',
+                    receptionAt: 'asc',
                 },
             ],
         })
@@ -165,6 +202,12 @@ export async function GET(request: NextRequest) {
         if (estimateStatusConfirmed) {
             filteredCustomers = filteredCustomers.filter((customer: any) =>
                 customer.estimates.some((e: any) => e.status === 'DRAFT')
+            )
+        }
+
+        if (estimateStatus) {
+            filteredCustomers = filteredCustomers.filter((customer: any) =>
+                customer.estimates.some((e: any) => e.status === estimateStatus)
             )
         }
 
@@ -205,6 +248,7 @@ export async function GET(request: NextRequest) {
                 funeralFrom: customer.funeralFrom ? customer.funeralFrom.toISOString() : null,
                 hasEstimate: customer.estimates.length > 0,
                 estimateId: customer.estimates[0]?.id.toString(),
+                estimateStatus: customer.estimates[0]?.status ?? null,
                 hasInvoice: customer.invoices.length > 0,
                 invoiceId: invoice?.id.toString(),
                 isPaid: isPaid,

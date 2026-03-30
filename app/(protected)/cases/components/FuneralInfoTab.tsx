@@ -2,6 +2,8 @@ import { useFormContext } from 'react-hook-form'
 import { CaseFormData } from '../schemas/CaseFormSchema'
 import { FormInput } from '@/components/form/FormInput'
 import { FormTextarea } from '@/components/form/FormTextarea'
+import { FormAutocomplete } from '@/components/form/FormAutocomplete'
+import { FUNERAL_PLACE_OPTIONS } from '../constants/casesOptions'
 
 export function FuneralInfoTab() {
     const {
@@ -34,28 +36,17 @@ export function FuneralInfoTab() {
             />
 
             {/* 葬儀・告別式会場 */}
-            <FormInput<CaseFormData>
+            <FormAutocomplete<CaseFormData>
                 name="funeralPlace"
                 control={control}
                 label="葬儀・告別式会場"
+                options={[...FUNERAL_PLACE_OPTIONS]}
                 error={errors.funeralPlace}
             />
 
-            {/* 引上日時 */}
-            <FormInput<CaseFormData>
-                name="returnAt"
-                control={control}
-                label="引上日時"
-                type="datetime-local"
-                error={errors.returnAt}
-            />
-
-            {/* 引上場所 */}
-            <FormInput<CaseFormData> name="returnPlace" control={control} label="引上場所" error={errors.returnPlace} />
-
             {/* 備考 */}
             <div style={{ gridColumn: '1 / -1' }}>
-                <FormTextarea<CaseFormData> name="notes" control={control} label="備考" rows={4} error={errors.notes} />
+                <FormTextarea<CaseFormData> name="notes" control={control} label="備考" rows={8} error={errors.notes} />
             </div>
         </div>
     )

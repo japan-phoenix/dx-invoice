@@ -6,13 +6,14 @@ import { useForm, FormProvider, useFieldArray, useWatch } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Suspense } from 'react'
 import { estimateFormSchema, EstimateFormData, DEFAULT_FORM_VALUES } from '../schemas/EstimateFormSchema'
-import { useEstimateCreate, useProductSearch, useEstimateItems, calculateTotals } from '../hooks/useEstimateForm'
-import { EstimateProductSearch } from '../components/EstimateProductSearch'
+import { useEstimateCreate, useEstimateFreeItems, calculateTotals } from '../hooks/useEstimateForm'
 import { EstimateItemTable } from '../components/EstimateItemTable'
 import { EstimateTotals } from '../components/EstimateTotals'
 import { EstimateOtherFields } from '../components/EstimateOtherFields'
 import { EstimateCustomerSummary } from '../components/EstimateCustomerSummary'
 import { EstimateBasicInfo } from '../components/EstimateBasicInfo'
+import { EstimateFreeItemInput } from '../components/EstimateFreeItemInput'
+import { ProductVariant } from '@/lib/products'
 import { toast } from '@/hooks/use-toast'
 
 function EstimateNewPageInner() {
@@ -28,22 +29,47 @@ function EstimateNewPageInner() {
         control,
         handleSubmit,
         reset,
+        setValue,
         formState: { isSubmitting, errors },
     } = methods
 
-    const {
-        fields: itemFields,
-        append: appendItemField,
-        remove: removeItemField,
-        move: moveItemField,
-    } = useFieldArray({ control, name: 'items' })
+    const { fields: itemFields } = useFieldArray({ control, name: 'items' })
 
-    const { loading, customer, items, setItems, onSubmit } = useEstimateCreate(customerId, reset)
-    const productSearchProps = useProductSearch(items, setItems, appendItemField, moveItemField)
-    const { handleRemoveItem } = useEstimateItems(items, setItems, removeItemField)
+    const {
+        fields: freeItemFields,
+        append: appendFreeItemField,
+        remove: removeFreeItemField,
+    } = useFieldArray({ control, name: 'freeItems' })
+
+    const { loading, customer, items, setItems, freeItems, setFreeItems, onSubmit } = useEstimateCreate(
+        customerId,
+        reset
+    )
+    const { handleAddFreeItem, handleRemoveFreeItem } = useEstimateFreeItems(
+        freeItems,
+        setFreeItems,
+        appendFreeItemField,
+        removeFreeItemField
+    )
     const [activeTab, setActiveTab] = useState<'items' | 'other'>('items')
     const watchedItems = useWatch({ control, name: 'items' })
     const watchedIsMember = useWatch({ control, name: 'isMember' })
+
+    const handleVariantChange = (index: number, variant: ProductVariant) => {
+        setItems((prev) =>
+            prev.map((item, i) =>
+                i !== index
+                    ? item
+                    : {
+                          ...item,
+                          productVariantId: variant.id,
+                          productVariant: variant,
+                          unitPriceGeneral: variant.priceGeneral,
+                          unitPriceMember: variant.priceMember,
+                      }
+            )
+        )
+    }
 
     if (loading) {
         return <div className="p-8">読み込み中...</div>
@@ -104,19 +130,23 @@ function EstimateNewPageInner() {
                 {/* 明細タブ */}
                 {activeTab === 'items' && (
                     <>
-                        <EstimateBasicInfo control={control} />
-                        <EstimateProductSearch {...productSearchProps} items={items} />
+                        <EstimateBasicInfo control={control} isNew />
                         {(errors.items?.root?.message ?? (errors.items as any)?.message) && (
                             <p className="-mt-4 mb-4 text-sm text-red-600">
                                 {errors.items?.root?.message ?? (errors.items as any)?.message}
                             </p>
                         )}
+                        <EstimateFreeItemInput onAdd={handleAddFreeItem} count={freeItems.length} />
                         <EstimateItemTable
                             items={items}
                             fields={itemFields}
                             control={control}
-                            handleRemoveItem={handleRemoveItem}
                             isMember={watchedIsMember === 'true'}
+                            freeItems={freeItems}
+                            freeFields={freeItemFields}
+                            handleRemoveFreeItem={handleRemoveFreeItem}
+                            onVariantChange={handleVariantChange}
+                            setValue={setValue}
                         />
                         <EstimateTotals totals={totals} />
                     </>
@@ -129,7 +159,10 @@ function EstimateNewPageInner() {
                 <div className="fixed bottom-0 right-0 flex gap-4 p-2">
                     <button
                         type="button"
-                        onClick={() => router.back()}
+                        onClick={() => {
+                            router.push('/cases')
+                            router.refresh()
+                        }}
                         className="cursor-pointer rounded border-0 bg-gray-500 px-6 py-3 text-white"
                     >
                         閉じる

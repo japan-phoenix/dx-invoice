@@ -10,3 +10,15 @@ export const GENDER_OPTIONS = [
 export const RELIGION_OPTIONS = ['神式', '仏式', 'キリスト式', '友人葬', '家族葬'] as const
 // 引取場所
 export const PICKUP_PLACE_OPTIONS = ['病院', '自宅'] as const
+// 葬儀・告別式会場
+export const FUNERAL_PLACE_OPTIONS = [
+    '総合総裁玉泉院',
+    '那覇玉泉院',
+    '名護玉泉院',
+    '一日橋玉泉院',
+    '糸満玉泉院',
+    '具志川玉泉院',
+    'やすらぎ会館玉泉院',
+    '西原玉泉院',
+    '小緑・豊見城玉泉院',
+] as const

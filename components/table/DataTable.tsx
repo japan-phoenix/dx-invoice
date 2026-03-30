@@ -106,6 +106,18 @@ export function DataTable<T>({
                                                     {sortKey === col.key ? (sortDir === 'asc' ? '▲' : '▼') : '⇅'}
                                                 </span>
                                             )}
+                                            {col.sortable && sortKey === col.key && (
+                                                <span
+                                                    onClick={(e) => {
+                                                        e.stopPropagation()
+                                                        setSortKey(null)
+                                                    }}
+                                                    className="ml-1 cursor-pointer text-base text-gray-400 hover:text-gray-600"
+                                                    title="ソートをリセット"
+                                                >
+                                                    ✕
+                                                </span>
+                                            )}
                                         </span>
                                     </th>
                                 ))}

@@ -11,6 +11,7 @@ export interface CustomerListItem {
     funeralFrom: string | null
     hasEstimate: boolean
     estimateId?: string
+    estimateStatus?: string | null
     hasInvoice: boolean
     invoiceId?: string
     isPaid: boolean
@@ -29,6 +30,9 @@ export interface SearchCustomersParams {
     paid?: boolean
     unpaid?: boolean
     estimateStatusConfirmed?: boolean
+    salesStaffName?: string
+    funeralPlace?: string
+    estimateStatus?: string
 }
 
 export async function searchCustomers(params: SearchCustomersParams): Promise<CustomerListItem[]> {

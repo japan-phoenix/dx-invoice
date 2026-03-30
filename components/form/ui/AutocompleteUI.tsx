@@ -65,7 +65,7 @@ export function AutocompleteUI({
                         onFocus={() => setOpen(filteredOptions.length > 0)}
                         onClick={() => setOpen(filteredOptions.length > 0)}
                         className={cn(
-                            'h-auto w-full rounded border px-3 py-2 text-left !text-xl shadow-none focus-visible:outline-none focus-visible:ring-0 focus-visible:ring-offset-0',
+                            'h-auto w-full rounded border bg-white px-3 py-2 text-left !text-xl shadow-none focus-visible:outline-none focus-visible:ring-0 focus-visible:ring-offset-0',
                             error ? 'border-red-500' : 'border-gray-300',
                             disabled ? 'cursor-not-allowed bg-gray-100 opacity-60' : ''
                         )}

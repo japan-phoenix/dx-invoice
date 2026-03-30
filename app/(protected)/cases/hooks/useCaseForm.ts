@@ -105,17 +105,13 @@ export function useCaseFormLoader(setValue: UseFormSetValue<any>): {
                     funeralFrom: formatDateForInput(customerData.funeralFrom),
                     funeralTo: formatDateForInput(customerData.funeralTo),
                     funeralPlace: customerData.funeralPlace || '',
-                    returnAt: formatDateForInput(customerData.returnAt),
-                    returnPlace: customerData.returnPlace || '',
                     notes: customerData.notes || '',
-                    memberCardNote: customerData.memberCardNote || '',
                     memberships: customerData.memberships?.map((m: any) => ({
                         rowNo: m.rowNo,
                         memberNo: m.memberNo || '',
                         joinedAt: m.joinedAt ? formatDateForInput(m.joinedAt).split('T')[0] : '',
                         memberName: m.memberName || '',
                         courseUnits: m.courseUnits ? m.courseUnits : undefined,
-                        maturityAmount: m.maturityAmount ? m.maturityAmount : undefined,
                         paymentTimes: m.paymentTimes ? m.paymentTimes : undefined,
                         paymentAmount: m.paymentAmount ? m.paymentAmount : undefined,
                         salesStaffName: m.salesStaffName || '',
@@ -127,7 +123,6 @@ export function useCaseFormLoader(setValue: UseFormSetValue<any>): {
                             joinedAt: '',
                             memberName: '',
                             courseUnits: undefined,
-                            maturityAmount: undefined,
                             paymentTimes: undefined,
                             paymentAmount: undefined,
                             salesStaffName: '',
@@ -139,7 +134,6 @@ export function useCaseFormLoader(setValue: UseFormSetValue<any>): {
                             joinedAt: '',
                             memberName: '',
                             courseUnits: undefined,
-                            maturityAmount: undefined,
                             paymentTimes: undefined,
                             paymentAmount: undefined,
                             salesStaffName: '',
@@ -151,7 +145,6 @@ export function useCaseFormLoader(setValue: UseFormSetValue<any>): {
                             joinedAt: '',
                             memberName: '',
                             courseUnits: undefined,
-                            maturityAmount: undefined,
                             paymentTimes: undefined,
                             paymentAmount: undefined,
                             salesStaffName: '',
@@ -186,10 +179,7 @@ export function useCaseFormLoader(setValue: UseFormSetValue<any>): {
                 setValue('funeralFrom', formattedData.funeralFrom)
                 setValue('funeralTo', formattedData.funeralTo)
                 setValue('funeralPlace', formattedData.funeralPlace)
-                setValue('returnAt', formattedData.returnAt)
-                setValue('returnPlace', formattedData.returnPlace)
                 setValue('notes', formattedData.notes)
-                setValue('memberCardNote', formattedData.memberCardNote)
                 setValue('memberships', formattedData.memberships)
 
                 return { customer: customerData, cities: citiesData }

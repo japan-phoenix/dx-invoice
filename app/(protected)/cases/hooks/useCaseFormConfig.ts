@@ -11,8 +11,11 @@ const normalizePhoneNumber = (value: unknown): string | undefined => {
  * フォーム内部では undefined を使用（null は持ち込まない）
  */
 export function getFormDefaultValues(): CaseFormData {
+    const now = new Date()
+    const pad = (n: number) => String(n).padStart(2, '0')
+    const defaultReceptionAt = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}T${pad(now.getHours())}:${pad(now.getMinutes())}`
     return {
-        receptionAt: '',
+        receptionAt: defaultReceptionAt,
         deceasedName: '',
         deceasedLastName: undefined,
         deceasedFirstName: undefined,
@@ -38,10 +41,7 @@ export function getFormDefaultValues(): CaseFormData {
         funeralFrom: undefined,
         funeralTo: undefined,
         funeralPlace: undefined,
-        returnAt: undefined,
-        returnPlace: undefined,
         notes: undefined,
-        memberCardNote: undefined,
         memberships: [
             {
                 rowNo: 1,
@@ -49,7 +49,6 @@ export function getFormDefaultValues(): CaseFormData {
                 joinedAt: undefined,
                 memberName: '',
                 courseUnits: undefined,
-                maturityAmount: undefined,
                 paymentTimes: undefined,
                 paymentAmount: undefined,
                 salesStaffName: '',
@@ -61,7 +60,6 @@ export function getFormDefaultValues(): CaseFormData {
                 joinedAt: undefined,
                 memberName: '',
                 courseUnits: undefined,
-                maturityAmount: undefined,
                 paymentTimes: undefined,
                 paymentAmount: undefined,
                 salesStaffName: '',
@@ -73,7 +71,6 @@ export function getFormDefaultValues(): CaseFormData {
                 joinedAt: undefined,
                 memberName: '',
                 courseUnits: undefined,
-                maturityAmount: undefined,
                 paymentTimes: undefined,
                 paymentAmount: undefined,
                 salesStaffName: '',
@@ -117,13 +114,11 @@ export function transformSubmitData(data: CaseFormData, formatDateForISO: (val: 
         departureAt: formatDateForISO(data.departureAt),
         funeralFrom: formatDateForISO(data.funeralFrom),
         funeralTo: formatDateForISO(data.funeralTo),
-        returnAt: formatDateForISO(data.returnAt),
         memberships: data.memberships.map((m) => ({
             ...m,
             rowNo: m.rowNo,
             joinedAt: m.joinedAt ? new Date(m.joinedAt).toISOString() : undefined,
             courseUnits: m.courseUnits ? parseInt(m.courseUnits.toString()) : undefined,
-            maturityAmount: m.maturityAmount ? parseInt(m.maturityAmount.toString()) : undefined,
             paymentTimes: m.paymentTimes ? parseInt(m.paymentTimes.toString()) : undefined,
             paymentAmount: m.paymentAmount ? parseInt(m.paymentAmount.toString()) : undefined,
         })),

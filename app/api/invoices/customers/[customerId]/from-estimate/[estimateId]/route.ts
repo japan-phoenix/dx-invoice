@@ -3,8 +3,10 @@ import { prisma } from '@/lib/prisma'
 import { requireAuth } from '@/lib/auth-middleware'
 import { serializeBigInt } from '@/lib/prisma-utils'
 
-function calculateTotals(items: any[], membershipPaidAmount: number) {
-    const subtotal = items.reduce((sum, item) => sum + (item.amount || 0), 0)
+function calculateTotals(items: any[], membershipPaidAmount: number, freeItems: any[] = []) {
+    const itemsSubtotal = items.reduce((sum, item) => sum + (item.amount || 0), 0)
+    const freeSubtotal = freeItems.reduce((sum, item) => sum + (item.unitPriceGeneral || 0) * (item.qty || 1), 0)
+    const subtotal = itemsSubtotal + freeSubtotal
     const tax = Math.round(subtotal * 0.1)
     const total = subtotal + tax
     const grandTotal = total - membershipPaidAmount
@@ -45,6 +47,9 @@ export async function POST(
                     include: {
                         productItem: true,
                         productVariant: true,
+                        freeItems: {
+                            orderBy: { sortNo: 'asc' },
+                        },
                     },
                 },
             },
@@ -63,12 +68,25 @@ export async function POST(
             0
         )
 
-        const totals = calculateTotals(estimate.items, membershipPaidAmount)
+        const allEstimateFreeItems = estimate.items.flatMap((item: any) => item.freeItems || [])
+        const totals = calculateTotals(estimate.items, membershipPaidAmount, allEstimateFreeItems)
+
+        // docNo の自動採番: customers.reception_atの年月(yyyymm) + 同プレフィックスの最大連番+1(3桁)
+        const receptionDate = estimate.customer.receptionAt ? new Date(estimate.customer.receptionAt) : new Date()
+        const yyyy = receptionDate.getFullYear()
+        const mm = String(receptionDate.getMonth() + 1).padStart(2, '0')
+        const prefix = `${yyyy}${mm}`
+        const latestDoc = await prisma.invoice.findFirst({
+            where: { docNo: { startsWith: prefix } },
+            orderBy: { docNo: 'desc' },
+        })
+        const nextSeq = latestDoc?.docNo ? parseInt(latestDoc.docNo.slice(6)) + 1 : 1
+        const autoDocNo = `${prefix}${String(nextSeq).padStart(3, '0')}`
 
         const invoice = await prisma.invoice.create({
             data: {
                 customerId: estimate.customerId,
-                docNo: null, // 請求番号は後で設定
+                docNo: autoDocNo,
                 status: 'DRAFT',
                 subtotal: totals.subtotal,
                 tax: totals.tax,
@@ -86,7 +104,7 @@ export async function POST(
                 decorationStaff: estimate.decorationStaff,
                 returnStaff: estimate.returnStaff,
                 items: {
-                    create: estimate.items.map((item: any, index: number) => ({
+                    create: estimate.items.map((item: any) => ({
                         productItemId: item.productItemId,
                         productVariantId: item.productVariantId,
                         description: item.description,
@@ -103,6 +121,37 @@ export async function POST(
                 items: true,
             },
         })
+
+        // フリー項目をコピー
+        if (allEstimateFreeItems.length > 0) {
+            let anchorItemId: bigint
+            if (invoice.items.length > 0) {
+                anchorItemId = invoice.items[0].id
+            } else {
+                const dummyItem = await prisma.invoiceItem.create({
+                    data: {
+                        invoiceId: invoice.id,
+                        unitPriceGeneral: 0,
+                        unitPriceMember: 0,
+                        qty: 0,
+                        amount: 0,
+                        sortNo: 9999,
+                    },
+                })
+                anchorItemId = dummyItem.id
+            }
+            await prisma.invoiceItemFree.createMany({
+                data: allEstimateFreeItems.map((item: any, index: number) => ({
+                    invoiceItemId: anchorItemId,
+                    productItemName: item.productItemName || '',
+                    description: item.description || '',
+                    unitPriceGeneral: item.unitPriceGeneral || 0,
+                    qty: item.qty || 1,
+                    amount: (item.unitPriceGeneral || 0) * (item.qty || 1),
+                    sortNo: item.sortNo ?? index,
+                })),
+            })
+        }
 
         // レスポンスを返す
         return NextResponse.json(

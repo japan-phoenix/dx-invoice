@@ -8,9 +8,10 @@ import type { DocumentFormData } from './DocumentItemTable'
 
 type Props = {
     control: Control<DocumentFormData>
+    disabled?: boolean
 }
 
-export function DocumentOtherFields({ control }: Props) {
+export function DocumentOtherFields({ control, disabled }: Props) {
     const altarPlaceType = useWatch({ control, name: 'altarPlaceType' })
 
     return (
@@ -22,6 +23,7 @@ export function DocumentOtherFields({ control }: Props) {
                     label="火葬許可証手続"
                     options={CREMATION_OPTIONS}
                     placeholder="選択してください"
+                    disabled={disabled}
                 />
                 <div className="flex flex-col gap-2">
                     <FormSelect
@@ -30,6 +32,7 @@ export function DocumentOtherFields({ control }: Props) {
                         label="祭壇設置場所"
                         options={ALTAR_OPTIONS}
                         placeholder="選択してください"
+                        disabled={disabled}
                     />
                     {altarPlaceType === 'OTHER' && (
                         <FormInput name="altarPlaceOther" control={control} placeholder="祭壇設置場所" />

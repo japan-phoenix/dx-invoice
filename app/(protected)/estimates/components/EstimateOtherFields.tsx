@@ -7,8 +7,9 @@ import type { DocumentFormData } from '@/components/document/DocumentItemTable'
 
 type Props = {
     control: Control<EstimateFormData>
+    disabled?: boolean
 }
 
-export function EstimateOtherFields({ control }: Props) {
-    return <DocumentOtherFields control={control as unknown as Control<DocumentFormData>} />
+export function EstimateOtherFields({ control, disabled }: Props) {
+    return <DocumentOtherFields control={control as unknown as Control<DocumentFormData>} disabled={disabled} />
 }

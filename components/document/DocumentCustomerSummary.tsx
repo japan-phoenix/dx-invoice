@@ -40,11 +40,6 @@ export function DocumentCustomerSummary({ customer }: Props) {
                     <p>
                         <strong>住所:</strong> {customer.chiefMournerAddress}
                     </p>
-                    {customer.memberCardNote && (
-                        <p>
-                            <strong>会員証:</strong> {customer.memberCardNote}
-                        </p>
-                    )}
                 </div>
             )}
         </div>

@@ -7,8 +7,8 @@ export const TAB_FIELDS = {
     chiefMourner: ['chiefMournerName', 'chiefMournerRelation', 'chiefMournerAddress', 'chiefMournerTel'],
     payer: ['sameAsChiefMourner', 'payerName', 'payerRelation', 'payerAddress', 'payerTel'],
     wake: ['pickupPlace', 'wakeAt', 'wakePlace', 'departureAt', 'departurePlace'],
-    funeralInfo: ['funeralFrom', 'funeralTo', 'funeralPlace', 'returnAt', 'returnPlace', 'notes'],
-    membership1: ['memberCardNote', 'memberships.0'],
+    funeralInfo: ['funeralFrom', 'funeralTo', 'funeralPlace', 'notes'],
+    membership1: ['memberships.0'],
     membership2: ['memberships.1'],
     membership3: ['memberships.2'],
 } as const

@@ -5,20 +5,14 @@ import { useRouter, useParams } from 'next/navigation'
 import { useForm, FormProvider, useFieldArray, useWatch } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { estimateFormSchema, EstimateFormData, DEFAULT_FORM_VALUES } from '../schemas/EstimateFormSchema'
-import {
-    useEstimateEdit,
-    useProductSearch,
-    useEstimateItems,
-    useEstimateFreeItems,
-    calculateTotals,
-} from '../hooks/useEstimateForm'
-import { EstimateProductSearch } from '../components/EstimateProductSearch'
+import { useEstimateEdit, useEstimateFreeItems, calculateTotals } from '../hooks/useEstimateForm'
 import { EstimateItemTable } from '../components/EstimateItemTable'
 import { EstimateTotals } from '../components/EstimateTotals'
 import { EstimateOtherFields } from '../components/EstimateOtherFields'
 import { EstimateCustomerSummary } from '../components/EstimateCustomerSummary'
 import { EstimateBasicInfo } from '../components/EstimateBasicInfo'
 import { EstimateFreeItemInput } from '../components/EstimateFreeItemInput'
+import { ProductVariant } from '@/lib/products'
 import { toast } from '@/hooks/use-toast'
 
 export default function EstimateEditPage() {
@@ -34,15 +28,11 @@ export default function EstimateEditPage() {
         control,
         handleSubmit,
         reset,
+        setValue,
         formState: { isSubmitting, isDirty, errors },
     } = methods
 
-    const {
-        fields: itemFields,
-        append: appendItemField,
-        remove: removeItemField,
-        move: moveItemField,
-    } = useFieldArray({ control, name: 'items' })
+    const { fields: itemFields } = useFieldArray({ control, name: 'items' })
 
     const {
         fields: freeItemFields,
@@ -54,8 +44,6 @@ export default function EstimateEditPage() {
         estimateId,
         reset
     )
-    const productSearchProps = useProductSearch(items, setItems, appendItemField, moveItemField)
-    const { handleRemoveItem } = useEstimateItems(items, setItems, removeItemField)
     const { handleAddFreeItem, handleRemoveFreeItem } = useEstimateFreeItems(
         freeItems,
         setFreeItems,
@@ -66,6 +54,23 @@ export default function EstimateEditPage() {
     const watchedItems = useWatch({ control, name: 'items' })
     const watchedFreeItems = useWatch({ control, name: 'freeItems' })
     const watchedIsMember = useWatch({ control, name: 'isMember' })
+    const watchedStatus = useWatch({ control, name: 'status' })
+
+    const handleVariantChange = (index: number, variant: ProductVariant) => {
+        setItems((prev) =>
+            prev.map((item, i) =>
+                i !== index
+                    ? item
+                    : {
+                          ...item,
+                          productVariantId: variant.id,
+                          productVariant: variant,
+                          unitPriceGeneral: variant.priceGeneral,
+                          unitPriceMember: variant.priceMember,
+                      }
+            )
+        )
+    }
 
     if (loading) {
         return <div className="p-8">読み込み中...</div>
@@ -74,6 +79,8 @@ export default function EstimateEditPage() {
     if (!customer || !estimate) {
         return null
     }
+
+    const isConfirmed = estimate.status === 'CONFIRMED'
 
     const totals = calculateTotals(
         items,
@@ -130,33 +137,36 @@ export default function EstimateEditPage() {
                     </button>
                 </div>
 
-                {/* 明細タブ */}
-                {activeTab === 'items' && (
-                    <>
-                        <EstimateBasicInfo control={control} />
-                        <EstimateProductSearch {...productSearchProps} items={items} />
-                        {(errors.items?.root?.message ?? (errors.items as any)?.message) && (
-                            <p className="-mt-4 mb-4 text-sm text-red-600">
-                                {errors.items?.root?.message ?? (errors.items as any)?.message}
-                            </p>
-                        )}
-                        <EstimateFreeItemInput onAdd={handleAddFreeItem} count={freeItems.length} />
-                        <EstimateItemTable
-                            items={items}
-                            fields={itemFields}
-                            control={control}
-                            handleRemoveItem={handleRemoveItem}
-                            isMember={watchedIsMember === 'true'}
-                            freeItems={freeItems}
-                            freeFields={freeItemFields}
-                            handleRemoveFreeItem={handleRemoveFreeItem}
-                        />
-                        <EstimateTotals totals={totals} />
-                    </>
-                )}
+                <fieldset disabled={isConfirmed} className="contents">
+                    {/* 明細タブ */}
+                    {activeTab === 'items' && (
+                        <>
+                            <EstimateBasicInfo control={control} disabled={isConfirmed} />
+                            {(errors.items?.root?.message ?? (errors.items as any)?.message) && (
+                                <p className="-mt-4 mb-4 text-sm text-red-600">
+                                    {errors.items?.root?.message ?? (errors.items as any)?.message}
+                                </p>
+                            )}
+                            <EstimateFreeItemInput onAdd={handleAddFreeItem} count={freeItems.length} />
+                            <EstimateItemTable
+                                items={items}
+                                fields={itemFields}
+                                control={control}
+                                isMember={watchedIsMember === 'true'}
+                                freeItems={freeItems}
+                                freeFields={freeItemFields}
+                                handleRemoveFreeItem={handleRemoveFreeItem}
+                                onVariantChange={handleVariantChange}
+                                setValue={setValue}
+                                readOnly={isConfirmed}
+                            />
+                            <EstimateTotals totals={totals} />
+                        </>
+                    )}
 
-                {/* その他タブ */}
-                {activeTab === 'other' && <EstimateOtherFields control={control} />}
+                    {/* その他タブ */}
+                    {activeTab === 'other' && <EstimateOtherFields control={control} disabled={isConfirmed} />}
+                </fieldset>
 
                 {/* 操作ボタン（画面右下固定） */}
                 <div className="fixed bottom-0 right-0 p-2">
@@ -164,7 +174,10 @@ export default function EstimateEditPage() {
                     <div className="flex gap-4 bg-white">
                         <button
                             type="button"
-                            onClick={() => router.back()}
+                            onClick={() => {
+                                router.push('/cases')
+                                router.refresh()
+                            }}
                             className="cursor-pointer rounded border-0 bg-gray-500 px-6 py-3 text-white"
                         >
                             閉じる
@@ -179,15 +192,17 @@ export default function EstimateEditPage() {
                         >
                             PDFプレビュー
                         </button>
-                        <button
-                            type="submit"
-                            disabled={isSubmitting}
-                            className={`rounded border-0 px-6 py-3 text-white ${
-                                isSubmitting ? 'cursor-not-allowed bg-gray-300' : 'cursor-pointer bg-green-600'
-                            }`}
-                        >
-                            {isSubmitting ? '保存中...' : '更新'}
-                        </button>
+                        {!isConfirmed && (
+                            <button
+                                type="submit"
+                                disabled={isSubmitting}
+                                className={`rounded border-0 px-6 py-3 text-white ${
+                                    isSubmitting ? 'cursor-not-allowed bg-gray-300' : 'cursor-pointer bg-green-600'
+                                }`}
+                            >
+                                {isSubmitting ? '保存中...' : watchedStatus === 'CONFIRMED' ? '確定' : '更新'}
+                            </button>
+                        )}
                     </div>
                 </div>
             </form>

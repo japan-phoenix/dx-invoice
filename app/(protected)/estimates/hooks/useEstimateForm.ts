@@ -1,11 +1,17 @@
 import { useState, useEffect, useCallback } from 'react'
 import { UseFormReset } from 'react-hook-form'
 import { useRouter } from 'next/navigation'
+import { useQueryClient } from '@tanstack/react-query'
 import { getEstimate, createEstimate, updateEstimate, Estimate, EstimateItem, EstimateFreeItem } from '@/lib/estimates'
 import { getCustomer } from '@/lib/customers'
 import { getProducts, ProductItem, ProductVariant } from '@/lib/products'
 import { toast } from '@/hooks/use-toast'
-import { EstimateFormData, EstimateItemField, EstimateFreeItemField } from '../schemas/EstimateFormSchema'
+import {
+    EstimateFormData,
+    EstimateItemField,
+    EstimateFreeItemField,
+    DEFAULT_FORM_VALUES,
+} from '../schemas/EstimateFormSchema'
 import { DEFAULT_DESCRIPTION_MAP } from '../constants/estimateOptions'
 
 const sortByProductItemId = (arr: EstimateItem[]): EstimateItem[] =>
@@ -20,6 +26,7 @@ const sortByProductItemId = (arr: EstimateItem[]): EstimateItem[] =>
 // -------------------------------------------------------
 export function useEstimateCreate(customerId: string, reset: UseFormReset<EstimateFormData>) {
     const router = useRouter()
+    const queryClient = useQueryClient()
     const [loading, setLoading] = useState(true)
     const [customer, setCustomer] = useState<any>(null)
     const [items, setItems] = useState<EstimateItem[]>([])
@@ -27,15 +34,40 @@ export function useEstimateCreate(customerId: string, reset: UseFormReset<Estima
 
     const loadData = useCallback(async () => {
         try {
-            const customerData = await getCustomer(customerId)
+            const [customerData, allProducts] = await Promise.all([getCustomer(customerId), getProducts()])
             setCustomer(customerData)
+
+            const initialItems: EstimateItem[] = allProducts.map((product) => {
+                const firstVariant = product.variants[0] ?? null
+                return {
+                    productItemId: product.id,
+                    productVariantId: firstVariant?.id ?? undefined,
+                    description: DEFAULT_DESCRIPTION_MAP[product.name] ?? '',
+                    unitPriceGeneral: firstVariant?.priceGeneral || 0,
+                    unitPriceMember: firstVariant?.priceMember || 0,
+                    qty: 0,
+                    amount: 0,
+                    sortNo: 0,
+                    productItem: { ...product },
+                    productVariant: firstVariant,
+                }
+            })
+            setItems(initialItems)
+
+            reset({
+                ...DEFAULT_FORM_VALUES,
+                items: initialItems.map((item) => ({
+                    qty: item.qty,
+                    description: item.description || '',
+                })),
+            })
         } catch (error) {
             console.error('Failed to load customer:', error)
             toast({ title: 'データの読み込みに失敗しました', variant: 'destructive', duration: 3000 })
         } finally {
             setLoading(false)
         }
-    }, [customerId])
+    }, [customerId, reset])
 
     useEffect(() => {
         loadData()
@@ -51,13 +83,22 @@ export function useEstimateCreate(customerId: string, reset: UseFormReset<Estima
     const onSubmit = async (formValues: EstimateFormData) => {
         try {
             const isMember = formValues.isMember === 'true'
-            const mergedItems = items.map((item, i) => {
+            const allMergedItems = items.map((item, i) => {
                 const qty = formValues.items[i]?.qty ?? item.qty
                 const description = formValues.items[i]?.description ?? item.description ?? ''
                 const unitPrice = isMember ? item.unitPriceMember : item.unitPriceGeneral
                 const amount = unitPrice * qty
-                return { ...item, qty, description, amount, sortNo: i }
+                return { ...item, qty, description, amount }
             })
+            const activeItems = allMergedItems.filter((item) => item.qty > 0).map((item, i) => ({ ...item, sortNo: i }))
+            if (activeItems.length === 0) {
+                toast({
+                    title: '数量が1以上の品目を少なくとも1つ入力してください',
+                    variant: 'destructive',
+                    duration: 3000,
+                })
+                return
+            }
             const mergedFreeItems = freeItems.map((item, i) => {
                 const qty = formValues.freeItems[i]?.qty ?? item.qty
                 const description = formValues.freeItems[i]?.description ?? item.description ?? ''
@@ -65,9 +106,10 @@ export function useEstimateCreate(customerId: string, reset: UseFormReset<Estima
                 return { ...item, qty, description, amount, sortNo: i }
             })
             const totals = calculateTotals(items, formValues.items, isMember, customer, freeItems, formValues.freeItems)
-            const data = { ...formValues, ...totals, items: mergedItems, freeItems: mergedFreeItems }
+            const data = { ...formValues, ...totals, items: activeItems, freeItems: mergedFreeItems }
             const created = await createEstimate(customerId, data)
             toast({ title: '登録しました', variant: 'success', duration: 2000 })
+            queryClient.invalidateQueries({ queryKey: ['customers'] })
             router.push(`/estimates/${created.id}`)
         } catch (error) {
             console.error('Failed to create:', error)
@@ -91,12 +133,33 @@ export function useEstimateEdit(estimateId: string, reset: UseFormReset<Estimate
 
     const loadData = useCallback(async () => {
         try {
-            const estimateData = await getEstimate(estimateId)
+            const [estimateData, allProducts] = await Promise.all([getEstimate(estimateId), getProducts()])
             setEstimate(estimateData)
-            const sortedItems = sortByProductItemId(estimateData.items || [])
-            setItems(sortedItems)
+            const existingItems: EstimateItem[] = estimateData.items || []
+
+            // 全アクティブ品目と既存見積明細をマージ
+            const mergedItems: EstimateItem[] = allProducts.map((product) => {
+                const existing = existingItems.find((item) => item.productItemId === product.id)
+                if (existing) {
+                    return { ...existing, productItem: { ...product } }
+                }
+                const firstVariant = product.variants[0] ?? null
+                return {
+                    productItemId: product.id,
+                    productVariantId: firstVariant?.id ?? undefined,
+                    description: DEFAULT_DESCRIPTION_MAP[product.name] ?? '',
+                    unitPriceGeneral: firstVariant?.priceGeneral || 0,
+                    unitPriceMember: firstVariant?.priceMember || 0,
+                    qty: 0,
+                    amount: 0,
+                    sortNo: 0,
+                    productItem: { ...product },
+                    productVariant: firstVariant,
+                }
+            })
 
             const loadedFreeItems: EstimateFreeItem[] = (estimateData as any).freeItems || []
+            setItems(mergedItems)
             setFreeItems(loadedFreeItems)
 
             const customerData = await getCustomer(estimateData.customerId)
@@ -115,7 +178,7 @@ export function useEstimateEdit(estimateId: string, reset: UseFormReset<Estimate
                 transportStaff: (estimateData as any).transportStaff || '',
                 decorationStaff: (estimateData as any).decorationStaff || '',
                 returnStaff: (estimateData as any).returnStaff || '',
-                items: sortedItems.map((item) => ({
+                items: mergedItems.map((item) => ({
                     qty: item.qty,
                     description: item.description || '',
                 })),
@@ -146,13 +209,22 @@ export function useEstimateEdit(estimateId: string, reset: UseFormReset<Estimate
     const onSubmit = async (formValues: EstimateFormData) => {
         try {
             const isMember = formValues.isMember === 'true'
-            const mergedItems = items.map((item, i) => {
+            const allMergedItems = items.map((item, i) => {
                 const qty = formValues.items[i]?.qty ?? item.qty
                 const description = formValues.items[i]?.description ?? item.description ?? ''
                 const unitPrice = isMember ? item.unitPriceMember : item.unitPriceGeneral
                 const amount = unitPrice * qty
-                return { ...item, qty, description, amount, sortNo: i }
+                return { ...item, qty, description, amount }
             })
+            const activeItems = allMergedItems.filter((item) => item.qty > 0).map((item, i) => ({ ...item, sortNo: i }))
+            if (activeItems.length === 0) {
+                toast({
+                    title: '数量が1以上の品目を少なくとも1つ入力してください',
+                    variant: 'destructive',
+                    duration: 3000,
+                })
+                return
+            }
             const mergedFreeItems = freeItems.map((item, i) => {
                 const qty = formValues.freeItems[i]?.qty ?? item.qty
                 const description = formValues.freeItems[i]?.description ?? item.description ?? ''
@@ -160,7 +232,7 @@ export function useEstimateEdit(estimateId: string, reset: UseFormReset<Estimate
                 return { ...item, qty, description, amount, sortNo: i }
             })
             const totals = calculateTotals(items, formValues.items, isMember, customer, freeItems, formValues.freeItems)
-            const data = { ...formValues, ...totals, items: mergedItems, freeItems: mergedFreeItems }
+            const data = { ...formValues, ...totals, items: activeItems, freeItems: mergedFreeItems }
             await updateEstimate(estimateId, data)
             toast({ title: '更新しました', variant: 'success', duration: 2000 })
             await loadData()

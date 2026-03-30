@@ -64,10 +64,22 @@ export async function POST(request: NextRequest, props: { params: Promise<{ cust
                 ? data.altarPlaceType
                 : null
 
+        // docNo の自動採番: customers.reception_atの年月(yyyymm) + 同プレフィックスの最大連番+1(3桁)
+        const receptionDate = customer.receptionAt ? new Date(customer.receptionAt) : new Date()
+        const yyyy = receptionDate.getFullYear()
+        const mm = String(receptionDate.getMonth() + 1).padStart(2, '0')
+        const prefix = `${yyyy}${mm}`
+        const latestDoc = await prisma.invoice.findFirst({
+            where: { docNo: { startsWith: prefix } },
+            orderBy: { docNo: 'desc' },
+        })
+        const nextSeq = latestDoc?.docNo ? parseInt(latestDoc.docNo.slice(6)) + 1 : 1
+        const docNo = data.docNo || `${prefix}${String(nextSeq).padStart(3, '0')}`
+
         const invoice = await prisma.invoice.create({
             data: {
                 customerId: BigInt(customerId),
-                docNo: data.docNo || null,
+                docNo,
                 status: data.status || 'DRAFT',
                 isMember: data.isMember === true || data.isMember === 'true',
                 subtotal: totals.subtotal,

@@ -7,13 +7,14 @@ import { FormSelect } from '@/components/form/FormSelect'
 
 type Props = {
     control: Control<InvoiceFormData>
+    isNew?: boolean
 }
 
-export function InvoiceBasicInfo({ control }: Props) {
+export function InvoiceBasicInfo({ control, isNew }: Props) {
     return (
         <div className="mb-8">
             <div className="grid grid-cols-2 gap-4">
-                <FormInput name="docNo" control={control} label="請求番号" placeholder="例: INV-0001" />
+                {!isNew && <FormInput name="docNo" control={control} label="請求番号" placeholder="例: INV-0001" />}
                 <FormSelect
                     name="isMember"
                     control={control}

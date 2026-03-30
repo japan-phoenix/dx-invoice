@@ -4,19 +4,11 @@ type Props = {
     memberships?: PdfMembership[]
 }
 
-const HEADERS = [
-    '会員番号',
-    '入金',
-    '会員名',
-    'コース',
-    '満期額',
-    '入金回数',
-    '入金金額',
-    '営業担当者名',
-    '故人との続柄',
-]
+const HEADERS = ['会員番号', '入金', '会員名', 'コース', '入金回数', '入金金額', '営業担当者名', '故人との続柄']
 
 export function PdfMembershipTable({ memberships = [] }: Props) {
+    if (memberships.length === 0 || memberships.every((m) => m.memberNo == null)) return null
+
     const rows = [0, 1, 2].map((i) => memberships[i] || ({} as PdfMembership))
 
     return (
@@ -52,11 +44,6 @@ export function PdfMembershipTable({ memberships = [] }: Props) {
                             <td className="border border-y-0 border-black px-2 text-center">{m.memberName ?? ''}</td>
                             <td className="border border-y-0 border-black px-2 text-right">
                                 {m.courseUnits != null ? `${m.courseUnits}\u00A0万口` : ''}
-                            </td>
-                            <td className="border border-y-0 border-black px-2 text-right">
-                                {m.maturityAmount != null
-                                    ? `${Number(m.maturityAmount).toLocaleString()}\u00A0万円`
-                                    : ''}
                             </td>
                             <td className="border border-y-0 border-black px-2 text-right">
                                 {m.paymentTimes != null ? `${m.paymentTimes}\u00A0回` : ''}

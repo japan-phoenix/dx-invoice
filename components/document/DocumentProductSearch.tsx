@@ -1,4 +1,7 @@
-'use client'
+{
+    /* 旧品目検索: 指摘修正のため現状は使用してない */
+}
+;('use client')
 
 import { useState } from 'react'
 import { ImageOff, X } from 'lucide-react'
@@ -47,7 +50,7 @@ export function DocumentProductSearch({
             {/* 画像拡大モーダル */}
             {enlargedImage && (
                 <div
-                    className="fixed inset-0 z-50 flex items-center justify-center bg-black/70"
+                    className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/70"
                     onClick={() => setEnlargedImage(null)}
                 >
                     <div className="relative" onClick={(e) => e.stopPropagation()}>
